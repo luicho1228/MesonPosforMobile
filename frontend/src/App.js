@@ -1659,6 +1659,7 @@ const POSInterface = () => {
   const [selectedTable, setSelectedTable] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { user, logout } = useAuth();
 
   const handleNewOrder = (table = null) => {
@@ -1688,6 +1689,8 @@ const POSInterface = () => {
     setCurrentView('main');
     setSelectedTable(null);
     setEditingOrder(null);
+    // Trigger refresh of active orders when returning to main view
+    setRefreshTrigger(prev => prev + 1);
   };
 
   if (currentView === 'new-order') {
