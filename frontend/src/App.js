@@ -329,6 +329,316 @@ const getOrderAgeColor = (createdAt) => {
   return 'bg-white border-gray-200';
 };
 
+// Order History Component
+const OrderHistory = ({ onBack }) => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('today');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchAllOrders();
+  }, []);
+
+  const fetchAllOrders = async () => {
+    try {
+      const response = await axios.get(`${API}/orders`);
+      setOrders(response.data);
+    } catch (error) {
+      console.error('Error fetching order history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFilteredOrders = () => {
+    let filtered = orders;
+
+    // Filter by status
+    if (filter !== 'all') {
+      filtered = filtered.filter(order => order.status === filter);
+    }
+
+    // Filter by date
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    if (dateFilter === 'today') {
+      filtered = filtered.filter(order => new Date(order.created_at) >= today);
+    } else if (dateFilter === 'yesterday') {
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate >= yesterday && orderDate < today;
+      });
+    } else if (dateFilter === 'week') {
+      filtered = filtered.filter(order => new Date(order.created_at) >= weekAgo);
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(order => 
+        order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.customer_phone.includes(searchTerm)
+      );
+    }
+
+    return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      draft: 'bg-gray-100 text-gray-800',
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      preparing: 'bg-orange-100 text-orange-800',
+      ready: 'bg-green-100 text-green-800',
+      out_for_delivery: 'bg-purple-100 text-purple-800',
+      delivered: 'bg-green-200 text-green-900',
+      paid: 'bg-emerald-200 text-emerald-900',
+      cancelled: 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getTotalRevenue = () => {
+    const filteredOrders = getFilteredOrders();
+    return filteredOrders
+      .filter(order => ['delivered', 'paid'].includes(order.status))
+      .reduce((sum, order) => sum + order.total, 0);
+  };
+
+  const getOrderCount = () => {
+    return getFilteredOrders().length;
+  };
+
+  const filteredOrders = getFilteredOrders();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Order History & Transactions</h1>
+          </div>
+          
+          {/* Summary Stats */}
+          <div className="flex items-center space-x-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{getOrderCount()}</div>
+              <div className="text-sm text-gray-600">Orders</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">${getTotalRevenue().toFixed(2)}</div>
+              <div className="text-sm text-gray-600">Revenue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {/* Filters */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Search */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <input
+                type="text"
+                placeholder="Order #, Customer name, Phone"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Date Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="week">Last 7 Days</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Orders</option>
+                <option value="paid">Paid</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="pending">Pending</option>
+                <option value="preparing">Preparing</option>
+                <option value="ready">Ready</option>
+                <option value="out_for_delivery">Out for Delivery</option>
+              </select>
+            </div>
+
+            {/* Refresh Button */}
+            <div className="flex items-end">
+              <button
+                onClick={fetchAllOrders}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Orders List */}
+        <div className="bg-white rounded-2xl shadow-lg">
+          <div className="p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-6">Orders ({filteredOrders.length})</h3>
+            
+            {filteredOrders.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No orders found matching your criteria</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Order #</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date & Time</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Customer</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Type</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Items</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Total</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Payment</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.map((order) => (
+                      <tr key={order.id} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-blue-600">{order.order_number}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm">
+                            <div>{new Date(order.created_at).toLocaleDateString()}</div>
+                            <div className="text-gray-500">{new Date(order.created_at).toLocaleTimeString()}</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm">
+                            <div className="font-medium">{order.customer_name || 'Walk-in'}</div>
+                            {order.customer_phone && (
+                              <div className="text-gray-500">{order.customer_phone}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm">
+                            <div className="font-medium">{order.order_type.replace('_', ' ').toUpperCase()}</div>
+                            {order.table_number && (
+                              <div className="text-gray-500">Table {order.table_number}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm">
+                            <div>{order.items.length} items</div>
+                            <div className="text-gray-500">
+                              {order.items.slice(0, 2).map(item => item.menu_item_name).join(', ')}
+                              {order.items.length > 2 && '...'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-green-600">${order.total.toFixed(2)}</div>
+                          {order.cash_received && (
+                            <div className="text-xs text-gray-500">
+                              Cash: ${order.cash_received.toFixed(2)}
+                              {order.change_amount > 0 && (
+                                <div>Change: ${order.change_amount.toFixed(2)}</div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm">
+                            <div className="font-medium">{order.payment_method?.toUpperCase() || 'Pending'}</div>
+                            <div className="text-gray-500">{order.payment_status}</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
+                            {order.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                // View order details in console for now
+                                console.log('Order Details:', order);
+                                alert(`Order ${order.order_number} details logged to console`);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              View
+                            </button>
+                            {order.status === 'paid' && (
+                              <button
+                                onClick={() => {
+                                  console.log('Print receipt for:', order);
+                                  alert(`Receipt for ${order.order_number} sent to printer`);
+                                }}
+                                className="text-green-600 hover:text-green-800 text-sm"
+                              >
+                                Print
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Active Orders Component
 const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
   const [orders, setOrders] = useState([]);
