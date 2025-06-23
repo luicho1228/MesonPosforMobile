@@ -692,7 +692,7 @@ async def send_order_to_kitchen(order_id: str, user_id: str = Depends(verify_tok
     # Update order status to pending
     await db.orders.update_one(
         {"id": order_id},
-        {"$set": {"status": "pending", "updated_at": datetime.utcnow()}}
+        {"$set": {"status": "pending", "updated_at": get_current_time()}}
     )
     
     # If table order, mark table as occupied
