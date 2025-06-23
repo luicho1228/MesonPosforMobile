@@ -1269,22 +1269,6 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
     alert('Receipt sent to printer');
   };
 
-  const handlePinSuccess = (user) => {
-    setIsAuthorized(true);
-    setShowPinModal(false);
-  };
-
-  // Show PIN modal if not authorized
-  if (!isAuthorized) {
-    return (
-      <PinVerificationModal
-        isOpen={true}
-        onClose={onBack}
-        onSuccess={handlePinSuccess}
-        title="Enter PIN to Start Order"
-      />
-    );
-  }
 
   const filteredItems = selectedCategory === 'all' 
     ? menuItems 
