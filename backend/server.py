@@ -8,11 +8,19 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import bcrypt
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
+import pytz
+
+# Set timezone to Eastern Daylight Time
+EDT = pytz.timezone('US/Eastern')
+
+def get_current_time():
+    """Get current time in EDT timezone"""
+    return datetime.now(EDT)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
