@@ -1215,7 +1215,7 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
           special_instructions: ''
         })),
         order_type: orderType,
-        tip: tip,
+        tip: 0,
         delivery_instructions: ''
       };
 
