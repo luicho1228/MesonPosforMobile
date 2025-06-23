@@ -261,8 +261,7 @@ class TimeEntry(BaseModel):
     break_end: Optional[datetime] = None
     total_hours: float = 0.0
     overtime_hours: float = 0.0
-    date: str  # YYYY-MM-DD format
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_current_time)
 
 # Authentication helpers
 def create_access_token(data: dict):
