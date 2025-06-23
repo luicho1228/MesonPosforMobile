@@ -1234,17 +1234,68 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
     let order = currentOrder;
     
     if (!order) {
+      // Create new order
       order = await createOrUpdateOrder();
       if (!order) return;
+      
+      try {
+        await axios.post(`${API}/orders/${order.id}/send`);
+        alert('Order sent successfully!');
+        onBack();
+      } catch (error) {
+        console.error('Error sending order:', error);
+        alert(error.response?.data?.detail || 'Error sending order');
+      }
+    } else {
+      // Update existing order
+      try {
+        await updateExistingOrder();
+        alert('Order updated successfully!');
+        onBack();
+      } catch (error) {
+        console.error('Error updating order:', error);
+        alert(error.response?.data?.detail || 'Error updating order');
+      }
     }
+  };
+
+  const updateExistingOrder = async () => {
+    if (!currentOrder) return;
 
     try {
-      const response = await axios.post(`${API}/orders/${order.id}/send`);
-      alert('Order sent successfully!');
-      onBack();
+      // For now, we'll recreate the order with new items
+      // In a real system, you might have a dedicated update endpoint
+      const orderData = {
+        customer_name: customerInfo.name,
+        customer_phone: customerInfo.phone,
+        customer_address: customerInfo.address,
+        table_id: selectedTable?.id || currentOrder.table_id,
+        items: cart.map(item => ({
+          menu_item_id: item.menu_item_id,
+          quantity: item.quantity,
+          modifiers: item.modifiers,
+          special_instructions: ''
+        })),
+        order_type: orderType,
+        tip: 0,
+        delivery_instructions: ''
+      };
+
+      // Delete the old order
+      await axios.delete(`${API}/orders/${currentOrder.id}`);
+      
+      // Create new order with same order number
+      const response = await axios.post(`${API}/orders`, orderData);
+      const newOrder = response.data;
+      
+      // Send the new order
+      await axios.post(`${API}/orders/${newOrder.id}/send`);
+      
+      setCurrentOrder(newOrder);
+      return newOrder;
     } catch (error) {
-      console.error('Error sending order:', error);
-      alert(error.response?.data?.detail || 'Error sending order');
+      console.error('Error updating order:', error);
+      throw error;
     }
   };
 
