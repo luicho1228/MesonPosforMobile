@@ -184,7 +184,7 @@ class ItemRemoval(BaseModel):
     reason: RemovalReason
     notes: str = ""
     removed_by: str
-    removed_at: datetime = Field(default_factory=datetime.utcnow)
+    removed_at: datetime = Field(default_factory=get_current_time)
 
 class Order(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
