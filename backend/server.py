@@ -1017,7 +1017,7 @@ async def clock_out(user_id: str = Depends(verify_token)):
     if not entry:
         raise HTTPException(status_code=400, detail="Not clocked in")
     
-    clock_out_time = datetime.utcnow()
+    clock_out_time = get_current_time()
     clock_in_time = entry['clock_in']
     
     # Calculate hours
