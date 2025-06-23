@@ -317,6 +317,20 @@ const PinVerificationModal = ({ isOpen, onClose, onSuccess, title = "Enter PIN t
   );
 };
 
+// Helper function to calculate time elapsed
+const getTimeElapsed = (createdAt) => {
+  const now = new Date();
+  const created = new Date(createdAt);
+  const diffMs = now - created;
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  
+  if (diffHours > 0) {
+    return `${diffHours}h ${diffMins % 60}m`;
+  }
+  return `${diffMins}m`;
+};
+
 // Helper function to get order age color
 const getOrderAgeColor = (createdAt) => {
   const now = new Date();
