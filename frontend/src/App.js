@@ -667,6 +667,7 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [orderTypeFilter, setOrderTypeFilter] = useState('all');
 
   useEffect(() => {
     fetchActiveOrders();
@@ -705,7 +706,6 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: 'bg-yellow-500',
       confirmed: 'bg-blue-500',
       preparing: 'bg-orange-500',
       ready: 'bg-green-500',
@@ -716,7 +716,6 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
 
   const getNextStatus = (currentStatus) => {
     const progression = {
-      pending: 'confirmed',
       confirmed: 'preparing',
       preparing: 'ready',
       ready: 'out_for_delivery',
@@ -727,7 +726,6 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
 
   const getNextStatusLabel = (currentStatus) => {
     const labels = {
-      pending: 'Confirm',
       confirmed: 'Start Prep',
       preparing: 'Ready',
       ready: 'Out for Delivery',
@@ -735,6 +733,11 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
     };
     return labels[currentStatus];
   };
+
+  // Filter orders by type
+  const filteredOrders = orderTypeFilter === 'all' 
+    ? orders 
+    : orders.filter(order => order.order_type === orderTypeFilter);
 
   if (loading) {
     return (
@@ -749,15 +752,33 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-6">Active Orders</h3>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-gray-800">Active Orders</h3>
+        
+        {/* Order Type Filter */}
+        <div className="flex items-center space-x-4">
+          <label className="text-sm font-medium text-gray-700">Filter:</label>
+          <select
+            value={orderTypeFilter}
+            onChange={(e) => setOrderTypeFilter(e.target.value)}
+            className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Orders</option>
+            <option value="dine_in">Dine In</option>
+            <option value="takeout">Takeout</option>
+            <option value="delivery">Delivery</option>
+            <option value="phone_order">Phone Order</option>
+          </select>
+        </div>
+      </div>
       
-      {orders.length === 0 ? (
+      {filteredOrders.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p>No active orders</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          {orders.map((order) => (
+          {filteredOrders.map((order) => (
             <div
               key={order.id}
               className={`border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md ${getOrderAgeColor(order.created_at)}`}
@@ -769,16 +790,27 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                   <p className="text-sm text-gray-600">
                     {new Date(order.created_at).toLocaleTimeString()}
                   </p>
-                  {/* Order Timer */}
+                  {/* Real-time Order Timer */}
                   <p className="text-xs font-semibold text-orange-600">
-                    ⏱️ {getTimeElapsed(order.created_at)} ago
+                    ⏱️ {getTimeElapsed(order.created_at)}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(order.status)}`}></span>
-                  <span className="text-xs font-medium capitalize">
-                    {order.status.replace('_', ' ')}
-                  </span>
+                  {/* Show status indicator only if not pending */}
+                  {order.status !== 'pending' && (
+                    <>
+                      <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(order.status)}`}></span>
+                      <span className="text-xs font-medium capitalize">
+                        {order.status.replace('_', ' ')}
+                      </span>
+                    </>
+                  )}
+                  {/* Show pending indicator for pending orders */}
+                  {order.status === 'pending' && (
+                    <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                      PENDING
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -806,8 +838,8 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
 
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
-                {/* Only show status buttons for delivery orders */}
-                {order.order_type === 'delivery' && getNextStatus(order.status) && (
+                {/* Only show status buttons for delivery orders and not pending */}
+                {order.order_type === 'delivery' && order.status !== 'pending' && getNextStatus(order.status) && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
