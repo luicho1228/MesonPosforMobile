@@ -1176,7 +1176,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
         await axios.delete(`${API}/orders/${currentOrder.id}/items/${removalItemIndex}`, {
           data: removalData
         });
-        loadExistingOrder(); // Reload order
+        loadExistingTableOrder(); // Reload order
       } catch (error) {
         console.error('Error removing item from order:', error);
       }
