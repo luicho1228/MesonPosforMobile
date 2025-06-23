@@ -507,7 +507,7 @@ async def merge_table_orders(table_id: str, merge_request: TableMoveRequest, use
                 "subtotal": total_subtotal,
                 "tax": total_tax,
                 "total": total_amount,
-                "updated_at": datetime.utcnow()
+                "updated_at": get_current_time()
             }
         }
     )
