@@ -690,74 +690,62 @@ const TableManagement = ({ onTableSelect }) => {
     return colors[status] || 'bg-gray-100 border-gray-300';
   };
 
+  const occupiedTables = tables.filter(t => t.status === 'occupied');
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-6">Table Management</h3>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-gray-800">Table Management</h3>
+        
+        {/* Action Buttons */}
+        <div className="flex space-x-2">
+          {occupiedTables.length > 0 && (
+            <>
+              <button
+                onClick={() => {
+                  if (occupiedTables.length === 1) {
+                    setSelectedTable(occupiedTables[0]);
+                    setShowMoveModal(true);
+                  } else {
+                    alert('Please select a specific table to move');
+                  }
+                }}
+                className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-purple-700"
+              >
+                Move Order
+              </button>
+              
+              <button
+                onClick={() => {
+                  const tableToUpdate = occupiedTables[0];
+                  if (occupiedTables.length === 1) {
+                    updateTableStatus(tableToUpdate.id, 'problem');
+                  } else {
+                    alert('Please select a specific table');
+                  }
+                }}
+                className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700"
+              >
+                Mark Problem
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-5 gap-3">
         {tables.map((table) => (
           <div
             key={table.id}
             className={`border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md ${getTableColor(table.status)}`}
-            onClick={() => {
-              if (table.status === 'available') {
-                onTableSelect(table);
-              }
-            }}
+            onClick={() => onTableSelect(table)}
           >
             <div className="text-center">
               <div className="text-2xl font-bold mb-1">{table.number}</div>
-              <div className="text-xs capitalize mb-2">
+              <div className="text-xs capitalize">
                 {table.status.replace('_', ' ')}
               </div>
             </div>
-            
-            {table.status === 'occupied' && (
-              <div className="space-y-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTableSelect(table, 'edit');
-                  }}
-                  className="w-full text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                >
-                  Add Items
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedTable(table);
-                    setShowMoveModal(true);
-                  }}
-                  className="w-full text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600"
-                >
-                  Move
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateTableStatus(table.id, 'problem');
-                  }}
-                  className="w-full text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                >
-                  Problem
-                </button>
-              </div>
-            )}
-            
-            {table.status !== 'available' && table.status !== 'occupied' && (
-              <div className="mt-2 flex justify-center">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateTableStatus(table.id, 'available');
-                  }}
-                  className="text-xs bg-white bg-opacity-50 px-2 py-1 rounded"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
           </div>
         ))}
       </div>
