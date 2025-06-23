@@ -129,7 +129,9 @@ const Login = () => {
           </button>
         </form>
         <div className="mt-4 text-center text-sm text-gray-600">
-          Demo credentials: admin/admin123 (you'll need to register first)
+          <strong>Demo Credentials:</strong><br />
+          Username: <code className="bg-gray-100 px-1 rounded">admin</code><br />
+          Password: <code className="bg-gray-100 px-1 rounded">admin123</code>
         </div>
       </div>
     </div>
