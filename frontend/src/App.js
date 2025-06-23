@@ -28,9 +28,9 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (username, password) => {
+  const login = async (pin) => {
     try {
-      const response = await axios.post(`${API}/auth/login`, { username, password });
+      const response = await axios.post(`${API}/auth/login`, { pin });
       const { access_token, user: userData } = response.data;
       
       localStorage.setItem('token', access_token);
@@ -66,543 +66,365 @@ const useAuth = () => {
   return context;
 };
 
-// Login Component
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+// PIN Login Component
+const PinLogin = () => {
+  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handlePinInput = (digit) => {
+    if (pin.length < 4) {
+      setPin(pin + digit);
+    }
+  };
+
+  const handleBackspace = () => {
+    setPin(pin.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    setPin('');
+    setError('');
+  };
+
+  const handleLogin = async () => {
+    if (pin.length !== 4) {
+      setError('Please enter a 4-digit PIN');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
-    const result = await login(username, password);
+    const result = await login(pin);
     if (!result.success) {
       setError(result.error);
+      setPin('');
     }
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (pin.length === 4) {
+      handleLogin();
+    }
+  }, [pin]);
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Restaurant POS Login
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Restaurant POS</h1>
+          <p className="text-gray-600">Enter your 4-digit PIN</p>
+        </div>
+
+        {/* PIN Display */}
+        <div className="flex justify-center mb-8">
+          <div className="flex space-x-3">
+            {[0,1,2,3].map(i => (
+              <div 
+                key={i}
+                className={`w-4 h-4 rounded-full border-2 ${
+                  i < pin.length ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                }`}
+              />
+            ))}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          {error && (
-            <div className="text-red-600 text-sm">{error}</div>
-          )}
+        </div>
+
+        {/* Keypad */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[1,2,3,4,5,6,7,8,9].map(num => (
+            <button
+              key={num}
+              onClick={() => handlePinInput(num.toString())}
+              className="h-16 bg-gray-100 hover:bg-gray-200 rounded-xl text-2xl font-semibold text-gray-800 transition-colors"
+              disabled={loading}
+            >
+              {num}
+            </button>
+          ))}
           <button
-            type="submit"
+            onClick={handleClear}
+            className="h-16 bg-red-100 hover:bg-red-200 rounded-xl text-sm font-semibold text-red-600 transition-colors"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            Clear
           </button>
-        </form>
-        <div className="mt-4 text-center text-sm text-gray-600">
-          <strong>Demo Credentials:</strong><br />
-          Username: <code className="bg-gray-100 px-1 rounded">admin</code><br />
-          Password: <code className="bg-gray-100 px-1 rounded">admin123</code>
+          <button
+            onClick={() => handlePinInput('0')}
+            className="h-16 bg-gray-100 hover:bg-gray-200 rounded-xl text-2xl font-semibold text-gray-800 transition-colors"
+            disabled={loading}
+          >
+            0
+          </button>
+          <button
+            onClick={handleBackspace}
+            className="h-16 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold text-gray-600 transition-colors"
+            disabled={loading}
+          >
+            ←
+          </button>
+        </div>
+
+        {error && (
+          <div className="text-red-600 text-center text-sm mb-4">{error}</div>
+        )}
+
+        {loading && (
+          <div className="text-center text-blue-600 text-sm">Logging in...</div>
+        )}
+
+        <div className="text-center text-xs text-gray-500 mt-8">
+          <strong>Demo PIN:</strong> 1234
         </div>
       </div>
     </div>
   );
 };
 
-// Dashboard Component
-const Dashboard = () => {
-  const [stats, setStats] = useState({
-    today_orders: 0,
-    today_revenue: 0,
-    pending_orders: 0,
-    active_employees: 0
-  });
-  const { user } = useAuth();
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      const response = await axios.get(`${API}/dashboard/stats`);
-      setStats(response.data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">Today's Orders</h3>
-        <p className="text-3xl font-bold text-blue-600">{stats.today_orders}</p>
-      </div>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">Today's Revenue</h3>
-        <p className="text-3xl font-bold text-green-600">${stats.today_revenue.toFixed(2)}</p>
-      </div>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">Pending Orders</h3>
-        <p className="text-3xl font-bold text-orange-600">{stats.pending_orders}</p>
-      </div>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">Active Staff</h3>
-        <p className="text-3xl font-bold text-purple-600">{stats.active_employees}</p>
-      </div>
-    </div>
-  );
+// Helper function to get order age color
+const getOrderAgeColor = (createdAt) => {
+  const now = new Date();
+  const orderTime = new Date(createdAt);
+  const minutesAgo = Math.floor((now - orderTime) / (1000 * 60));
+  
+  if (minutesAgo >= 45) return 'bg-red-100 border-red-500 text-red-800';
+  if (minutesAgo >= 30) return 'bg-orange-100 border-orange-500 text-orange-800';
+  if (minutesAgo >= 20) return 'bg-yellow-100 border-yellow-500 text-yellow-800';
+  return 'bg-white border-gray-200';
 };
 
-// Menu Manager Component
-const MenuManager = () => {
-  const [menuItems, setMenuItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category: '',
-    image_url: '',
-    available: true
-  });
-
-  useEffect(() => {
-    fetchMenuItems();
-    fetchCategories();
-  }, []);
-
-  const fetchMenuItems = async () => {
-    try {
-      const response = await axios.get(`${API}/menu/items/all`);
-      setMenuItems(response.data);
-    } catch (error) {
-      console.error('Error fetching menu items:', error);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get(`${API}/menu/categories`);
-      setCategories(response.data.categories);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const data = {
-        ...formData,
-        price: parseFloat(formData.price)
-      };
-
-      if (editingItem) {
-        await axios.put(`${API}/menu/items/${editingItem.id}`, data);
-      } else {
-        await axios.post(`${API}/menu/items`, data);
-      }
-
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        category: '',
-        image_url: '',
-        available: true
-      });
-      setShowAddForm(false);
-      setEditingItem(null);
-      fetchMenuItems();
-      fetchCategories();
-    } catch (error) {
-      console.error('Error saving menu item:', error);
-    }
-  };
-
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setFormData({
-      name: item.name,
-      description: item.description,
-      price: item.price.toString(),
-      category: item.category,
-      image_url: item.image_url,
-      available: item.available
-    });
-    setShowAddForm(true);
-  };
-
-  const handleDelete = async (itemId) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      try {
-        await axios.delete(`${API}/menu/items/${itemId}`);
-        fetchMenuItems();
-      } catch (error) {
-        console.error('Error deleting menu item:', error);
-      }
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Menu Manager</h2>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          Add Item
-        </button>
-      </div>
-
-      {showAddForm && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold mb-4">
-            {editingItem ? 'Edit Item' : 'Add New Item'}
-          </h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <input
-                type="text"
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="3"
-              />
-            </div>
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.available}
-                  onChange={(e) => setFormData({...formData, available: e.target.checked})}
-                  className="mr-2"
-                />
-                Available
-              </label>
-            </div>
-            <div className="md:col-span-2 flex space-x-4">
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-              >
-                {editingItem ? 'Update' : 'Add'} Item
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  setEditingItem(null);
-                  setFormData({
-                    name: '',
-                    description: '',
-                    price: '',
-                    category: '',
-                    image_url: '',
-                    available: true
-                  });
-                }}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {menuItems.map((item) => (
-          <div key={item.id} className="bg-white rounded-lg shadow-md p-4">
-            {item.image_url && (
-              <img 
-                src={item.image_url} 
-                alt={item.name}
-                className="w-full h-48 object-cover rounded-md mb-4"
-              />
-            )}
-            <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-            <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-            <p className="text-lg font-bold text-green-600">${item.price.toFixed(2)}</p>
-            <p className="text-sm text-gray-500 mb-4">Category: {item.category}</p>
-            <div className="flex items-center justify-between">
-              <span className={`px-2 py-1 rounded-full text-xs ${
-                item.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {item.available ? 'Available' : 'Unavailable'}
-              </span>
-              <div className="space-x-2">
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="text-red-600 hover:text-red-800 text-sm"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Order Management Component
-const OrderManagement = () => {
+// Active Orders Component
+const ActiveOrders = ({ onOrderClick }) => {
   const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
+    fetchActiveOrders();
+    const interval = setInterval(fetchActiveOrders, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchActiveOrders = async () => {
     try {
-      const response = await axios.get(`${API}/orders`);
+      const response = await axios.get(`${API}/orders/active`);
       setOrders(response.data);
     } catch (error) {
       console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await axios.put(`${API}/orders/${orderId}/status`, { status: newStatus });
-      fetchOrders();
+      fetchActiveOrders();
     } catch (error) {
       console.error('Error updating order status:', error);
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    if (filter === 'all') return true;
-    return order.status === filter;
-  });
-
   const getStatusColor = (status) => {
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-      preparing: 'bg-orange-100 text-orange-800',
-      ready: 'bg-green-100 text-green-800',
-      out_for_delivery: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800'
+      pending: 'bg-yellow-500',
+      confirmed: 'bg-blue-500',
+      preparing: 'bg-orange-500',
+      ready: 'bg-green-500',
+      out_for_delivery: 'bg-purple-500'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-gray-500';
+  };
+
+  const getNextStatus = (currentStatus) => {
+    const progression = {
+      pending: 'confirmed',
+      confirmed: 'preparing',
+      preparing: 'ready',
+      ready: 'out_for_delivery',
+      out_for_delivery: 'delivered'
+    };
+    return progression[currentStatus];
+  };
+
+  const getNextStatusLabel = (currentStatus) => {
+    const labels = {
+      pending: 'Confirm',
+      confirmed: 'Start Prep',
+      preparing: 'Ready',
+      ready: 'Out for Delivery',
+      out_for_delivery: 'Delivered'
+    };
+    return labels[currentStatus];
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Active Orders</h3>
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <h3 className="text-xl font-bold text-gray-800 mb-6">Active Orders</h3>
+      
+      {orders.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>No active orders</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className={`border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md ${getOrderAgeColor(order.created_at)}`}
+              onClick={() => onOrderClick(order)}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-bold text-lg">{order.order_number}</h4>
+                  <p className="text-sm text-gray-600">
+                    {new Date(order.created_at).toLocaleTimeString()}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(order.status)}`}></span>
+                  <span className="text-xs font-medium capitalize">
+                    {order.status.replace('_', ' ')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <p className="text-sm font-medium">
+                  {order.order_type.replace('_', ' ').toUpperCase()}
+                  {order.table_number && ` - Table ${order.table_number}`}
+                </p>
+                {order.customer_name && (
+                  <p className="text-sm text-gray-600">{order.customer_name}</p>
+                )}
+              </div>
+
+              <div className="mb-3 text-sm">
+                {order.items.slice(0, 2).map((item, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>{item.quantity}x {item.menu_item_name}</span>
+                  </div>
+                ))}
+                {order.items.length > 2 && (
+                  <p className="text-gray-500">+{order.items.length - 2} more items</p>
+                )}
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
+                {getNextStatus(order.status) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateOrderStatus(order.id, getNextStatus(order.status));
+                    }}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    {getNextStatusLabel(order.status)}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Table Management Component
+const TableManagement = ({ onTableSelect }) => {
+  const [tables, setTables] = useState([]);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    fetchTables();
+  }, []);
+
+  const fetchTables = async () => {
+    try {
+      const response = await axios.get(`${API}/tables`);
+      setTables(response.data);
+    } catch (error) {
+      console.error('Error fetching tables:', error);
+    }
+  };
+
+  const updateTableStatus = async (tableId, status) => {
+    try {
+      await axios.put(`${API}/tables/${tableId}`, { status });
+      fetchTables();
+    } catch (error) {
+      console.error('Error updating table:', error);
+    }
+  };
+
+  const getTableColor = (status) => {
+    const colors = {
+      available: 'bg-green-100 border-green-500 text-green-800',
+      occupied: 'bg-red-100 border-red-500 text-red-800',
+      needs_cleaning: 'bg-yellow-100 border-yellow-500 text-yellow-800',
+      reserved: 'bg-blue-100 border-blue-500 text-blue-800'
+    };
+    return colors[status] || 'bg-gray-100 border-gray-300';
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Order Management</h2>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-gray-800">Table Management</h3>
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
         >
-          <option value="all">All Orders</option>
-          <option value="pending">Pending</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="preparing">Preparing</option>
-          <option value="ready">Ready</option>
-          <option value="out_for_delivery">Out for Delivery</option>
-          <option value="delivered">Delivered</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+          Settings
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredOrders.map((order) => (
-          <div key={order.id} className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Order #{order.order_number}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {new Date(order.created_at).toLocaleString()}
-                </p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                {order.status.replace('_', ' ').toUpperCase()}
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-600">
-                <strong>Customer:</strong> {order.customer_name || 'Walk-in'}
-              </p>
-              {order.customer_phone && (
-                <p className="text-sm text-gray-600">
-                  <strong>Phone:</strong> {order.customer_phone}
-                </p>
-              )}
-              <p className="text-sm text-gray-600">
-                <strong>Type:</strong> {order.order_type.replace('_', ' ').toUpperCase()}
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <h4 className="font-medium text-gray-800 mb-2">Items:</h4>
-              {order.items.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span>{item.quantity}x Item</span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t pt-4 mb-4">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal:</span>
-                <span>${order.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Tax:</span>
-                <span>${order.tax.toFixed(2)}</span>
-              </div>
-              {order.tip > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span>Tip:</span>
-                  <span>${order.tip.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-semibold">
-                <span>Total:</span>
-                <span>${order.total.toFixed(2)}</span>
+      <div className="grid grid-cols-5 gap-3">
+        {tables.map((table) => (
+          <div
+            key={table.id}
+            className={`border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md ${getTableColor(table.status)}`}
+            onClick={() => {
+              if (table.status === 'available') {
+                onTableSelect(table);
+              }
+            }}
+          >
+            <div className="text-center">
+              <div className="text-2xl font-bold mb-1">{table.number}</div>
+              <div className="text-xs capitalize">
+                {table.status.replace('_', ' ')}
               </div>
             </div>
-
-            <div className="flex space-x-2">
-              {order.status === 'pending' && (
+            
+            {table.status !== 'available' && (
+              <div className="mt-2 flex justify-center">
                 <button
-                  onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateTableStatus(table.id, 'available');
+                  }}
+                  className="text-xs bg-white bg-opacity-50 px-2 py-1 rounded"
                 >
-                  Confirm
+                  Clear
                 </button>
-              )}
-              {order.status === 'confirmed' && (
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'preparing')}
-                  className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700"
-                >
-                  Start Preparing
-                </button>
-              )}
-              {order.status === 'preparing' && (
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'ready')}
-                  className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                >
-                  Mark Ready
-                </button>
-              )}
-              {order.status === 'ready' && order.order_type === 'delivery' && (
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                  className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
-                >
-                  Out for Delivery
-                </button>
-              )}
-              {order.status === 'out_for_delivery' && (
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'delivered')}
-                  className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
-                >
-                  Mark Delivered
-                </button>
-              )}
-              {['pending', 'confirmed'].includes(order.status) && (
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -611,8 +433,10 @@ const OrderManagement = () => {
 };
 
 // New Order Component
-const NewOrder = () => {
+const NewOrder = ({ selectedTable, onBack }) => {
   const [menuItems, setMenuItems] = useState([]);
+  const [modifierGroups, setModifierGroups] = useState([]);
+  const [modifiers, setModifiers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [cart, setCart] = useState([]);
@@ -621,12 +445,16 @@ const NewOrder = () => {
     phone: '',
     address: ''
   });
-  const [orderType, setOrderType] = useState('dine_in');
+  const [orderType, setOrderType] = useState(selectedTable ? 'dine_in' : 'takeout');
   const [tip, setTip] = useState(0);
+  const [showModifierModal, setShowModifierModal] = useState(false);
+  const [selectedMenuItem, setSelectedMenuItem] = useState(null);
+  const [selectedModifiers, setSelectedModifiers] = useState({});
 
   useEffect(() => {
     fetchMenuItems();
     fetchCategories();
+    fetchModifierData();
   }, []);
 
   const fetchMenuItems = async () => {
@@ -647,38 +475,104 @@ const NewOrder = () => {
     }
   };
 
-  const addToCart = (item) => {
-    const existingItem = cart.find(cartItem => cartItem.menu_item_id === item.id);
-    if (existingItem) {
-      setCart(cart.map(cartItem =>
-        cartItem.menu_item_id === item.id
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      ));
-    } else {
-      setCart([...cart, {
-        menu_item_id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: 1,
-        modifiers: [],
-        special_instructions: ''
-      }]);
+  const fetchModifierData = async () => {
+    try {
+      const [groupsRes, modRes] = await Promise.all([
+        axios.get(`${API}/modifiers/groups`),
+        axios.get(`${API}/modifiers`)
+      ]);
+      setModifierGroups(groupsRes.data);
+      setModifiers(modRes.data);
+    } catch (error) {
+      console.error('Error fetching modifier data:', error);
     }
   };
 
-  const updateCartItem = (itemId, field, value) => {
-    setCart(cart.map(item =>
-      item.menu_item_id === itemId ? { ...item, [field]: value } : item
-    ));
+  const addToCart = (item) => {
+    if (item.modifier_groups && item.modifier_groups.length > 0) {
+      setSelectedMenuItem(item);
+      setSelectedModifiers({});
+      setShowModifierModal(true);
+    } else {
+      // Add item without modifiers
+      const cartItem = {
+        menu_item_id: item.id,
+        menu_item_name: item.name,
+        quantity: 1,
+        base_price: item.price,
+        modifiers: [],
+        total_price: item.price
+      };
+      
+      const existingIndex = cart.findIndex(cartItem => 
+        cartItem.menu_item_id === item.id && cartItem.modifiers.length === 0
+      );
+      
+      if (existingIndex >= 0) {
+        const newCart = [...cart];
+        newCart[existingIndex].quantity += 1;
+        newCart[existingIndex].total_price = newCart[existingIndex].base_price * newCart[existingIndex].quantity;
+        setCart(newCart);
+      } else {
+        setCart([...cart, cartItem]);
+      }
+    }
   };
 
-  const removeFromCart = (itemId) => {
-    setCart(cart.filter(item => item.menu_item_id !== itemId));
+  const handleModifierSelection = () => {
+    if (!selectedMenuItem) return;
+    
+    const selectedModifiersList = [];
+    let modifierTotal = 0;
+    
+    Object.entries(selectedModifiers).forEach(([groupId, modifierIds]) => {
+      modifierIds.forEach(modifierId => {
+        const modifier = modifiers.find(m => m.id === modifierId);
+        if (modifier) {
+          selectedModifiersList.push({
+            modifier_id: modifier.id,
+            name: modifier.name,
+            price: modifier.price
+          });
+          modifierTotal += modifier.price;
+        }
+      });
+    });
+    
+    const cartItem = {
+      menu_item_id: selectedMenuItem.id,
+      menu_item_name: selectedMenuItem.name,
+      quantity: 1,
+      base_price: selectedMenuItem.price,
+      modifiers: selectedModifiersList,
+      total_price: selectedMenuItem.price + modifierTotal
+    };
+    
+    setCart([...cart, cartItem]);
+    setShowModifierModal(false);
+    setSelectedMenuItem(null);
+  };
+
+  const updateCartItemQuantity = (index, newQuantity) => {
+    if (newQuantity <= 0) {
+      removeFromCart(index);
+      return;
+    }
+    
+    const newCart = [...cart];
+    newCart[index].quantity = newQuantity;
+    const modifierTotal = newCart[index].modifiers.reduce((sum, mod) => sum + mod.price, 0);
+    newCart[index].total_price = (newCart[index].base_price + modifierTotal) * newQuantity;
+    setCart(newCart);
+  };
+
+  const removeFromCart = (index) => {
+    const newCart = cart.filter((_, i) => i !== index);
+    setCart(newCart);
   };
 
   const calculateTotal = () => {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
     const tax = subtotal * 0.08;
     return {
       subtotal,
@@ -698,16 +592,15 @@ const NewOrder = () => {
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
         customer_address: customerInfo.address,
+        table_id: selectedTable?.id || null,
         items: cart.map(item => ({
           menu_item_id: item.menu_item_id,
           quantity: item.quantity,
-          price: item.price,
           modifiers: item.modifiers,
-          special_instructions: item.special_instructions
+          special_instructions: ''
         })),
         order_type: orderType,
         tip: tip,
-        delivery_address: orderType === 'delivery' ? customerInfo.address : '',
         delivery_instructions: ''
       };
 
@@ -719,6 +612,7 @@ const NewOrder = () => {
       setTip(0);
       
       alert('Order placed successfully!');
+      onBack();
     } catch (error) {
       console.error('Error placing order:', error);
       alert('Error placing order. Please try again.');
@@ -732,169 +626,201 @@ const NewOrder = () => {
   const { subtotal, tax, total } = calculateTotal();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Menu Items */}
-      <div className="lg:col-span-2 space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800">New Order</h2>
-        
-        {/* Category Filter */}
-        <div className="flex flex-wrap gap-2">
+    <div className="bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
           <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-md ${
-              selectedCategory === 'all' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            onClick={onBack}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
           >
-            All
+            <span>←</span>
+            <span>Back</span>
           </button>
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-md ${
-                selectedCategory === category 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredItems.map(item => (
-            <div key={item.id} className="bg-white rounded-lg shadow-md p-4">
-              {item.image_url && (
-                <img 
-                  src={item.image_url} 
-                  alt={item.name}
-                  className="w-full h-32 object-cover rounded-md mb-3"
-                />
-              )}
-              <h3 className="font-semibold text-gray-800">{item.name}</h3>
-              <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-bold text-green-600">
-                  ${item.price.toFixed(2)}
-                </span>
-                <button
-                  onClick={() => addToCart(item)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          ))}
+          <h1 className="text-xl font-bold">
+            New Order {selectedTable && `- Table ${selectedTable.number}`}
+          </h1>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-green-600">${total.toFixed(2)}</div>
+            <div className="text-sm text-gray-600">{cart.length} items</div>
+          </div>
         </div>
       </div>
 
-      {/* Order Summary */}
-      <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
-          
-          {/* Order Type */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Order Type</label>
-            <select
-              value={orderType}
-              onChange={(e) => setOrderType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="dine_in">Dine In</option>
-              <option value="takeout">Takeout</option>
-              <option value="delivery">Delivery</option>
-              <option value="phone_order">Phone Order</option>
-            </select>
+      <div className="flex h-screen">
+        {/* Menu Items */}
+        <div className="flex-1 p-6">
+          {/* Order Type Selection */}
+          <div className="mb-6">
+            <div className="flex space-x-2">
+              {[
+                { value: 'dine_in', label: 'Dine In' },
+                { value: 'takeout', label: 'Takeout' },
+                { value: 'delivery', label: 'Delivery' }
+              ].map(type => (
+                <button
+                  key={type.value}
+                  onClick={() => setOrderType(type.value)}
+                  className={`px-4 py-2 rounded-lg font-medium ${
+                    orderType === type.value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 border hover:bg-gray-50'
+                  }`}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Customer Info */}
-          <div className="space-y-3 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
-              <input
-                type="text"
-                value={customerInfo.name}
-                onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                value={customerInfo.phone}
-                onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            {(orderType === 'delivery' || orderType === 'phone_order') && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <textarea
+          {/* Customer Info for Delivery */}
+          {orderType === 'delivery' && (
+            <div className="mb-6 bg-white rounded-xl p-4">
+              <h3 className="font-bold text-lg mb-4">Customer Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  type="text"
+                  placeholder="Customer Name"
+                  value={customerInfo.name}
+                  onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  value={customerInfo.phone}
+                  onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Address"
                   value={customerInfo.address}
                   onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Category Filter */}
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-4 py-2 rounded-lg ${
+                  selectedCategory === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border hover:bg-gray-50'
+                }`}
+              >
+                All
+              </button>
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedCategory === category
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 border hover:bg-gray-50'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Cart Items */}
-          <div className="space-y-3 mb-4">
-            {cart.map(item => (
-              <div key={item.menu_item_id} className="flex justify-between items-center border-b pb-2">
-                <div className="flex-1">
-                  <p className="font-medium">{item.name}</p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <button
-                      onClick={() => updateCartItem(item.menu_item_id, 'quantity', Math.max(1, item.quantity - 1))}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      -
-                    </button>
-                    <span className="text-sm">{item.quantity}</span>
-                    <button
-                      onClick={() => updateCartItem(item.menu_item_id, 'quantity', item.quantity + 1)}
-                      className="text-green-600 hover:text-green-800"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+          {/* Menu Items Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredItems.map(item => (
+              <div key={item.id} className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                {item.image_url && (
+                  <img 
+                    src={item.image_url} 
+                    alt={item.name}
+                    className="w-full h-32 object-cover rounded-lg mb-3"
+                  />
+                )}
+                <h3 className="font-semibold text-gray-800 mb-1">{item.name}</h3>
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-green-600">
+                    ${item.price.toFixed(2)}
+                  </span>
                   <button
-                    onClick={() => removeFromCart(item.menu_item_id)}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    onClick={() => addToCart(item)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Remove
+                    Add
                   </button>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Tip */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tip ($)</label>
+        {/* Order Summary */}
+        <div className="w-96 bg-white shadow-lg p-6 overflow-y-auto">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Order Summary</h3>
+          
+          {/* Cart Items */}
+          <div className="space-y-3 mb-6">
+            {cart.map((item, index) => (
+              <div key={index} className="bg-gray-50 rounded-lg p-3">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium">{item.menu_item_name}</h4>
+                  <button
+                    onClick={() => removeFromCart(index)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    ×
+                  </button>
+                </div>
+                
+                {item.modifiers.length > 0 && (
+                  <div className="text-xs text-gray-600 mb-2">
+                    {item.modifiers.map(mod => mod.name).join(', ')}
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => updateCartItemQuantity(index, item.quantity - 1)}
+                      className="w-6 h-6 bg-gray-200 rounded text-sm hover:bg-gray-300"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateCartItemQuantity(index, item.quantity + 1)}
+                      className="w-6 h-6 bg-gray-200 rounded text-sm hover:bg-gray-300"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="font-medium">${item.total_price.toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tip Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tip ($)</label>
             <input
               type="number"
               step="0.01"
               value={tip}
               onChange={(e) => setTip(parseFloat(e.target.value) || 0)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Total */}
-          <div className="border-t pt-4 space-y-2">
+          <div className="border-t pt-4 space-y-2 mb-6">
             <div className="flex justify-between text-sm">
               <span>Subtotal:</span>
               <span>${subtotal.toFixed(2)}</span>
@@ -915,226 +841,237 @@ const NewOrder = () => {
 
           <button
             onClick={submitOrder}
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 mt-4"
+            className="w-full bg-green-600 text-white py-4 px-4 rounded-lg hover:bg-green-700 text-lg font-semibold"
           >
             Place Order
           </button>
         </div>
       </div>
-    </div>
-  );
-};
 
-// Time Clock Component
-const TimeClock = () => {
-  const [timeEntries, setTimeEntries] = useState([]);
-  const [currentEntry, setCurrentEntry] = useState(null);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    fetchTimeEntries();
-    checkCurrentEntry();
-  }, []);
-
-  const fetchTimeEntries = async () => {
-    try {
-      const response = await axios.get(`${API}/time/entries`);
-      setTimeEntries(response.data);
-    } catch (error) {
-      console.error('Error fetching time entries:', error);
-    }
-  };
-
-  const checkCurrentEntry = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayEntry = timeEntries.find(entry => 
-      entry.date === today && !entry.clock_out
-    );
-    setCurrentEntry(todayEntry);
-  };
-
-  const clockIn = async () => {
-    try {
-      const response = await axios.post(`${API}/time/clock-in`);
-      alert('Clocked in successfully!');
-      fetchTimeEntries();
-    } catch (error) {
-      alert(error.response?.data?.detail || 'Error clocking in');
-    }
-  };
-
-  const clockOut = async () => {
-    try {
-      const response = await axios.post(`${API}/time/clock-out`);
-      alert(`Clocked out successfully! Total hours: ${response.data.total_hours.toFixed(2)}`);
-      fetchTimeEntries();
-      setCurrentEntry(null);
-    } catch (error) {
-      alert(error.response?.data?.detail || 'Error clocking out');
-    }
-  };
-
-  useEffect(() => {
-    checkCurrentEntry();
-  }, [timeEntries]);
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">Time Clock</h2>
-      
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="text-center mb-6">
-          <p className="text-lg text-gray-600 mb-2">
-            Welcome, {user?.full_name || user?.username}
-          </p>
-          <p className="text-2xl font-bold text-gray-800">
-            {new Date().toLocaleString()}
-          </p>
-        </div>
-
-        <div className="flex justify-center space-x-4">
-          {!currentEntry ? (
-            <button
-              onClick={clockIn}
-              className="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700"
-            >
-              Clock In
-            </button>
-          ) : (
-            <button
-              onClick={clockOut}
-              className="bg-red-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-red-700"
-            >
-              Clock Out
-            </button>
-          )}
-        </div>
-
-        {currentEntry && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Clocked in at: {new Date(currentEntry.clock_in).toLocaleString()}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Time Entries</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left">Date</th>
-                <th className="px-4 py-2 text-left">Clock In</th>
-                <th className="px-4 py-2 text-left">Clock Out</th>
-                <th className="px-4 py-2 text-left">Total Hours</th>
-                <th className="px-4 py-2 text-left">Overtime</th>
-              </tr>
-            </thead>
-            <tbody>
-              {timeEntries.slice(0, 10).map(entry => (
-                <tr key={entry.id} className="border-b">
-                  <td className="px-4 py-2">{entry.date}</td>
-                  <td className="px-4 py-2">
-                    {new Date(entry.clock_in).toLocaleTimeString()}
-                  </td>
-                  <td className="px-4 py-2">
-                    {entry.clock_out ? new Date(entry.clock_out).toLocaleTimeString() : 'In Progress'}
-                  </td>
-                  <td className="px-4 py-2">{entry.total_hours.toFixed(2)}</td>
-                  <td className="px-4 py-2">{entry.overtime_hours.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Main App Component
-const MainApp = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, logout } = useAuth();
-
-  const navigation = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'new-order', label: 'New Order', icon: '🛒' },
-    { id: 'orders', label: 'Orders', icon: '📋' },
-    { id: 'menu', label: 'Menu', icon: '🍽️' },
-    { id: 'time-clock', label: 'Time Clock', icon: '⏰' },
-  ];
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'new-order':
-        return <NewOrder />;
-      case 'orders':
-        return <OrderManagement />;
-      case 'menu':
-        return <MenuManager />;
-      case 'time-clock':
-        return <TimeClock />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Restaurant POS</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                Welcome, {user?.full_name || user?.username}
-              </span>
+      {/* Modifier Modal */}
+      {showModifierModal && selectedMenuItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
+            <h3 className="text-lg font-bold mb-4">Customize {selectedMenuItem.name}</h3>
+            
+            {selectedMenuItem.modifier_groups.map(groupId => {
+              const group = modifierGroups.find(g => g.id === groupId);
+              if (!group) return null;
+              
+              const groupModifiers = modifiers.filter(m => m.group_id === groupId);
+              
+              return (
+                <div key={groupId} className="mb-4">
+                  <h4 className="font-medium mb-2">
+                    {group.name} {group.required && <span className="text-red-500">*</span>}
+                  </h4>
+                  <div className="space-y-2">
+                    {groupModifiers.map(modifier => (
+                      <label key={modifier.id} className="flex items-center space-x-2">
+                        <input
+                          type={group.max_selections === 1 ? "radio" : "checkbox"}
+                          name={`group-${groupId}`}
+                          onChange={(e) => {
+                            const newSelected = { ...selectedModifiers };
+                            if (!newSelected[groupId]) newSelected[groupId] = [];
+                            
+                            if (group.max_selections === 1) {
+                              newSelected[groupId] = e.target.checked ? [modifier.id] : [];
+                            } else {
+                              if (e.target.checked) {
+                                newSelected[groupId].push(modifier.id);
+                              } else {
+                                newSelected[groupId] = newSelected[groupId].filter(id => id !== modifier.id);
+                              }
+                            }
+                            setSelectedModifiers(newSelected);
+                          }}
+                        />
+                        <span className="flex-1">{modifier.name}</span>
+                        {modifier.price > 0 && (
+                          <span className="text-green-600">+${modifier.price.toFixed(2)}</span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            
+            <div className="flex space-x-3 mt-6">
               <button
-                onClick={logout}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                onClick={() => setShowModifierModal(false)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
               >
-                Logout
+                Cancel
+              </button>
+              <button
+                onClick={handleModifierSelection}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+              >
+                Add to Cart
               </button>
             </div>
           </div>
         </div>
-      </header>
+      )}
+    </div>
+  );
+};
 
-      <div className="flex">
-        {/* Sidebar */}
-        <nav className="w-64 bg-white shadow-sm min-h-screen">
-          <div className="p-4">
-            <ul className="space-y-2">
-              {navigation.map((item) => (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center px-4 py-2 text-left rounded-md transition-colors ${
-                      activeTab === item.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span className="mr-3">{item.icon}</span>
-                    {item.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
+// Order Detail Modal
+const OrderDetailModal = ({ order, onClose }) => {
+  if (!order) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-96 overflow-y-auto">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold">Order {order.order_number}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Order Details</h4>
+            <p><strong>Type:</strong> {order.order_type.replace('_', ' ').toUpperCase()}</p>
+            <p><strong>Status:</strong> {order.status.replace('_', ' ').toUpperCase()}</p>
+            <p><strong>Time:</strong> {new Date(order.created_at).toLocaleString()}</p>
+            {order.table_number && <p><strong>Table:</strong> {order.table_number}</p>}
           </div>
-        </nav>
 
-        {/* Main Content */}
-        <main className="flex-1 p-8">
-          {renderContent()}
-        </main>
+          {order.customer_name && (
+            <div>
+              <h4 className="font-medium text-gray-700 mb-2">Customer Information</h4>
+              <p><strong>Name:</strong> {order.customer_name}</p>
+              {order.customer_phone && <p><strong>Phone:</strong> {order.customer_phone}</p>}
+              {order.customer_address && <p><strong>Address:</strong> {order.customer_address}</p>}
+            </div>
+          )}
+
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Items</h4>
+            {order.items.map((item, index) => (
+              <div key={index} className="border-b pb-2 mb-2">
+                <div className="flex justify-between">
+                  <span>{item.quantity}x {item.menu_item_name}</span>
+                  <span>${item.total_price.toFixed(2)}</span>
+                </div>
+                {item.modifiers && item.modifiers.length > 0 && (
+                  <div className="text-sm text-gray-600 ml-4">
+                    {item.modifiers.map(mod => mod.name).join(', ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal:</span>
+              <span>${order.subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Tax:</span>
+              <span>${order.tax.toFixed(2)}</span>
+            </div>
+            {order.tip > 0 && (
+              <div className="flex justify-between text-sm">
+                <span>Tip:</span>
+                <span>${order.tip.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+              <span>Total:</span>
+              <span>${order.total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+};
+
+// Main POS Interface
+const POSInterface = () => {
+  const [currentView, setCurrentView] = useState('main');
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const { user, logout } = useAuth();
+
+  const handleNewOrder = (table = null) => {
+    setSelectedTable(table);
+    setCurrentView('new-order');
+  };
+
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+  };
+
+  const handleBackToMain = () => {
+    setCurrentView('main');
+    setSelectedTable(null);
+  };
+
+  if (currentView === 'new-order') {
+    return (
+      <NewOrder 
+        selectedTable={selectedTable}
+        onBack={handleBackToMain}
+      />
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-800">Restaurant POS</h1>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">
+              Welcome, {user?.full_name}
+            </span>
+            <button
+              onClick={logout}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Quick Actions */}
+        <div className="flex space-x-4">
+          <button
+            onClick={() => handleNewOrder()}
+            className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+          >
+            + New Order
+          </button>
+        </div>
+
+        {/* Active Orders */}
+        <ActiveOrders onOrderClick={handleOrderClick} />
+
+        {/* Table Management */}
+        <TableManagement onTableSelect={handleNewOrder} />
+      </div>
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <OrderDetailModal 
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+        />
+      )}
     </div>
   );
 };
@@ -1153,7 +1090,7 @@ const AppContent = () => {
 
   return (
     <div className="App">
-      {isAuthenticated ? <MainApp /> : <Login />}
+      {isAuthenticated ? <POSInterface /> : <PinLogin />}
     </div>
   );
 };

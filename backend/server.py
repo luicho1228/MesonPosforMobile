@@ -50,10 +50,14 @@ class OrderType(str, Enum):
     PHONE_ORDER = "phone_order"
 
 class UserRole(str, Enum):
-    CASHIER = "cashier"
+    EMPLOYEE = "employee"
     MANAGER = "manager"
-    KITCHEN = "kitchen"
-    DELIVERY = "delivery"
+
+class TableStatus(str, Enum):
+    AVAILABLE = "available"
+    OCCUPIED = "occupied"
+    NEEDS_CLEANING = "needs_cleaning"
+    RESERVED = "reserved"
 
 class PaymentMethod(str, Enum):
     CASH = "cash"
@@ -61,6 +65,18 @@ class PaymentMethod(str, Enum):
     ONLINE = "online"
 
 # Models
+class ModifierGroup(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    required: bool = False
+    max_selections: int = 1
+
+class Modifier(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    price: float = 0.0
+    group_id: str
+
 class MenuItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -69,7 +85,7 @@ class MenuItem(BaseModel):
     category: str
     image_url: str = ""
     available: bool = True
-    modifiers: List[str] = []
+    modifier_groups: List[str] = []  # List of modifier group IDs
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class MenuItemCreate(BaseModel):
@@ -79,7 +95,33 @@ class MenuItemCreate(BaseModel):
     category: str
     image_url: str = ""
     available: bool = True
-    modifiers: List[str] = []
+    modifier_groups: List[str] = []
+
+class ModifierGroupCreate(BaseModel):
+    name: str
+    required: bool = False
+    max_selections: int = 1
+
+class ModifierCreate(BaseModel):
+    name: str
+    price: float = 0.0
+    group_id: str
+
+class Table(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    number: int
+    capacity: int = 4
+    status: TableStatus = TableStatus.AVAILABLE
+    current_order_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class TableCreate(BaseModel):
+    number: int
+    capacity: int = 4
+
+class TableUpdate(BaseModel):
+    status: TableStatus
+    current_order_id: Optional[str] = None
 
 class Customer(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -95,12 +137,19 @@ class CustomerCreate(BaseModel):
     email: str = ""
     address: str = ""
 
+class OrderItemModifier(BaseModel):
+    modifier_id: str
+    name: str
+    price: float
+
 class OrderItem(BaseModel):
     menu_item_id: str
+    menu_item_name: str
     quantity: int
-    price: float
-    modifiers: List[str] = []
+    base_price: float
+    modifiers: List[OrderItemModifier] = []
     special_instructions: str = ""
+    total_price: float
 
 class Order(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -109,6 +158,8 @@ class Order(BaseModel):
     customer_name: str = ""
     customer_phone: str = ""
     customer_address: str = ""
+    table_id: Optional[str] = None
+    table_number: Optional[int] = None
     items: List[OrderItem]
     subtotal: float
     tax: float
@@ -121,7 +172,6 @@ class Order(BaseModel):
     created_by: str  # user_id
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    delivery_address: str = ""
     delivery_instructions: str = ""
     estimated_time: Optional[datetime] = None
 
@@ -129,16 +179,15 @@ class OrderCreate(BaseModel):
     customer_name: str = ""
     customer_phone: str = ""
     customer_address: str = ""
-    items: List[OrderItem]
+    table_id: Optional[str] = None
+    items: List[Dict]  # Will be processed to OrderItem
     order_type: OrderType
     tip: float = 0.0
-    delivery_address: str = ""
     delivery_instructions: str = ""
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    username: str
-    email: str
+    pin: str
     role: UserRole
     full_name: str
     phone: str = ""
@@ -146,16 +195,13 @@ class User(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
+    pin: str
     role: UserRole
     full_name: str
     phone: str = ""
 
 class UserLogin(BaseModel):
-    username: str
-    password: str
+    pin: str
 
 class TimeEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -187,31 +233,31 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+def hash_pin(pin: str) -> str:
+    return bcrypt.hashpw(pin.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+def verify_pin(pin: str, hashed: str) -> bool:
+    return bcrypt.checkpw(pin.encode('utf-8'), hashed.encode('utf-8'))
 
 # Routes
 
 # Auth routes
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate):
-    # Check if user exists
-    existing_user = await db.users.find_one({"username": user_data.username})
+    # Check if user exists (by PIN)
+    existing_user = await db.users.find_one({"pin": user_data.pin})
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=400, detail="PIN already registered")
     
-    # Hash password and create user
-    hashed_password = hash_password(user_data.password)
+    # Hash PIN and create user
+    hashed_pin = hash_pin(user_data.pin)
     user_dict = user_data.dict()
-    del user_dict['password']
+    del user_dict['pin']
     user_obj = User(**user_dict)
     
-    # Store user with hashed password
+    # Store user with hashed PIN
     user_to_store = user_obj.dict()
-    user_to_store['password'] = hashed_password
+    user_to_store['hashed_pin'] = hashed_pin
     
     await db.users.insert_one(user_to_store)
     
@@ -221,15 +267,24 @@ async def register(user_data: UserCreate):
 
 @api_router.post("/auth/login")
 async def login(login_data: UserLogin):
-    user = await db.users.find_one({"username": login_data.username})
-    if not user or not verify_password(login_data.password, user['password']):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    user = await db.users.find_one({"pin": login_data.pin})
+    if not user:
+        # Check if it's a hashed PIN instead
+        users = await db.users.find().to_list(1000)
+        user = None
+        for u in users:
+            if verify_pin(login_data.pin, u.get('hashed_pin', '')):
+                user = u
+                break
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid PIN")
     
     if not user.get('is_active', True):
         raise HTTPException(status_code=401, detail="Account is deactivated")
     
     access_token = create_access_token(data={"sub": user['id']})
-    user_obj = User(**{k: v for k, v in user.items() if k != 'password'})
+    user_obj = User(**{k: v for k, v in user.items() if k not in ['hashed_pin', 'password']})
     return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
 
 @api_router.get("/auth/me")
@@ -237,7 +292,52 @@ async def get_current_user(user_id: str = Depends(verify_token)):
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return User(**{k: v for k, v in user.items() if k != 'password'})
+    return User(**{k: v for k, v in user.items() if k not in ['hashed_pin', 'password']})
+
+# Modifier Groups routes
+@api_router.post("/modifiers/groups", response_model=ModifierGroup)
+async def create_modifier_group(group: ModifierGroupCreate, user_id: str = Depends(verify_token)):
+    group_obj = ModifierGroup(**group.dict())
+    await db.modifier_groups.insert_one(group_obj.dict())
+    return group_obj
+
+@api_router.get("/modifiers/groups", response_model=List[ModifierGroup])
+async def get_modifier_groups():
+    groups = await db.modifier_groups.find().to_list(1000)
+    return [ModifierGroup(**group) for group in groups]
+
+@api_router.delete("/modifiers/groups/{group_id}")
+async def delete_modifier_group(group_id: str, user_id: str = Depends(verify_token)):
+    # Delete all modifiers in this group first
+    await db.modifiers.delete_many({"group_id": group_id})
+    result = await db.modifier_groups.delete_one({"id": group_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Modifier group not found")
+    return {"message": "Modifier group deleted successfully"}
+
+# Modifiers routes
+@api_router.post("/modifiers", response_model=Modifier)
+async def create_modifier(modifier: ModifierCreate, user_id: str = Depends(verify_token)):
+    modifier_obj = Modifier(**modifier.dict())
+    await db.modifiers.insert_one(modifier_obj.dict())
+    return modifier_obj
+
+@api_router.get("/modifiers", response_model=List[Modifier])
+async def get_modifiers():
+    modifiers = await db.modifiers.find().to_list(1000)
+    return [Modifier(**modifier) for modifier in modifiers]
+
+@api_router.get("/modifiers/group/{group_id}", response_model=List[Modifier])
+async def get_modifiers_by_group(group_id: str):
+    modifiers = await db.modifiers.find({"group_id": group_id}).to_list(1000)
+    return [Modifier(**modifier) for modifier in modifiers]
+
+@api_router.delete("/modifiers/{modifier_id}")
+async def delete_modifier(modifier_id: str, user_id: str = Depends(verify_token)):
+    result = await db.modifiers.delete_one({"id": modifier_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Modifier not found")
+    return {"message": "Modifier deleted successfully"}
 
 # Menu routes
 @api_router.post("/menu/items", response_model=MenuItem)
@@ -278,6 +378,44 @@ async def get_menu_categories():
     categories = await db.menu_items.distinct("category")
     return {"categories": categories}
 
+# Table routes
+@api_router.post("/tables", response_model=Table)
+async def create_table(table: TableCreate, user_id: str = Depends(verify_token)):
+    # Check if table number already exists
+    existing_table = await db.tables.find_one({"number": table.number})
+    if existing_table:
+        raise HTTPException(status_code=400, detail="Table number already exists")
+    
+    table_obj = Table(**table.dict())
+    await db.tables.insert_one(table_obj.dict())
+    return table_obj
+
+@api_router.get("/tables", response_model=List[Table])
+async def get_tables():
+    tables = await db.tables.find().sort("number", 1).to_list(1000)
+    return [Table(**table) for table in tables]
+
+@api_router.put("/tables/{table_id}", response_model=Table)
+async def update_table(table_id: str, table_update: TableUpdate, user_id: str = Depends(verify_token)):
+    existing_table = await db.tables.find_one({"id": table_id})
+    if not existing_table:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    update_data = table_update.dict()
+    update_data['updated_at'] = datetime.utcnow()
+    
+    await db.tables.update_one({"id": table_id}, {"$set": update_data})
+    
+    updated_table = await db.tables.find_one({"id": table_id})
+    return Table(**updated_table)
+
+@api_router.delete("/tables/{table_id}")
+async def delete_table(table_id: str, user_id: str = Depends(verify_token)):
+    result = await db.tables.delete_one({"id": table_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Table not found")
+    return {"message": "Table deleted successfully"}
+
 # Customer routes
 @api_router.post("/customers", response_model=Customer)
 async def create_customer(customer: CustomerCreate, user_id: str = Depends(verify_token)):
@@ -305,8 +443,45 @@ async def get_customer_by_phone(phone: str, user_id: str = Depends(verify_token)
 # Order routes
 @api_router.post("/orders", response_model=Order)
 async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_token)):
-    # Calculate totals
-    subtotal = sum(item.price * item.quantity for item in order_data.items)
+    # Process order items and calculate totals
+    processed_items = []
+    subtotal = 0
+    
+    for item_data in order_data.items:
+        menu_item = await db.menu_items.find_one({"id": item_data["menu_item_id"]})
+        if not menu_item:
+            raise HTTPException(status_code=404, detail=f"Menu item not found: {item_data['menu_item_id']}")
+        
+        # Process modifiers
+        modifiers = []
+        modifier_total = 0
+        
+        for modifier_data in item_data.get("modifiers", []):
+            modifier = await db.modifiers.find_one({"id": modifier_data["modifier_id"]})
+            if modifier:
+                modifiers.append(OrderItemModifier(
+                    modifier_id=modifier["id"],
+                    name=modifier["name"],
+                    price=modifier["price"]
+                ))
+                modifier_total += modifier["price"]
+        
+        item_total = (menu_item["price"] + modifier_total) * item_data["quantity"]
+        
+        order_item = OrderItem(
+            menu_item_id=menu_item["id"],
+            menu_item_name=menu_item["name"],
+            quantity=item_data["quantity"],
+            base_price=menu_item["price"],
+            modifiers=modifiers,
+            special_instructions=item_data.get("special_instructions", ""),
+            total_price=item_total
+        )
+        
+        processed_items.append(order_item)
+        subtotal += item_total
+    
+    # Calculate tax and total
     tax = subtotal * 0.08  # 8% tax rate
     total = subtotal + tax + order_data.tip
     
@@ -325,19 +500,32 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
         customer = await create_customer(customer_data, user_id)
         customer_id = customer.id
     
+    # Get table info if dine-in
+    table_number = None
+    if order_data.table_id:
+        table = await db.tables.find_one({"id": order_data.table_id})
+        if table:
+            table_number = table["number"]
+            # Update table status to occupied
+            await db.tables.update_one(
+                {"id": order_data.table_id}, 
+                {"$set": {"status": "occupied", "current_order_id": str(uuid.uuid4())}}
+            )
+    
     order_obj = Order(
         order_number=order_number,
         customer_id=customer_id,
         customer_name=order_data.customer_name,
         customer_phone=order_data.customer_phone,
         customer_address=order_data.customer_address,
-        items=order_data.items,
+        table_id=order_data.table_id,
+        table_number=table_number,
+        items=processed_items,
         subtotal=subtotal,
         tax=tax,
         tip=order_data.tip,
         total=total,
         order_type=order_data.order_type,
-        delivery_address=order_data.delivery_address,
         delivery_instructions=order_data.delivery_instructions,
         created_by=user_id
     )
@@ -347,7 +535,37 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
 
 @api_router.get("/orders", response_model=List[Order])
 async def get_orders(user_id: str = Depends(verify_token)):
-    orders = await db.orders.find().sort("created_at", -1).to_list(1000)
+    # Get current user to check role
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Managers see all orders, employees see only their orders
+    if user.get("role") == "manager":
+        orders = await db.orders.find().sort("created_at", -1).to_list(1000)
+    else:
+        orders = await db.orders.find({"created_by": user_id}).sort("created_at", -1).to_list(1000)
+    
+    return [Order(**order) for order in orders]
+
+@api_router.get("/orders/active", response_model=List[Order])
+async def get_active_orders(user_id: str = Depends(verify_token)):
+    # Get current user to check role  
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Active orders are not delivered or cancelled
+    active_statuses = ["pending", "confirmed", "preparing", "ready", "out_for_delivery"]
+    
+    if user.get("role") == "manager":
+        orders = await db.orders.find({"status": {"$in": active_statuses}}).sort("created_at", -1).to_list(1000)
+    else:
+        orders = await db.orders.find({
+            "created_by": user_id,
+            "status": {"$in": active_statuses}
+        }).sort("created_at", -1).to_list(1000)
+    
     return [Order(**order) for order in orders]
 
 @api_router.get("/orders/{order_id}", response_model=Order)
@@ -355,6 +573,12 @@ async def get_order(order_id: str, user_id: str = Depends(verify_token)):
     order = await db.orders.find_one({"id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check if user can access this order
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager" and order["created_by"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     return Order(**order)
 
 @api_router.put("/orders/{order_id}/status")
@@ -363,13 +587,26 @@ async def update_order_status(order_id: str, status: Dict[str, str], user_id: st
     if new_status not in [s.value for s in OrderStatus]:
         raise HTTPException(status_code=400, detail="Invalid status")
     
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check if user can update this order
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager" and order["created_by"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     result = await db.orders.update_one(
         {"id": order_id}, 
         {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
     )
     
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Order not found")
+    # If order is completed and has a table, free the table
+    if new_status in ["delivered", "cancelled"] and order.get("table_id"):
+        await db.tables.update_one(
+            {"id": order["table_id"]}, 
+            {"$set": {"status": "needs_cleaning", "current_order_id": None}}
+        )
     
     return {"message": "Order status updated successfully"}
 
@@ -441,56 +678,6 @@ async def clock_out(user_id: str = Depends(verify_token)):
 async def get_time_entries(user_id: str = Depends(verify_token)):
     entries = await db.time_entries.find({"user_id": user_id}).sort("date", -1).to_list(100)
     return [TimeEntry(**entry) for entry in entries]
-
-# Dashboard/Analytics routes
-@api_router.get("/dashboard/stats")
-async def get_dashboard_stats(user_id: str = Depends(verify_token)):
-    today = datetime.utcnow().date()
-    
-    # Today's orders
-    today_orders = await db.orders.count_documents({
-        "created_at": {
-            "$gte": datetime.combine(today, datetime.min.time()),
-            "$lt": datetime.combine(today + timedelta(days=1), datetime.min.time())
-        }
-    })
-    
-    # Today's revenue
-    today_revenue_pipeline = [
-        {
-            "$match": {
-                "created_at": {
-                    "$gte": datetime.combine(today, datetime.min.time()),
-                    "$lt": datetime.combine(today + timedelta(days=1), datetime.min.time())
-                }
-            }
-        },
-        {
-            "$group": {
-                "_id": None,
-                "total_revenue": {"$sum": "$total"}
-            }
-        }
-    ]
-    
-    today_revenue_result = await db.orders.aggregate(today_revenue_pipeline).to_list(1)
-    today_revenue = today_revenue_result[0]["total_revenue"] if today_revenue_result else 0
-    
-    # Pending orders
-    pending_orders = await db.orders.count_documents({"status": "pending"})
-    
-    # Active employees (clocked in today)
-    active_employees = await db.time_entries.count_documents({
-        "date": today.isoformat(),
-        "clock_out": None
-    })
-    
-    return {
-        "today_orders": today_orders,
-        "today_revenue": today_revenue,
-        "pending_orders": pending_orders,
-        "active_employees": active_employees
-    }
 
 # Include the router in the main app
 app.include_router(api_router)
