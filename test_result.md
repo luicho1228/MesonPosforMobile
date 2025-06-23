@@ -137,15 +137,18 @@ backend:
         
   - task: "Order Management API"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented order creation, status updates, customer info storage with support for dine-in, takeout, delivery, and phone orders. Includes tax calculation and tip handling"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested order creation, retrieval, and status updates. Tax calculation, tip handling, and customer information storage are working correctly. Order status updates are properly tracked."
         
   - task: "Customer Management API"
     implemented: true
