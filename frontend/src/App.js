@@ -1282,23 +1282,15 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
     setShowPinModal(false);
   };
 
+  // Show PIN modal if not authorized
   if (!isAuthorized) {
     return (
-      <>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Authorization Required</h2>
-            <p className="text-gray-600 mb-4">Please enter your PIN to start a new order</p>
-          </div>
-        </div>
-        
-        <PinVerificationModal
-          isOpen={showPinModal}
-          onClose={onBack}
-          onSuccess={handlePinSuccess}
-          title="Enter PIN to Start Order"
-        />
-      </>
+      <PinVerificationModal
+        isOpen={true}
+        onClose={onBack}
+        onSuccess={handlePinSuccess}
+        title="Enter PIN to Start Order"
+      />
     );
   }
 
