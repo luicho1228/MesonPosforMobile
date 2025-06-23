@@ -1329,6 +1329,21 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
     }
   };
 
+  const handlePayLater = async () => {
+    setProcessing(true);
+    try {
+      // Update order status to pending (pay later)
+      await axios.put(`${API}/orders/${order.id}/status`, { status: 'pending' });
+      alert('Order marked as pay later - moved to active orders');
+      onPaymentComplete();
+      onClose();
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Error processing pay later');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   if (!isOpen || !order) return null;
 
   return (
@@ -1343,7 +1358,7 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
         {/* Payment Method */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-          <div className="flex space-x-4">
+          <div className="flex space-x-2">
             <button
               onClick={() => setPaymentMethod('card')}
               className={`flex-1 py-2 px-4 rounded-lg border ${
@@ -1419,12 +1434,21 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
           >
             Cancel
           </button>
+          
+          <button
+            onClick={handlePayLater}
+            className="flex-1 bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700"
+            disabled={processing}
+          >
+            Pay Later
+          </button>
+          
           <button
             onClick={handlePayment}
             className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700"
             disabled={processing || (paymentMethod === 'cash' && (!cashReceived || parseFloat(cashReceived) < order.total))}
           >
-            {processing ? 'Processing...' : 'Process Payment'}
+            {processing ? 'Processing...' : 'Pay Now'}
           </button>
         </div>
       </div>
