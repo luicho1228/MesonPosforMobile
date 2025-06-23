@@ -458,7 +458,7 @@ async def update_table(table_id: str, table_update: TableUpdate, user_id: str = 
         raise HTTPException(status_code=404, detail="Table not found")
     
     update_data = table_update.dict()
-    update_data['updated_at'] = datetime.utcnow()
+    update_data['updated_at'] = get_current_time()
     
     await db.tables.update_one({"id": table_id}, {"$set": update_data})
     
