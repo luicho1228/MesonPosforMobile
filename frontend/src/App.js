@@ -1342,7 +1342,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
             <span>Back</span>
           </button>
           <h1 className="text-xl font-bold">
-            {editingOrder ? `Edit Order - Table ${editingOrder.number}` : 
+            {editingOrder ? `Edit Table ${editingOrder.number} Order` : 
+             editingActiveOrder ? `Edit Order ${editingActiveOrder.order_number}` :
              selectedTable ? `New Order - Table ${selectedTable.number}` : 'New Order'}
           </h1>
           <div className="text-right">
