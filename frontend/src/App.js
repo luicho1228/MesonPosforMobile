@@ -2125,6 +2125,13 @@ const POSInterface = () => {
           >
             + New Order
           </button>
+          
+          <button
+            onClick={handleOrderHistory}
+            className="bg-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg"
+          >
+            📋 Order History
+          </button>
         </div>
 
         {/* Active Orders */}
