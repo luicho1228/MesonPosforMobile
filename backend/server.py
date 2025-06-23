@@ -714,7 +714,7 @@ async def process_payment(order_id: str, payment: PaymentRequest, user_id: str =
         "payment_method": payment.payment_method,
         "payment_status": "completed",
         "status": "paid",
-        "updated_at": datetime.utcnow()
+        "updated_at": get_current_time()
     }
     
     # Handle cash payment
