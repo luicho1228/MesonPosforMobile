@@ -993,7 +993,7 @@ const ItemRemovalModal = ({ isOpen, onClose, onRemove }) => {
 };
 
 // New Order Component
-const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
+const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [modifierGroups, setModifierGroups] = useState([]);
   const [modifiers, setModifiers] = useState([]);
@@ -1017,14 +1017,16 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
 
   useEffect(() => {
     if (editingOrder) {
-      loadExistingOrder();
+      loadExistingTableOrder();
+    } else if (editingActiveOrder) {
+      loadActiveOrder();
     }
     fetchMenuItems();
     fetchCategories();
     fetchModifierData();
-  }, [editingOrder]);
+  }, [editingOrder, editingActiveOrder]);
 
-  const loadExistingOrder = async () => {
+  const loadExistingTableOrder = async () => {
     try {
       const response = await axios.get(`${API}/orders/${editingOrder.current_order_id}`);
       const order = response.data;
@@ -1039,6 +1041,18 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
     } catch (error) {
       console.error('Error loading existing order:', error);
     }
+  };
+
+  const loadActiveOrder = () => {
+    const order = editingActiveOrder;
+    setCurrentOrder(order);
+    setCart(order.items);
+    setCustomerInfo({
+      name: order.customer_name,
+      phone: order.customer_phone,
+      address: order.customer_address
+    });
+    setOrderType(order.order_type);
   };
 
   const fetchMenuItems = async () => {
