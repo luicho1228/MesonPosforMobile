@@ -10,42 +10,123 @@ import uuid
 # Add the backend directory to Python path
 sys.path.append('/app/backend')
 
-async def create_admin_user():
+async def create_demo_users():
     # MongoDB connection
     mongo_url = "mongodb://localhost:27017"
     client = AsyncIOMotorClient(mongo_url)
     db = client["restaurant_pos"]
     
-    # Check if admin user already exists
-    existing_admin = await db.users.find_one({"username": "admin"})
-    if existing_admin:
-        print("Admin user already exists!")
-        return
+    # Clear existing users to avoid conflicts
+    await db.users.delete_many({})
     
-    # Hash password
-    password = "admin123"
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # Hash PINs
+    def hash_pin(pin):
+        return bcrypt.hashpw(pin.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
-    # Create admin user
-    admin_user = {
+    # Create demo users
+    demo_users = [
+        {
+            "id": str(uuid.uuid4()),
+            "pin": "1234",
+            "role": "manager",
+            "full_name": "Demo Manager",
+            "phone": "555-0001",
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "hashed_pin": hash_pin("1234")
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "pin": "5678",
+            "role": "employee",
+            "full_name": "Demo Employee",
+            "phone": "555-0002",
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "hashed_pin": hash_pin("5678")
+        }
+    ]
+    
+    # Insert demo users
+    await db.users.insert_many(demo_users)
+    print("✅ Demo users created successfully!")
+    print("Manager PIN: 1234 (Demo Manager)")
+    print("Employee PIN: 5678 (Demo Employee)")
+    
+    # Create default tables (1-10)
+    await db.tables.delete_many({})  # Clear existing tables
+    tables = []
+    for i in range(1, 11):
+        tables.append({
+            "id": str(uuid.uuid4()),
+            "number": i,
+            "capacity": 4,
+            "status": "available",
+            "current_order_id": None,
+            "created_at": datetime.utcnow()
+        })
+    
+    await db.tables.insert_many(tables)
+    print("✅ Default tables (1-10) created!")
+    
+    # Create sample modifier groups and modifiers
+    await db.modifier_groups.delete_many({})
+    await db.modifiers.delete_many({})
+    
+    # Size modifier group
+    size_group = {
         "id": str(uuid.uuid4()),
-        "username": "admin",
-        "email": "admin@restaurant.com",
-        "role": "manager",
-        "full_name": "Restaurant Admin",
-        "phone": "555-0000",
-        "is_active": True,
-        "created_at": datetime.utcnow(),
-        "password": hashed_password
+        "name": "Size",
+        "required": True,
+        "max_selections": 1
     }
+    await db.modifier_groups.insert_one(size_group)
     
-    # Insert admin user
-    await db.users.insert_one(admin_user)
-    print("✅ Admin user created successfully!")
-    print("Username: admin")
-    print("Password: admin123")
+    size_modifiers = [
+        {"id": str(uuid.uuid4()), "name": "Small", "price": 0.0, "group_id": size_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Medium", "price": 1.50, "group_id": size_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Large", "price": 3.00, "group_id": size_group["id"]}
+    ]
+    await db.modifiers.insert_many(size_modifiers)
     
-    # Create some sample menu items
+    # Flavor modifier group for sodas
+    flavor_group = {
+        "id": str(uuid.uuid4()),
+        "name": "Flavor",
+        "required": True,
+        "max_selections": 1
+    }
+    await db.modifier_groups.insert_one(flavor_group)
+    
+    flavor_modifiers = [
+        {"id": str(uuid.uuid4()), "name": "Coca Cola", "price": 0.0, "group_id": flavor_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Sprite", "price": 0.0, "group_id": flavor_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Orange Fanta", "price": 0.0, "group_id": flavor_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Diet Coke", "price": 0.0, "group_id": flavor_group["id"]}
+    ]
+    await db.modifiers.insert_many(flavor_modifiers)
+    
+    # Extras modifier group
+    extras_group = {
+        "id": str(uuid.uuid4()),
+        "name": "Extras",
+        "required": False,
+        "max_selections": 5
+    }
+    await db.modifier_groups.insert_one(extras_group)
+    
+    extras_modifiers = [
+        {"id": str(uuid.uuid4()), "name": "Extra Cheese", "price": 1.50, "group_id": extras_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Bacon", "price": 2.00, "group_id": extras_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Mushrooms", "price": 1.00, "group_id": extras_group["id"]},
+        {"id": str(uuid.uuid4()), "name": "Pepperoni", "price": 1.50, "group_id": extras_group["id"]}
+    ]
+    await db.modifiers.insert_many(extras_modifiers)
+    
+    print("✅ Sample modifier groups and modifiers created!")
+    
+    # Update menu items with modifier groups
+    await db.menu_items.delete_many({})  # Clear existing items
     sample_items = [
         {
             "id": str(uuid.uuid4()),
@@ -55,7 +136,7 @@ async def create_admin_user():
             "category": "Pizza",
             "image_url": "",
             "available": True,
-            "modifiers": ["Extra Cheese"],
+            "modifier_groups": [size_group["id"], extras_group["id"]],
             "created_at": datetime.utcnow()
         },
         {
@@ -66,7 +147,7 @@ async def create_admin_user():
             "category": "Burgers",
             "image_url": "",
             "available": True,
-            "modifiers": ["Extra Cheese", "Bacon"],
+            "modifier_groups": [extras_group["id"]],
             "created_at": datetime.utcnow()
         },
         {
@@ -77,27 +158,27 @@ async def create_admin_user():
             "category": "Salads",
             "image_url": "",
             "available": True,
-            "modifiers": ["Grilled Chicken"],
+            "modifier_groups": [extras_group["id"]],
             "created_at": datetime.utcnow()
         },
         {
             "id": str(uuid.uuid4()),
-            "name": "Coca Cola",
+            "name": "Soda",
             "description": "Refreshing soft drink",
             "price": 2.99,
             "category": "Beverages",
             "image_url": "",
             "available": True,
-            "modifiers": [],
+            "modifier_groups": [size_group["id"], flavor_group["id"]],
             "created_at": datetime.utcnow()
         }
     ]
     
-    # Insert sample menu items
+    # Insert updated menu items
     await db.menu_items.insert_many(sample_items)
-    print("✅ Sample menu items created!")
+    print("✅ Sample menu items with modifiers created!")
     
     client.close()
 
 if __name__ == "__main__":
-    asyncio.run(create_admin_user())
+    asyncio.run(create_demo_users())
