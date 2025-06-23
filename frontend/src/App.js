@@ -972,8 +972,10 @@ const ClockInOut = () => {
 const TableManagement = ({ onTableSelect }) => {
   const [tables, setTables] = useState([]);
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [availableTables, setAvailableTables] = useState([]);
+  const [selectedSourceTable, setSelectedSourceTable] = useState(null);
+  const [selectedDestTable, setSelectedDestTable] = useState(null);
+  const [showMergeConfirm, setShowMergeConfirm] = useState(false);
+  const [step, setStep] = useState('select-source'); // 'select-source', 'select-destination'
 
   useEffect(() => {
     fetchTables();
@@ -983,7 +985,6 @@ const TableManagement = ({ onTableSelect }) => {
     try {
       const response = await axios.get(`${API}/tables`);
       setTables(response.data);
-      setAvailableTables(response.data.filter(t => t.status === 'available'));
     } catch (error) {
       console.error('Error fetching tables:', error);
     }
@@ -1002,10 +1003,51 @@ const TableManagement = ({ onTableSelect }) => {
     try {
       await axios.post(`${API}/tables/${fromTableId}/move`, { new_table_id: toTableId });
       fetchTables();
-      setShowMoveModal(false);
+      resetMoveModal();
       alert('Order moved successfully!');
     } catch (error) {
       alert(error.response?.data?.detail || 'Error moving order');
+    }
+  };
+
+  const mergeTableOrders = async (fromTableId, toTableId) => {
+    try {
+      await axios.post(`${API}/tables/${fromTableId}/merge`, { new_table_id: toTableId });
+      fetchTables();
+      resetMoveModal();
+      setShowMergeConfirm(false);
+      alert('Orders merged successfully!');
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Error merging orders');
+    }
+  };
+
+  const resetMoveModal = () => {
+    setShowMoveModal(false);
+    setSelectedSourceTable(null);
+    setSelectedDestTable(null);
+    setStep('select-source');
+    setShowMergeConfirm(false);
+  };
+
+  const handleMoveClick = () => {
+    setShowMoveModal(true);
+    setStep('select-source');
+  };
+
+  const handleSourceTableSelect = (table) => {
+    setSelectedSourceTable(table);
+    setStep('select-destination');
+  };
+
+  const handleDestTableSelect = (table) => {
+    setSelectedDestTable(table);
+    
+    if (table.status === 'occupied') {
+      setShowMergeConfirm(true);
+    } else {
+      // Available table - just move
+      moveTableOrder(selectedSourceTable.id, table.id);
     }
   };
 
@@ -1021,6 +1063,7 @@ const TableManagement = ({ onTableSelect }) => {
   };
 
   const occupiedTables = tables.filter(t => t.status === 'occupied');
+  const availableTables = tables.filter(t => t.status === 'available');
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -1032,14 +1075,7 @@ const TableManagement = ({ onTableSelect }) => {
           {occupiedTables.length > 0 && (
             <>
               <button
-                onClick={() => {
-                  if (occupiedTables.length === 1) {
-                    setSelectedTable(occupiedTables[0]);
-                    setShowMoveModal(true);
-                  } else {
-                    alert('Please select a specific table to move');
-                  }
-                }}
+                onClick={handleMoveClick}
                 className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-purple-700"
               >
                 Move Order
@@ -1047,9 +1083,8 @@ const TableManagement = ({ onTableSelect }) => {
               
               <button
                 onClick={() => {
-                  const tableToUpdate = occupiedTables[0];
                   if (occupiedTables.length === 1) {
-                    updateTableStatus(tableToUpdate.id, 'problem');
+                    updateTableStatus(occupiedTables[0].id, 'problem');
                   } else {
                     alert('Please select a specific table');
                   }
@@ -1080,34 +1115,120 @@ const TableManagement = ({ onTableSelect }) => {
         ))}
       </div>
 
-      {/* Move Table Modal */}
-      {showMoveModal && selectedTable && (
+      {/* Enhanced Move Modal */}
+      {showMoveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">Move Table {selectedTable.number}</h3>
-            
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {availableTables.map((table) => (
-                <button
-                  key={table.id}
-                  onClick={() => moveTableOrder(selectedTable.id, table.id)}
-                  className="bg-green-100 border-2 border-green-500 text-green-800 p-3 rounded-lg hover:bg-green-200"
-                >
-                  Table {table.number}
-                </button>
-              ))}
-            </div>
+            {step === 'select-source' && (
+              <>
+                <h3 className="text-lg font-bold mb-4">Select Table to Move</h3>
+                
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {occupiedTables.map((table) => (
+                    <button
+                      key={table.id}
+                      onClick={() => handleSourceTableSelect(table)}
+                      className="bg-red-100 border-2 border-red-500 text-red-800 p-3 rounded-lg hover:bg-red-200"
+                    >
+                      Table {table.number}
+                    </button>
+                  ))}
+                </div>
 
-            {availableTables.length === 0 && (
-              <p className="text-center text-gray-500 py-4">No available tables</p>
+                {occupiedTables.length === 0 && (
+                  <p className="text-center text-gray-500 py-4">No occupied tables to move</p>
+                )}
+              </>
+            )}
+
+            {step === 'select-destination' && selectedSourceTable && (
+              <>
+                <h3 className="text-lg font-bold mb-4">
+                  Move Table {selectedSourceTable.number} to:
+                </h3>
+                
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold mb-2 text-green-600">Available Tables</h4>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {availableTables.map((table) => (
+                      <button
+                        key={table.id}
+                        onClick={() => handleDestTableSelect(table)}
+                        className="bg-green-100 border-2 border-green-500 text-green-800 p-3 rounded-lg hover:bg-green-200"
+                      >
+                        Table {table.number}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold mb-2 text-red-600">Occupied Tables (Merge)</h4>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {occupiedTables.filter(t => t.id !== selectedSourceTable.id).map((table) => (
+                      <button
+                        key={table.id}
+                        onClick={() => handleDestTableSelect(table)}
+                        className="bg-red-100 border-2 border-red-500 text-red-800 p-3 rounded-lg hover:bg-red-200"
+                      >
+                        Table {table.number}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setStep('select-source')}
+                  className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 mb-2"
+                >
+                  ← Back
+                </button>
+              </>
             )}
 
             <button
-              onClick={() => setShowMoveModal(false)}
+              onClick={resetMoveModal}
               className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Merge Confirmation Modal */}
+      {showMergeConfirm && selectedSourceTable && selectedDestTable && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4 text-orange-600">⚠️ Table Occupied</h3>
+            
+            <p className="mb-4">
+              Table {selectedDestTable.number} is already occupied with an order. 
+              Do you want to <strong>merge</strong> the orders from Table {selectedSourceTable.number} 
+              into Table {selectedDestTable.number}?
+            </p>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> This will combine all items from both tables into one order 
+                on Table {selectedDestTable.number}. Table {selectedSourceTable.number} will become available.
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowMergeConfirm(false)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => mergeTableOrders(selectedSourceTable.id, selectedDestTable.id)}
+                className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700"
+              >
+                Merge Orders
+              </button>
+            </div>
           </div>
         </div>
       )}
