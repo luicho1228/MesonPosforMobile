@@ -463,6 +463,64 @@ async def update_table(table_id: str, table_update: TableUpdate, user_id: str = 
     updated_table = await db.tables.find_one({"id": table_id})
     return Table(**updated_table)
 
+@api_router.post("/tables/{table_id}/merge")
+async def merge_table_orders(table_id: str, merge_request: TableMoveRequest, user_id: str = Depends(verify_token)):
+    # Get source table
+    source_table = await db.tables.find_one({"id": table_id})
+    if not source_table or not source_table.get("current_order_id"):
+        raise HTTPException(status_code=404, detail="No order found on source table")
+    
+    # Get destination table
+    dest_table = await db.tables.find_one({"id": merge_request.new_table_id})
+    if not dest_table:
+        raise HTTPException(status_code=404, detail="Destination table not found")
+    
+    if dest_table.get("status") != "occupied" or not dest_table.get("current_order_id"):
+        raise HTTPException(status_code=400, detail="Destination table has no order to merge with")
+    
+    source_order_id = source_table["current_order_id"]
+    dest_order_id = dest_table["current_order_id"]
+    
+    # Get both orders
+    source_order = await db.orders.find_one({"id": source_order_id})
+    dest_order = await db.orders.find_one({"id": dest_order_id})
+    
+    if not source_order or not dest_order:
+        raise HTTPException(status_code=404, detail="One or both orders not found")
+    
+    # Merge items from source order into destination order
+    merged_items = dest_order["items"] + source_order["items"]
+    
+    # Recalculate totals
+    total_subtotal = dest_order["subtotal"] + source_order["subtotal"]
+    total_tax = total_subtotal * 0.08
+    total_amount = total_subtotal + total_tax
+    
+    # Update destination order with merged items
+    await db.orders.update_one(
+        {"id": dest_order_id},
+        {
+            "$set": {
+                "items": merged_items,
+                "subtotal": total_subtotal,
+                "tax": total_tax,
+                "total": total_amount,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    # Delete source order
+    await db.orders.delete_one({"id": source_order_id})
+    
+    # Clear source table
+    await db.tables.update_one(
+        {"id": table_id},
+        {"$set": {"status": "available", "current_order_id": None}}
+    )
+    
+    return {"message": "Orders merged successfully"}
+
 @api_router.post("/tables/{table_id}/move")
 async def move_table_order(table_id: str, move_request: TableMoveRequest, user_id: str = Depends(verify_token)):
     # Get current table
