@@ -674,11 +674,11 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
     return () => clearInterval(interval);
   }, [refreshTrigger]);
 
-  // Update current time every minute to refresh timers
+  // Update current time every 30 seconds to refresh timers in real-time
   useEffect(() => {
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 30000); // Update every 30 seconds for real-time updates
     
     return () => clearInterval(timeInterval);
   }, []);
