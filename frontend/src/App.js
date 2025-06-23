@@ -1504,7 +1504,7 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
               onClick={sendToKitchen}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-semibold"
             >
-              Send to Kitchen
+              Send
             </button>
             
             <button
