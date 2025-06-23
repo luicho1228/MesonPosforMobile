@@ -975,7 +975,7 @@ async def update_order_status(order_id: str, status: Dict[str, str], user_id: st
     
     result = await db.orders.update_one(
         {"id": order_id}, 
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": get_current_time()}}
     )
     
     return {"message": "Order status updated successfully"}
