@@ -1048,7 +1048,6 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
         address: order.customer_address
       });
       setOrderType(order.order_type);
-      setTip(order.tip);
     } catch (error) {
       console.error('Error loading existing order:', error);
     }
