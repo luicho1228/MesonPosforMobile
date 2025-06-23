@@ -785,7 +785,7 @@ async def remove_order_item(order_id: str, item_index: int, removal: ItemRemoval
                 "subtotal": subtotal,
                 "tax": tax,
                 "total": total,
-                "updated_at": datetime.utcnow()
+                "updated_at": get_current_time()
             }
         }
     )
