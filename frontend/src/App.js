@@ -1026,23 +1026,15 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showRemovalModal, setShowRemovalModal] = useState(false);
   const [removalItemIndex, setRemovalItemIndex] = useState(null);
-  const [showPinModal, setShowPinModal] = useState(!editingOrder);
-  const [isAuthorized, setIsAuthorized] = useState(!!editingOrder);
 
   useEffect(() => {
     if (editingOrder) {
       loadExistingOrder();
-      setIsAuthorized(true);
     }
+    fetchMenuItems();
+    fetchCategories();
+    fetchModifierData();
   }, [editingOrder]);
-
-  useEffect(() => {
-    if (isAuthorized) {
-      fetchMenuItems();
-      fetchCategories();
-      fetchModifierData();
-    }
-  }, [isAuthorized]);
 
   const loadExistingOrder = async () => {
     try {
