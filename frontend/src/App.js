@@ -1737,7 +1737,7 @@ const POSInterface = () => {
         </div>
 
         {/* Active Orders */}
-        <ActiveOrders onOrderClick={handleOrderClick} />
+        <ActiveOrders onOrderClick={handleOrderClick} refreshTrigger={refreshTrigger} />
 
         {/* Table Management */}
         <TableManagement onTableSelect={handleTableSelect} />
