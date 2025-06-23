@@ -780,6 +780,30 @@ async def get_order(order_id: str, user_id: str = Depends(verify_token)):
     
     return Order(**order)
 
+@api_router.delete("/orders/{order_id}")
+async def delete_order(order_id: str, user_id: str = Depends(verify_token)):
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check if user can delete this order
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager" and order["created_by"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Free table if it's a table order
+    if order.get("table_id"):
+        await db.tables.update_one(
+            {"id": order["table_id"]},
+            {"$set": {"status": "available", "current_order_id": None}}
+        )
+    
+    result = await db.orders.delete_one({"id": order_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"message": "Order deleted successfully"}
+
 @api_router.put("/orders/{order_id}/status")
 async def update_order_status(order_id: str, status: Dict[str, str], user_id: str = Depends(verify_token)):
     new_status = status.get("status")
