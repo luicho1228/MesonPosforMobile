@@ -100,8 +100,7 @@ class MenuItem(BaseModel):
     category: str
     image_url: str = ""
     available: bool = True
-    modifier_groups: List[str] = []  # List of modifier group IDs
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_current_time)
 
 class MenuItemCreate(BaseModel):
     name: str
