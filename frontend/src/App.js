@@ -1724,6 +1724,7 @@ const POSInterface = () => {
   const [currentView, setCurrentView] = useState('main');
   const [selectedTable, setSelectedTable] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [editingActiveOrder, setEditingActiveOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { user, logout } = useAuth();
@@ -1731,6 +1732,7 @@ const POSInterface = () => {
   const handleNewOrder = (table = null) => {
     setSelectedTable(table);
     setEditingOrder(null);
+    setEditingActiveOrder(null);
     setCurrentView('new-order');
   };
 
@@ -1739,22 +1741,29 @@ const POSInterface = () => {
       // Start new order for available table
       setSelectedTable(table);
       setEditingOrder(null);
+      setEditingActiveOrder(null);
     } else if (table.status === 'occupied') {
       // Edit existing order for occupied table
       setEditingOrder(table);
       setSelectedTable(null);
+      setEditingActiveOrder(null);
     }
     setCurrentView('new-order');
   };
 
   const handleOrderClick = (order) => {
-    setSelectedOrder(order);
+    // Instead of showing modal, go to order editing
+    setEditingActiveOrder(order);
+    setSelectedTable(null);
+    setEditingOrder(null);
+    setCurrentView('new-order');
   };
 
   const handleBackToMain = () => {
     setCurrentView('main');
     setSelectedTable(null);
     setEditingOrder(null);
+    setEditingActiveOrder(null);
     // Trigger refresh of active orders when returning to main view
     setRefreshTrigger(prev => prev + 1);
   };
