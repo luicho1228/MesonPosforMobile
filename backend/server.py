@@ -154,12 +154,26 @@ class OrderItemModifier(BaseModel):
 
 class OrderItem(BaseModel):
     menu_item_id: str
-    menu_item_name: str
+    menu_item_name: Optional[str] = ""  # Make optional for backward compatibility
     quantity: int
-    base_price: float
+    base_price: Optional[float] = 0.0  # Make optional for backward compatibility
     modifiers: List[OrderItemModifier] = []
     special_instructions: str = ""
-    total_price: float
+    total_price: Optional[float] = 0.0  # Make optional for backward compatibility
+    
+    # For backward compatibility with old data format
+    price: Optional[float] = None
+
+    def __init__(self, **data):
+        # Handle backward compatibility
+        if 'price' in data and 'base_price' not in data:
+            data['base_price'] = data['price']
+        if 'price' in data and 'total_price' not in data:
+            data['total_price'] = data['price'] * data.get('quantity', 1)
+        if 'menu_item_name' not in data:
+            data['menu_item_name'] = f"Item {data.get('menu_item_id', '')[:8]}"
+            
+        super().__init__(**data)
 
 class ItemRemoval(BaseModel):
     reason: RemovalReason
