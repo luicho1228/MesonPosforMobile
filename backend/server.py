@@ -208,7 +208,7 @@ class Order(BaseModel):
     cash_received: Optional[float] = None
     change_amount: Optional[float] = None
     created_at: datetime = Field(default_factory=get_current_time)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=get_current_time)
     delivery_instructions: str = ""
     estimated_time: Optional[datetime] = None
 
