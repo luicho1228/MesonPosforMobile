@@ -2085,49 +2085,53 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
           <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
             <h3 className="text-lg font-bold mb-4">Customize {selectedMenuItem.name}</h3>
             
-            {selectedMenuItem.modifier_groups.map(groupId => {
-              const group = modifierGroups.find(g => g.id === groupId);
-              if (!group) return null;
-              
-              const groupModifiers = modifiers.filter(m => m.group_id === groupId);
-              
-              return (
-                <div key={groupId} className="mb-4">
-                  <h4 className="font-medium mb-2">
-                    {group.name} {group.required && <span className="text-red-500">*</span>}
-                  </h4>
-                  <div className="space-y-2">
-                    {groupModifiers.map(modifier => (
-                      <label key={modifier.id} className="flex items-center space-x-2">
-                        <input
-                          type={group.max_selections === 1 ? "radio" : "checkbox"}
-                          name={`group-${groupId}`}
-                          onChange={(e) => {
-                            const newSelected = { ...selectedModifiers };
-                            if (!newSelected[groupId]) newSelected[groupId] = [];
-                            
-                            if (group.max_selections === 1) {
-                              newSelected[groupId] = e.target.checked ? [modifier.id] : [];
-                            } else {
-                              if (e.target.checked) {
-                                newSelected[groupId].push(modifier.id);
+            {selectedMenuItem.modifier_groups && selectedMenuItem.modifier_groups.length > 0 ? (
+              selectedMenuItem.modifier_groups.map(groupId => {
+                const group = modifierGroups.find(g => g.id === groupId);
+                if (!group) return null;
+                
+                const groupModifiers = modifiers.filter(m => m.group_id === groupId);
+                
+                return (
+                  <div key={groupId} className="mb-4">
+                    <h4 className="font-medium mb-2">
+                      {group.name} {group.required && <span className="text-red-500">*</span>}
+                    </h4>
+                    <div className="space-y-2">
+                      {groupModifiers.map(modifier => (
+                        <label key={modifier.id} className="flex items-center space-x-2">
+                          <input
+                            type={group.max_selections === 1 ? "radio" : "checkbox"}
+                            name={`group-${groupId}`}
+                            onChange={(e) => {
+                              const newSelected = { ...selectedModifiers };
+                              if (!newSelected[groupId]) newSelected[groupId] = [];
+                              
+                              if (group.max_selections === 1) {
+                                newSelected[groupId] = e.target.checked ? [modifier.id] : [];
                               } else {
-                                newSelected[groupId] = newSelected[groupId].filter(id => id !== modifier.id);
+                                if (e.target.checked) {
+                                  newSelected[groupId].push(modifier.id);
+                                } else {
+                                  newSelected[groupId] = newSelected[groupId].filter(id => id !== modifier.id);
+                                }
                               }
-                            }
-                            setSelectedModifiers(newSelected);
-                          }}
-                        />
-                        <span className="flex-1">{modifier.name}</span>
-                        {modifier.price > 0 && (
-                          <span className="text-green-600">+${modifier.price.toFixed(2)}</span>
-                        )}
-                      </label>
-                    ))}
+                              setSelectedModifiers(newSelected);
+                            }}
+                          />
+                          <span className="flex-1">{modifier.name}</span>
+                          {modifier.price > 0 && (
+                            <span className="text-green-600">+${modifier.price.toFixed(2)}</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <p className="text-gray-500 mb-4">No modifiers available for this item.</p>
+            )}
             
             <div className="flex space-x-3 mt-6">
               <button
