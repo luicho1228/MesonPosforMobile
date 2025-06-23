@@ -458,7 +458,8 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
 
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
-                {getNextStatus(order.status) && (
+                {/* Only show status buttons for delivery orders */}
+                {order.order_type === 'delivery' && getNextStatus(order.status) && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
