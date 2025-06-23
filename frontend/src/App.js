@@ -1263,8 +1263,6 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
     if (!currentOrder) return;
 
     try {
-      // For now, we'll recreate the order with new items
-      // In a real system, you might have a dedicated update endpoint
       const orderData = {
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
@@ -1281,18 +1279,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
         delivery_instructions: ''
       };
 
-      // Delete the old order
-      await axios.delete(`${API}/orders/${currentOrder.id}`);
+      // Update the existing order (keeps same order number)
+      const response = await axios.put(`${API}/orders/${currentOrder.id}`, orderData);
+      const updatedOrder = response.data;
       
-      // Create new order with same order number
-      const response = await axios.post(`${API}/orders`, orderData);
-      const newOrder = response.data;
-      
-      // Send the new order
-      await axios.post(`${API}/orders/${newOrder.id}/send`);
-      
-      setCurrentOrder(newOrder);
-      return newOrder;
+      setCurrentOrder(updatedOrder);
+      return updatedOrder;
     } catch (error) {
       console.error('Error updating order:', error);
       throw error;
