@@ -1006,7 +1006,7 @@ async def clock_in(user_id: str = Depends(verify_token)):
 
 @api_router.post("/time/clock-out")
 async def clock_out(user_id: str = Depends(verify_token)):
-    today = datetime.utcnow().date().isoformat()
+    today = get_current_time().date().isoformat()
     
     entry = await db.time_entries.find_one({
         "user_id": user_id,
