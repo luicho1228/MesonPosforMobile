@@ -983,7 +983,7 @@ async def update_order_status(order_id: str, status: Dict[str, str], user_id: st
 # Time tracking routes
 @api_router.post("/time/clock-in")
 async def clock_in(user_id: str = Depends(verify_token)):
-    today = datetime.utcnow().date().isoformat()
+    today = get_current_time().date().isoformat()
     
     # Check if already clocked in today
     existing_entry = await db.time_entries.find_one({
