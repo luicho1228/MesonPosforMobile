@@ -2073,6 +2073,10 @@ const POSInterface = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const handleOrderHistory = () => {
+    setCurrentView('order-history');
+  };
+
   if (currentView === 'new-order') {
     return (
       <NewOrder 
@@ -2081,6 +2085,12 @@ const POSInterface = () => {
         editingActiveOrder={editingActiveOrder}
         onBack={handleBackToMain}
       />
+    );
+  }
+
+  if (currentView === 'order-history') {
+    return (
+      <OrderHistory onBack={handleBackToMain} />
     );
   }
 
