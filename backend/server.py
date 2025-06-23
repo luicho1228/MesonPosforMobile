@@ -926,7 +926,7 @@ async def update_order(order_id: str, order_data: OrderCreate, user_id: str = De
         "total": total,
         "order_type": order_data.order_type,
         "delivery_instructions": order_data.delivery_instructions,
-        "updated_at": datetime.utcnow()
+        "updated_at": get_current_time()
     }
     
     await db.orders.update_one({"id": order_id}, {"$set": update_data})
