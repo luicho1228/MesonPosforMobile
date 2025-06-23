@@ -1773,6 +1773,7 @@ const POSInterface = () => {
       <NewOrder 
         selectedTable={selectedTable}
         editingOrder={editingOrder}
+        editingActiveOrder={editingActiveOrder}
         onBack={handleBackToMain}
       />
     );
