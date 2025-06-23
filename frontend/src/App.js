@@ -44,6 +44,15 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  const verifyPin = async (pin) => {
+    try {
+      const response = await axios.post(`${API}/auth/verify-pin`, { pin });
+      return { success: true, user: response.data.user };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.detail || 'Invalid PIN' };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
@@ -52,7 +61,7 @@ const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, verifyPin, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
@@ -177,7 +186,131 @@ const PinLogin = () => {
         )}
 
         <div className="text-center text-xs text-gray-500 mt-8">
-          <strong>Demo PIN:</strong> 1234
+          <strong>Demo PIN:</strong> 1234 (Manager) | 5678 (Employee)
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// PIN Verification Modal
+const PinVerificationModal = ({ isOpen, onClose, onSuccess, title = "Enter PIN to Continue" }) => {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { verifyPin } = useAuth();
+
+  const handlePinInput = (digit) => {
+    if (pin.length < 4) {
+      setPin(pin + digit);
+    }
+  };
+
+  const handleBackspace = () => {
+    setPin(pin.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    setPin('');
+    setError('');
+  };
+
+  const handleVerification = async () => {
+    if (pin.length !== 4) {
+      setError('Please enter a 4-digit PIN');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    const result = await verifyPin(pin);
+    if (result.success) {
+      onSuccess(result.user);
+      onClose();
+      setPin('');
+    } else {
+      setError(result.error);
+      setPin('');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (pin.length === 4) {
+      handleVerification();
+    }
+  }, [pin]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
+        </div>
+
+        {/* PIN Display */}
+        <div className="flex justify-center mb-8">
+          <div className="flex space-x-3">
+            {[0,1,2,3].map(i => (
+              <div 
+                key={i}
+                className={`w-4 h-4 rounded-full border-2 ${
+                  i < pin.length ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Keypad */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[1,2,3,4,5,6,7,8,9].map(num => (
+            <button
+              key={num}
+              onClick={() => handlePinInput(num.toString())}
+              className="h-12 bg-gray-100 hover:bg-gray-200 rounded-xl text-xl font-semibold text-gray-800 transition-colors"
+              disabled={loading}
+            >
+              {num}
+            </button>
+          ))}
+          <button
+            onClick={handleClear}
+            className="h-12 bg-red-100 hover:bg-red-200 rounded-xl text-sm font-semibold text-red-600 transition-colors"
+            disabled={loading}
+          >
+            Clear
+          </button>
+          <button
+            onClick={() => handlePinInput('0')}
+            className="h-12 bg-gray-100 hover:bg-gray-200 rounded-xl text-xl font-semibold text-gray-800 transition-colors"
+            disabled={loading}
+          >
+            0
+          </button>
+          <button
+            onClick={handleBackspace}
+            className="h-12 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold text-gray-600 transition-colors"
+            disabled={loading}
+          >
+            ←
+          </button>
+        </div>
+
+        {error && (
+          <div className="text-red-600 text-center text-sm mb-4">{error}</div>
+        )}
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -345,10 +478,172 @@ const ActiveOrders = ({ onOrderClick }) => {
   );
 };
 
+// Employee Status Component
+const EmployeeStatus = () => {
+  const [activeEmployees, setActiveEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (showModal) {
+      fetchActiveEmployees();
+    }
+  }, [showModal]);
+
+  const fetchActiveEmployees = async () => {
+    try {
+      const response = await axios.get(`${API}/time/active-employees`);
+      setActiveEmployees(response.data.active_employees);
+    } catch (error) {
+      console.error('Error fetching active employees:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setShowModal(true)}
+        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+      >
+        Employee Status
+      </button>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Active Employees</h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : activeEmployees.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No employees currently clocked in</p>
+            ) : (
+              <div className="space-y-3">
+                {activeEmployees.map((employee) => (
+                  <div key={employee.user_id} className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{employee.full_name}</h4>
+                        <p className="text-sm text-gray-600">
+                          Clocked in: {new Date(employee.clock_in_time).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-green-600">
+                          {employee.active_hours.toFixed(1)}h
+                        </p>
+                        <p className="text-xs text-gray-500">Active</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// Clock In/Out Component
+const ClockInOut = () => {
+  const [isClockingIn, setIsClockingIn] = useState(false);
+  const [isClockingOut, setIsClockingOut] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [clockAction, setClockAction] = useState(null);
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [currentEntry, setCurrentEntry] = useState(null);
+
+  useEffect(() => {
+    checkClockStatus();
+  }, []);
+
+  const checkClockStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/time/entries`);
+      setTimeEntries(response.data);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const todayEntry = response.data.find(entry => 
+        entry.date === today && !entry.clock_out
+      );
+      setCurrentEntry(todayEntry);
+    } catch (error) {
+      console.error('Error checking clock status:', error);
+    }
+  };
+
+  const handleClockAction = async (user) => {
+    try {
+      if (clockAction === 'in') {
+        setIsClockingIn(true);
+        await axios.post(`${API}/time/clock-in`);
+        alert('Clocked in successfully!');
+      } else {
+        setIsClockingOut(true);
+        const response = await axios.post(`${API}/time/clock-out`);
+        alert(`Clocked out successfully! Total hours: ${response.data.total_hours.toFixed(2)}`);
+      }
+      
+      checkClockStatus();
+      setShowPinModal(false);
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Error processing clock action');
+    } finally {
+      setIsClockingIn(false);
+      setIsClockingOut(false);
+    }
+  };
+
+  const initiateClock = (action) => {
+    setClockAction(action);
+    setShowPinModal(true);
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => initiateClock(currentEntry ? 'out' : 'in')}
+        className={`px-4 py-2 rounded-lg transition-colors ${
+          currentEntry 
+            ? 'bg-red-600 text-white hover:bg-red-700' 
+            : 'bg-blue-600 text-white hover:bg-blue-700'
+        }`}
+        disabled={isClockingIn || isClockingOut}
+      >
+        {isClockingIn || isClockingOut ? 'Processing...' : 
+         currentEntry ? 'Clock Out' : 'Clock In'}
+      </button>
+
+      <PinVerificationModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onSuccess={handleClockAction}
+        title={clockAction === 'in' ? 'Clock In' : 'Clock Out'}
+      />
+    </>
+  );
+};
+
 // Table Management Component
 const TableManagement = ({ onTableSelect }) => {
   const [tables, setTables] = useState([]);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [availableTables, setAvailableTables] = useState([]);
 
   useEffect(() => {
     fetchTables();
@@ -358,6 +653,7 @@ const TableManagement = ({ onTableSelect }) => {
     try {
       const response = await axios.get(`${API}/tables`);
       setTables(response.data);
+      setAvailableTables(response.data.filter(t => t.status === 'available'));
     } catch (error) {
       console.error('Error fetching tables:', error);
     }
@@ -372,27 +668,31 @@ const TableManagement = ({ onTableSelect }) => {
     }
   };
 
+  const moveTableOrder = async (fromTableId, toTableId) => {
+    try {
+      await axios.post(`${API}/tables/${fromTableId}/move`, { new_table_id: toTableId });
+      fetchTables();
+      setShowMoveModal(false);
+      alert('Order moved successfully!');
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Error moving order');
+    }
+  };
+
   const getTableColor = (status) => {
     const colors = {
       available: 'bg-green-100 border-green-500 text-green-800',
       occupied: 'bg-red-100 border-red-500 text-red-800',
       needs_cleaning: 'bg-yellow-100 border-yellow-500 text-yellow-800',
-      reserved: 'bg-blue-100 border-blue-500 text-blue-800'
+      reserved: 'bg-blue-100 border-blue-500 text-blue-800',
+      problem: 'bg-gray-100 border-gray-500 text-gray-800'
     };
     return colors[status] || 'bg-gray-100 border-gray-300';
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-gray-800">Table Management</h3>
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-        >
-          Settings
-        </button>
-      </div>
+      <h3 className="text-xl font-bold text-gray-800 mb-6">Table Management</h3>
 
       <div className="grid grid-cols-5 gap-3">
         {tables.map((table) => (
@@ -407,12 +707,45 @@ const TableManagement = ({ onTableSelect }) => {
           >
             <div className="text-center">
               <div className="text-2xl font-bold mb-1">{table.number}</div>
-              <div className="text-xs capitalize">
+              <div className="text-xs capitalize mb-2">
                 {table.status.replace('_', ' ')}
               </div>
             </div>
             
-            {table.status !== 'available' && (
+            {table.status === 'occupied' && (
+              <div className="space-y-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTableSelect(table, 'edit');
+                  }}
+                  className="w-full text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                >
+                  Add Items
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTable(table);
+                    setShowMoveModal(true);
+                  }}
+                  className="w-full text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600"
+                >
+                  Move
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateTableStatus(table.id, 'problem');
+                  }}
+                  className="w-full text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                >
+                  Problem
+                </button>
+              </div>
+            )}
+            
+            {table.status !== 'available' && table.status !== 'occupied' && (
               <div className="mt-2 flex justify-center">
                 <button
                   onClick={(e) => {
@@ -428,18 +761,258 @@ const TableManagement = ({ onTableSelect }) => {
           </div>
         ))}
       </div>
+
+      {/* Move Table Modal */}
+      {showMoveModal && selectedTable && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">Move Table {selectedTable.number}</h3>
+            
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {availableTables.map((table) => (
+                <button
+                  key={table.id}
+                  onClick={() => moveTableOrder(selectedTable.id, table.id)}
+                  className="bg-green-100 border-2 border-green-500 text-green-800 p-3 rounded-lg hover:bg-green-200"
+                >
+                  Table {table.number}
+                </button>
+              ))}
+            </div>
+
+            {availableTables.length === 0 && (
+              <p className="text-center text-gray-500 py-4">No available tables</p>
+            )}
+
+            <button
+              onClick={() => setShowMoveModal(false)}
+              className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Payment Modal Component
+const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [cashReceived, setCashReceived] = useState('');
+  const [emailReceipt, setEmailReceipt] = useState('');
+  const [printReceipt, setPrintReceipt] = useState(true);
+  const [processing, setProcessing] = useState(false);
+
+  const calculateChange = () => {
+    if (paymentMethod === 'cash' && cashReceived) {
+      return Math.max(0, parseFloat(cashReceived) - order.total);
+    }
+    return 0;
+  };
+
+  const handlePayment = async () => {
+    if (paymentMethod === 'cash' && parseFloat(cashReceived) < order.total) {
+      alert('Cash received is less than total amount');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const paymentData = {
+        payment_method: paymentMethod,
+        cash_received: paymentMethod === 'cash' ? parseFloat(cashReceived) : null,
+        email_receipt: emailReceipt || null,
+        print_receipt: printReceipt
+      };
+
+      const response = await axios.post(`${API}/orders/${order.id}/pay`, paymentData);
+      
+      alert(`Payment successful! ${paymentMethod === 'cash' ? `Change: $${response.data.change_amount.toFixed(2)}` : ''}`);
+      onPaymentComplete();
+      onClose();
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Payment failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  if (!isOpen || !order) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <h3 className="text-xl font-bold mb-4">Process Payment</h3>
+        
+        <div className="mb-4">
+          <h4 className="font-medium mb-2">Order Total: ${order.total.toFixed(2)}</h4>
+        </div>
+
+        {/* Payment Method */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setPaymentMethod('card')}
+              className={`flex-1 py-2 px-4 rounded-lg border ${
+                paymentMethod === 'card' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-white text-gray-700 border-gray-300'
+              }`}
+            >
+              Card
+            </button>
+            <button
+              onClick={() => setPaymentMethod('cash')}
+              className={`flex-1 py-2 px-4 rounded-lg border ${
+                paymentMethod === 'cash' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-white text-gray-700 border-gray-300'
+              }`}
+            >
+              Cash
+            </button>
+          </div>
+        </div>
+
+        {/* Cash Payment */}
+        {paymentMethod === 'cash' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Cash Received</label>
+            <input
+              type="number"
+              step="0.01"
+              value={cashReceived}
+              onChange={(e) => setCashReceived(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="0.00"
+            />
+            {cashReceived && (
+              <p className="text-sm text-gray-600 mt-1">
+                Change: ${calculateChange().toFixed(2)}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Receipt Options */}
+        <div className="mb-6">
+          <div className="flex items-center mb-2">
+            <input
+              type="checkbox"
+              checked={printReceipt}
+              onChange={(e) => setPrintReceipt(e.target.checked)}
+              className="mr-2"
+            />
+            <label className="text-sm">Print Receipt</label>
+          </div>
+          
+          <div className="mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Receipt (optional)</label>
+            <input
+              type="email"
+              value={emailReceipt}
+              onChange={(e) => setEmailReceipt(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="customer@email.com"
+            />
+          </div>
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+            disabled={processing}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handlePayment}
+            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700"
+            disabled={processing || (paymentMethod === 'cash' && (!cashReceived || parseFloat(cashReceived) < order.total))}
+          >
+            {processing ? 'Processing...' : 'Process Payment'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Item Removal Modal
+const ItemRemovalModal = ({ isOpen, onClose, onRemove }) => {
+  const [reason, setReason] = useState('wrong_item');
+  const [notes, setNotes] = useState('');
+
+  const handleRemove = () => {
+    onRemove({ reason, notes });
+    setReason('wrong_item');
+    setNotes('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <h3 className="text-lg font-bold mb-4">Remove Item - Reason Required</h3>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+          <select
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="wrong_item">Wrong Item Selected</option>
+            <option value="customer_changed_mind">Customer Changed Mind</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="3"
+            placeholder="Additional details..."
+          />
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleRemove}
+            className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+          >
+            Remove Item
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
 // New Order Component
-const NewOrder = ({ selectedTable, onBack }) => {
+const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [modifierGroups, setModifierGroups] = useState([]);
   const [modifiers, setModifiers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [cart, setCart] = useState([]);
+  const [currentOrder, setCurrentOrder] = useState(null);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
@@ -450,12 +1023,44 @@ const NewOrder = ({ selectedTable, onBack }) => {
   const [showModifierModal, setShowModifierModal] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState(null);
   const [selectedModifiers, setSelectedModifiers] = useState({});
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showRemovalModal, setShowRemovalModal] = useState(false);
+  const [removalItemIndex, setRemovalItemIndex] = useState(null);
+  const [showPinModal, setShowPinModal] = useState(!editingOrder);
+  const [isAuthorized, setIsAuthorized] = useState(!!editingOrder);
 
   useEffect(() => {
-    fetchMenuItems();
-    fetchCategories();
-    fetchModifierData();
-  }, []);
+    if (editingOrder) {
+      loadExistingOrder();
+      setIsAuthorized(true);
+    }
+  }, [editingOrder]);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchMenuItems();
+      fetchCategories();
+      fetchModifierData();
+    }
+  }, [isAuthorized]);
+
+  const loadExistingOrder = async () => {
+    try {
+      const response = await axios.get(`${API}/orders/${editingOrder.current_order_id}`);
+      const order = response.data;
+      setCurrentOrder(order);
+      setCart(order.items);
+      setCustomerInfo({
+        name: order.customer_name,
+        phone: order.customer_phone,
+        address: order.customer_address
+      });
+      setOrderType(order.order_type);
+      setTip(order.tip);
+    } catch (error) {
+      console.error('Error loading existing order:', error);
+    }
+  };
 
   const fetchMenuItems = async () => {
     try {
@@ -555,7 +1160,7 @@ const NewOrder = ({ selectedTable, onBack }) => {
 
   const updateCartItemQuantity = (index, newQuantity) => {
     if (newQuantity <= 0) {
-      removeFromCart(index);
+      initiateItemRemoval(index);
       return;
     }
     
@@ -566,9 +1171,27 @@ const NewOrder = ({ selectedTable, onBack }) => {
     setCart(newCart);
   };
 
-  const removeFromCart = (index) => {
-    const newCart = cart.filter((_, i) => i !== index);
-    setCart(newCart);
+  const initiateItemRemoval = (index) => {
+    setRemovalItemIndex(index);
+    setShowRemovalModal(true);
+  };
+
+  const removeFromCart = async (removalData) => {
+    if (currentOrder) {
+      // Remove from existing order
+      try {
+        await axios.delete(`${API}/orders/${currentOrder.id}/items/${removalItemIndex}`, {
+          data: removalData
+        });
+        loadExistingOrder(); // Reload order
+      } catch (error) {
+        console.error('Error removing item from order:', error);
+      }
+    } else {
+      // Remove from cart
+      const newCart = cart.filter((_, i) => i !== removalItemIndex);
+      setCart(newCart);
+    }
   };
 
   const calculateTotal = () => {
@@ -581,7 +1204,7 @@ const NewOrder = ({ selectedTable, onBack }) => {
     };
   };
 
-  const submitOrder = async () => {
+  const createOrUpdateOrder = async () => {
     if (cart.length === 0) {
       alert('Please add items to your order');
       return;
@@ -604,20 +1227,80 @@ const NewOrder = ({ selectedTable, onBack }) => {
         delivery_instructions: ''
       };
 
-      await axios.post(`${API}/orders`, orderData);
-      
-      // Reset form
-      setCart([]);
-      setCustomerInfo({ name: '', phone: '', address: '' });
-      setTip(0);
-      
-      alert('Order placed successfully!');
-      onBack();
+      const response = await axios.post(`${API}/orders`, orderData);
+      setCurrentOrder(response.data);
+      return response.data;
     } catch (error) {
-      console.error('Error placing order:', error);
-      alert('Error placing order. Please try again.');
+      console.error('Error creating order:', error);
+      alert('Error creating order. Please try again.');
+      return null;
     }
   };
+
+  const sendToKitchen = async () => {
+    let order = currentOrder;
+    
+    if (!order) {
+      order = await createOrUpdateOrder();
+      if (!order) return;
+    }
+
+    try {
+      await axios.post(`${API}/orders/${order.id}/send`);
+      alert('Order sent to kitchen successfully!');
+      onBack();
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Error sending order to kitchen');
+    }
+  };
+
+  const initiateCheckout = async () => {
+    let order = currentOrder;
+    
+    if (!order) {
+      order = await createOrUpdateOrder();
+      if (!order) return;
+    }
+
+    setShowPaymentModal(true);
+  };
+
+  const printReceipt = () => {
+    // In a real implementation, this would interface with a receipt printer
+    const receiptData = {
+      order: currentOrder || { items: cart, ...calculateTotal() },
+      customer: customerInfo,
+      timestamp: new Date().toLocaleString()
+    };
+    
+    console.log('Printing receipt:', receiptData);
+    alert('Receipt sent to printer');
+  };
+
+  const handlePinSuccess = (user) => {
+    setIsAuthorized(true);
+    setShowPinModal(false);
+  };
+
+  if (!isAuthorized) {
+    return (
+      <>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Authorization Required</h2>
+            <p className="text-gray-600 mb-4">Please enter your PIN to start a new order</p>
+          </div>
+        </div>
+        
+        <PinVerificationModal
+          isOpen={showPinModal}
+          onClose={onBack}
+          onSuccess={handlePinSuccess}
+          title="Enter PIN to Start Order"
+        />
+      </>
+    );
+  }
 
   const filteredItems = selectedCategory === 'all' 
     ? menuItems 
@@ -638,7 +1321,8 @@ const NewOrder = ({ selectedTable, onBack }) => {
             <span>Back</span>
           </button>
           <h1 className="text-xl font-bold">
-            New Order {selectedTable && `- Table ${selectedTable.number}`}
+            {editingOrder ? `Edit Order - Table ${editingOrder.number}` : 
+             selectedTable ? `New Order - Table ${selectedTable.number}` : 'New Order'}
           </h1>
           <div className="text-right">
             <div className="text-2xl font-bold text-green-600">${total.toFixed(2)}</div>
@@ -772,7 +1456,7 @@ const NewOrder = ({ selectedTable, onBack }) => {
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">{item.menu_item_name}</h4>
                   <button
-                    onClick={() => removeFromCart(index)}
+                    onClick={() => initiateItemRemoval(index)}
                     className="text-red-600 hover:text-red-800 text-sm"
                   >
                     ×
@@ -839,16 +1523,33 @@ const NewOrder = ({ selectedTable, onBack }) => {
             </div>
           </div>
 
-          <button
-            onClick={submitOrder}
-            className="w-full bg-green-600 text-white py-4 px-4 rounded-lg hover:bg-green-700 text-lg font-semibold"
-          >
-            Place Order
-          </button>
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={initiateCheckout}
+              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 text-lg font-semibold"
+            >
+              Checkout
+            </button>
+            
+            <button
+              onClick={sendToKitchen}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-semibold"
+            >
+              Send to Kitchen
+            </button>
+            
+            <button
+              onClick={printReceipt}
+              className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 font-semibold"
+            >
+              Print Receipt
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Modifier Modal */}
+      {/* Modals */}
       {showModifierModal && selectedMenuItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
@@ -915,6 +1616,22 @@ const NewOrder = ({ selectedTable, onBack }) => {
           </div>
         </div>
       )}
+
+      <PaymentModal
+        isOpen={showPaymentModal}
+        order={currentOrder || { ...calculateTotal(), id: 'temp' }}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentComplete={() => {
+          setShowPaymentModal(false);
+          onBack();
+        }}
+      />
+
+      <ItemRemovalModal
+        isOpen={showRemovalModal}
+        onClose={() => setShowRemovalModal(false)}
+        onRemove={removeFromCart}
+      />
     </div>
   );
 };
@@ -1001,11 +1718,16 @@ const OrderDetailModal = ({ order, onClose }) => {
 const POSInterface = () => {
   const [currentView, setCurrentView] = useState('main');
   const [selectedTable, setSelectedTable] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const { user, logout } = useAuth();
 
-  const handleNewOrder = (table = null) => {
-    setSelectedTable(table);
+  const handleNewOrder = (table = null, action = 'new') => {
+    if (action === 'edit') {
+      setEditingOrder(table);
+    } else {
+      setSelectedTable(table);
+    }
     setCurrentView('new-order');
   };
 
@@ -1016,12 +1738,14 @@ const POSInterface = () => {
   const handleBackToMain = () => {
     setCurrentView('main');
     setSelectedTable(null);
+    setEditingOrder(null);
   };
 
   if (currentView === 'new-order') {
     return (
       <NewOrder 
         selectedTable={selectedTable}
+        editingOrder={editingOrder}
         onBack={handleBackToMain}
       />
     );
@@ -1035,8 +1759,10 @@ const POSInterface = () => {
           <h1 className="text-2xl font-bold text-gray-800">Restaurant POS</h1>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
-              Welcome, {user?.full_name}
+              Welcome, {user?.full_name} ({user?.role})
             </span>
+            {user?.role === 'manager' && <EmployeeStatus />}
+            <ClockInOut />
             <button
               onClick={logout}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
