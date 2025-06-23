@@ -2291,6 +2291,10 @@ const POSInterface = () => {
     setCurrentView('order-history');
   };
 
+  const handleTableManagement = () => {
+    setCurrentView('table-management');
+  };
+
   if (currentView === 'new-order') {
     return (
       <NewOrder 
@@ -2305,6 +2309,32 @@ const POSInterface = () => {
   if (currentView === 'order-history') {
     return (
       <OrderHistory onBack={handleBackToMain} />
+    );
+  }
+
+  if (currentView === 'table-management') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBackToMain}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+              >
+                <span>←</span>
+                <span>Back</span>
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">Table Management</h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <TableManagement onTableSelect={handleTableSelect} />
+        </div>
+      </div>
     );
   }
 
