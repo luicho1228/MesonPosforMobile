@@ -1192,7 +1192,7 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
     return {
       subtotal,
       tax,
-      total: subtotal + tax + tip
+      total: subtotal + tax
     };
   };
 
