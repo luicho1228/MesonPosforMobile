@@ -657,12 +657,22 @@ const OrderHistory = ({ onBack }) => {
 const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     fetchActiveOrders();
     const interval = setInterval(fetchActiveOrders, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [refreshTrigger]);
+
+  // Update current time every minute to refresh timers
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(timeInterval);
+  }, []);
 
   const fetchActiveOrders = async () => {
     try {
