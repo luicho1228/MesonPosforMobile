@@ -122,15 +122,18 @@ backend:
         
   - task: "Menu Management API"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented CRUD operations for menu items with categories, pricing, availability status, and image support"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested all menu management endpoints. Create, read, update, and delete operations are working correctly. Category retrieval is also functioning properly."
         
   - task: "Order Management API"
     implemented: true
