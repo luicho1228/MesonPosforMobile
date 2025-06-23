@@ -1217,18 +1217,25 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
   };
 
   const sendToKitchen = async () => {
+    console.log('Send button clicked, cart:', cart);
+    console.log('Current order:', currentOrder);
+    
     let order = currentOrder;
     
     if (!order) {
+      console.log('Creating new order...');
       order = await createOrUpdateOrder();
       if (!order) return;
     }
 
+    console.log('Sending order to kitchen:', order.id);
     try {
-      await axios.post(`${API}/orders/${order.id}/send`);
+      const response = await axios.post(`${API}/orders/${order.id}/send`);
+      console.log('Order sent response:', response.data);
       alert('Order sent successfully!');
       onBack();
     } catch (error) {
+      console.error('Error sending order:', error);
       alert(error.response?.data?.detail || 'Error sending order');
     }
   };
