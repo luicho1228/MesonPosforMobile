@@ -238,8 +238,7 @@ class User(BaseModel):
     role: UserRole
     full_name: str
     phone: str = ""
-    is_active: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_current_time)
 
 class UserCreate(BaseModel):
     pin: str
