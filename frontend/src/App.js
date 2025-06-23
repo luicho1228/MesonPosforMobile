@@ -322,18 +322,16 @@ const getTimeElapsed = (createdAt) => {
   const now = new Date();
   const created = new Date(createdAt);
   
-  // Debug logging to see what's happening
-  console.log('Now:', now.toISOString());
-  console.log('Created:', created.toISOString());
-  console.log('CreatedAt input:', createdAt);
+  // Ensure we're working with valid dates
+  if (isNaN(created.getTime())) {
+    return "Invalid date";
+  }
   
   const diffMs = Math.abs(now - created);
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
   const diffMonths = Math.floor(diffDays / 30);
-  
-  console.log('Time difference in minutes:', diffMins);
   
   if (diffMins < 1) {
     return "less than 1 min ago";
