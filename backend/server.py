@@ -997,7 +997,7 @@ async def clock_in(user_id: str = Depends(verify_token)):
     
     time_entry = TimeEntry(
         user_id=user_id,
-        clock_in=datetime.utcnow(),
+        clock_in=get_current_time(),
         date=today
     )
     
