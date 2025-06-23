@@ -1238,10 +1238,10 @@ const NewOrder = ({ selectedTable, editingOrder, onBack }) => {
 
     try {
       await axios.post(`${API}/orders/${order.id}/send`);
-      alert('Order sent to kitchen successfully!');
+      alert('Order sent successfully!');
       onBack();
     } catch (error) {
-      alert(error.response?.data?.detail || 'Error sending order to kitchen');
+      alert(error.response?.data?.detail || 'Error sending order');
     }
   };
 
