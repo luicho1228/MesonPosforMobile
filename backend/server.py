@@ -144,8 +144,7 @@ class Customer(BaseModel):
     name: str
     phone: str
     email: str = ""
-    address: str = ""
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_current_time)
 
 class CustomerCreate(BaseModel):
     name: str
