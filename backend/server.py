@@ -812,7 +812,7 @@ async def get_active_orders(user_id: str = Depends(verify_token)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Active orders are not delivered, cancelled, or paid
+    # Active orders include pending (pay later) and processing statuses
     active_statuses = ["pending", "confirmed", "preparing", "ready", "out_for_delivery"]
     
     if user.get("role") == "manager":
