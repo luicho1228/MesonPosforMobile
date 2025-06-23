@@ -780,6 +780,100 @@ async def get_order(order_id: str, user_id: str = Depends(verify_token)):
     
     return Order(**order)
 
+@api_router.put("/orders/{order_id}")
+async def update_order(order_id: str, order_data: OrderCreate, user_id: str = Depends(verify_token)):
+    existing_order = await db.orders.find_one({"id": order_id})
+    if not existing_order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check if user can update this order
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager" and existing_order["created_by"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Process order items and calculate totals
+    processed_items = []
+    subtotal = 0
+    
+    for item_data in order_data.items:
+        menu_item = await db.menu_items.find_one({"id": item_data["menu_item_id"]})
+        if not menu_item:
+            raise HTTPException(status_code=404, detail=f"Menu item not found: {item_data['menu_item_id']}")
+        
+        # Process modifiers
+        modifiers = []
+        modifier_total = 0
+        
+        for modifier_data in item_data.get("modifiers", []):
+            modifier = await db.modifiers.find_one({"id": modifier_data["modifier_id"]})
+            if modifier:
+                modifiers.append(OrderItemModifier(
+                    modifier_id=modifier["id"],
+                    name=modifier["name"],
+                    price=modifier["price"]
+                ))
+                modifier_total += modifier["price"]
+        
+        item_total = (menu_item["price"] + modifier_total) * item_data["quantity"]
+        
+        order_item = OrderItem(
+            menu_item_id=menu_item["id"],
+            menu_item_name=menu_item["name"],
+            quantity=item_data["quantity"],
+            base_price=menu_item["price"],
+            modifiers=modifiers,
+            special_instructions=item_data.get("special_instructions", ""),
+            total_price=item_total
+        )
+        
+        processed_items.append(order_item)
+        subtotal += item_total
+    
+    # Calculate tax and total
+    tax = subtotal * 0.08
+    total = subtotal + tax + order_data.tip
+    
+    # Create customer if provided
+    customer_id = existing_order.get("customer_id")
+    if order_data.customer_phone:
+        customer_data = CustomerCreate(
+            name=order_data.customer_name,
+            phone=order_data.customer_phone,
+            address=order_data.customer_address
+        )
+        customer = await create_customer(customer_data, user_id)
+        customer_id = customer.id
+    
+    # Get table info if dine-in
+    table_number = existing_order.get("table_number")
+    if order_data.table_id:
+        table = await db.tables.find_one({"id": order_data.table_id})
+        if table:
+            table_number = table["number"]
+    
+    # Update the order (keeping same order number and ID)
+    update_data = {
+        "customer_id": customer_id,
+        "customer_name": order_data.customer_name,
+        "customer_phone": order_data.customer_phone,
+        "customer_address": order_data.customer_address,
+        "table_id": order_data.table_id,
+        "table_number": table_number,
+        "items": [item.dict() for item in processed_items],
+        "subtotal": subtotal,
+        "tax": tax,
+        "tip": order_data.tip,
+        "total": total,
+        "order_type": order_data.order_type,
+        "delivery_instructions": order_data.delivery_instructions,
+        "updated_at": datetime.utcnow()
+    }
+    
+    await db.orders.update_one({"id": order_id}, {"$set": update_data})
+    
+    updated_order = await db.orders.find_one({"id": order_id})
+    return Order(**updated_order)
+
 @api_router.delete("/orders/{order_id}")
 async def delete_order(order_id: str, user_id: str = Depends(verify_token)):
     order = await db.orders.find_one({"id": order_id})
