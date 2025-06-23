@@ -1818,14 +1818,6 @@ const POSInterface = () => {
         {/* Table Management */}
         <TableManagement onTableSelect={handleTableSelect} />
       </div>
-
-      {/* Order Detail Modal */}
-      {selectedOrder && (
-        <OrderDetailModal 
-          order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-        />
-      )}
     </div>
   );
 };
