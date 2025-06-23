@@ -321,14 +321,23 @@ const PinVerificationModal = ({ isOpen, onClose, onSuccess, title = "Enter PIN t
 const getTimeElapsed = (createdAt) => {
   const now = new Date();
   const created = new Date(createdAt);
-  const diffMs = now - created;
+  const diffMs = Math.abs(now - created); // Use absolute value to prevent negative
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffMonths = Math.floor(diffDays / 30);
   
-  if (diffHours > 0) {
-    return `${diffHours}h ${diffMins % 60}m`;
+  if (diffMins < 1) {
+    return "less than 1 min ago";
+  } else if (diffMins < 60) {
+    return `${diffMins} min ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  } else if (diffDays < 30) {
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  } else {
+    return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
   }
-  return `${diffMins}m`;
 };
 
 // Helper function to get order age color
