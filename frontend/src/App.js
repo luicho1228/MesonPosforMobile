@@ -2376,13 +2376,17 @@ const POSInterface = () => {
           >
             📋 Order History
           </button>
+          
+          <button
+            onClick={handleTableManagement}
+            className="bg-green-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-green-700 transition-colors shadow-lg"
+          >
+            🏓 Table Management
+          </button>
         </div>
 
         {/* Active Orders */}
         <ActiveOrders onOrderClick={handleOrderClick} refreshTrigger={refreshTrigger} />
-
-        {/* Table Management */}
-        <TableManagement onTableSelect={handleTableSelect} />
       </div>
     </div>
   );
