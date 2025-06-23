@@ -35,6 +35,7 @@ security = HTTPBearer()
 
 # Enums
 class OrderStatus(str, Enum):
+    DRAFT = "draft"  # In cart, not sent yet
     PENDING = "pending"
     CONFIRMED = "confirmed"
     PREPARING = "preparing"
@@ -42,6 +43,7 @@ class OrderStatus(str, Enum):
     OUT_FOR_DELIVERY = "out_for_delivery"
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
+    PAID = "paid"
 
 class OrderType(str, Enum):
     DINE_IN = "dine_in"
@@ -58,11 +60,16 @@ class TableStatus(str, Enum):
     OCCUPIED = "occupied"
     NEEDS_CLEANING = "needs_cleaning"
     RESERVED = "reserved"
+    PROBLEM = "problem"
 
 class PaymentMethod(str, Enum):
     CASH = "cash"
     CARD = "card"
-    ONLINE = "online"
+
+class RemovalReason(str, Enum):
+    WRONG_ITEM = "wrong_item"
+    CUSTOMER_CHANGED_MIND = "customer_changed_mind"
+    OTHER = "other"
 
 # Models
 class ModifierGroup(BaseModel):
@@ -123,6 +130,9 @@ class TableUpdate(BaseModel):
     status: TableStatus
     current_order_id: Optional[str] = None
 
+class TableMoveRequest(BaseModel):
+    new_table_id: str
+
 class Customer(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -151,6 +161,12 @@ class OrderItem(BaseModel):
     special_instructions: str = ""
     total_price: float
 
+class ItemRemoval(BaseModel):
+    reason: RemovalReason
+    notes: str = ""
+    removed_by: str
+    removed_at: datetime = Field(default_factory=datetime.utcnow)
+
 class Order(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     order_number: str
@@ -161,14 +177,17 @@ class Order(BaseModel):
     table_id: Optional[str] = None
     table_number: Optional[int] = None
     items: List[OrderItem]
+    removed_items: List[Dict] = []  # Track removed items with reasons
     subtotal: float
     tax: float
     tip: float = 0.0
     total: float
     order_type: OrderType
-    status: OrderStatus = OrderStatus.PENDING
+    status: OrderStatus = OrderStatus.DRAFT
     payment_method: Optional[PaymentMethod] = None
     payment_status: str = "pending"
+    cash_received: Optional[float] = None
+    change_amount: Optional[float] = None
     created_by: str  # user_id
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -184,6 +203,16 @@ class OrderCreate(BaseModel):
     order_type: OrderType
     tip: float = 0.0
     delivery_instructions: str = ""
+
+class PaymentRequest(BaseModel):
+    payment_method: PaymentMethod
+    cash_received: Optional[float] = None
+    email_receipt: Optional[str] = None
+    print_receipt: bool = True
+
+class ItemRemovalRequest(BaseModel):
+    reason: RemovalReason
+    notes: str = ""
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -201,6 +230,9 @@ class UserCreate(BaseModel):
     phone: str = ""
 
 class UserLogin(BaseModel):
+    pin: str
+
+class PinVerification(BaseModel):
     pin: str
 
 class TimeEntry(BaseModel):
@@ -239,6 +271,14 @@ def hash_pin(pin: str) -> str:
 def verify_pin(pin: str, hashed: str) -> bool:
     return bcrypt.checkpw(pin.encode('utf-8'), hashed.encode('utf-8'))
 
+async def verify_user_pin(pin: str) -> Optional[Dict]:
+    """Verify PIN and return user data"""
+    users = await db.users.find().to_list(1000)
+    for user in users:
+        if verify_pin(pin, user.get('hashed_pin', '')):
+            return user
+    return None
+
 # Routes
 
 # Auth routes
@@ -267,16 +307,7 @@ async def register(user_data: UserCreate):
 
 @api_router.post("/auth/login")
 async def login(login_data: UserLogin):
-    user = await db.users.find_one({"pin": login_data.pin})
-    if not user:
-        # Check if it's a hashed PIN instead
-        users = await db.users.find().to_list(1000)
-        user = None
-        for u in users:
-            if verify_pin(login_data.pin, u.get('hashed_pin', '')):
-                user = u
-                break
-    
+    user = await verify_user_pin(login_data.pin)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid PIN")
     
@@ -286,6 +317,15 @@ async def login(login_data: UserLogin):
     access_token = create_access_token(data={"sub": user['id']})
     user_obj = User(**{k: v for k, v in user.items() if k not in ['hashed_pin', 'password']})
     return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
+
+@api_router.post("/auth/verify-pin")
+async def verify_pin_endpoint(pin_data: PinVerification):
+    user = await verify_user_pin(pin_data.pin)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid PIN")
+    
+    user_obj = User(**{k: v for k, v in user.items() if k not in ['hashed_pin', 'password']})
+    return {"valid": True, "user": user_obj}
 
 @api_router.get("/auth/me")
 async def get_current_user(user_id: str = Depends(verify_token)):
@@ -409,6 +449,43 @@ async def update_table(table_id: str, table_update: TableUpdate, user_id: str = 
     updated_table = await db.tables.find_one({"id": table_id})
     return Table(**updated_table)
 
+@api_router.post("/tables/{table_id}/move")
+async def move_table_order(table_id: str, move_request: TableMoveRequest, user_id: str = Depends(verify_token)):
+    # Get current table
+    current_table = await db.tables.find_one({"id": table_id})
+    if not current_table or not current_table.get("current_order_id"):
+        raise HTTPException(status_code=404, detail="No order found on this table")
+    
+    # Get new table
+    new_table = await db.tables.find_one({"id": move_request.new_table_id})
+    if not new_table:
+        raise HTTPException(status_code=404, detail="New table not found")
+    
+    if new_table.get("status") != "available":
+        raise HTTPException(status_code=400, detail="New table is not available")
+    
+    order_id = current_table["current_order_id"]
+    
+    # Update order with new table
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"table_id": move_request.new_table_id, "table_number": new_table["number"], "updated_at": datetime.utcnow()}}
+    )
+    
+    # Clear current table
+    await db.tables.update_one(
+        {"id": table_id},
+        {"$set": {"status": "available", "current_order_id": None}}
+    )
+    
+    # Occupy new table
+    await db.tables.update_one(
+        {"id": move_request.new_table_id},
+        {"$set": {"status": "occupied", "current_order_id": order_id}}
+    )
+    
+    return {"message": "Order moved successfully"}
+
 @api_router.delete("/tables/{table_id}")
 async def delete_table(table_id: str, user_id: str = Depends(verify_token)):
     result = await db.tables.delete_one({"id": table_id})
@@ -506,11 +583,6 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
         table = await db.tables.find_one({"id": order_data.table_id})
         if table:
             table_number = table["number"]
-            # Update table status to occupied
-            await db.tables.update_one(
-                {"id": order_data.table_id}, 
-                {"$set": {"status": "occupied", "current_order_id": str(uuid.uuid4())}}
-            )
     
     order_obj = Order(
         order_number=order_number,
@@ -527,11 +599,124 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
         total=total,
         order_type=order_data.order_type,
         delivery_instructions=order_data.delivery_instructions,
-        created_by=user_id
+        created_by=user_id,
+        status=OrderStatus.DRAFT  # Start as draft
     )
     
     await db.orders.insert_one(order_obj.dict())
     return order_obj
+
+@api_router.post("/orders/{order_id}/send")
+async def send_order_to_kitchen(order_id: str, user_id: str = Depends(verify_token)):
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order["status"] != "draft":
+        raise HTTPException(status_code=400, detail="Order already sent")
+    
+    # Update order status to pending
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"status": "pending", "updated_at": datetime.utcnow()}}
+    )
+    
+    # If table order, mark table as occupied
+    if order.get("table_id"):
+        await db.tables.update_one(
+            {"id": order["table_id"]},
+            {"$set": {"status": "occupied", "current_order_id": order_id}}
+        )
+    
+    return {"message": "Order sent to kitchen successfully"}
+
+@api_router.post("/orders/{order_id}/pay")
+async def process_payment(order_id: str, payment: PaymentRequest, user_id: str = Depends(verify_token)):
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    update_data = {
+        "payment_method": payment.payment_method,
+        "payment_status": "completed",
+        "status": "paid",
+        "updated_at": datetime.utcnow()
+    }
+    
+    # Handle cash payment
+    if payment.payment_method == "cash" and payment.cash_received:
+        if payment.cash_received < order["total"]:
+            raise HTTPException(status_code=400, detail="Insufficient cash received")
+        
+        change_amount = payment.cash_received - order["total"]
+        update_data["cash_received"] = payment.cash_received
+        update_data["change_amount"] = change_amount
+    
+    await db.orders.update_one({"id": order_id}, {"$set": update_data})
+    
+    # Free table if it's a table order
+    if order.get("table_id"):
+        await db.tables.update_one(
+            {"id": order["table_id"]},
+            {"$set": {"status": "available", "current_order_id": None}}
+        )
+    
+    updated_order = await db.orders.find_one({"id": order_id})
+    return {
+        "message": "Payment processed successfully",
+        "change_amount": update_data.get("change_amount", 0),
+        "order": Order(**updated_order)
+    }
+
+@api_router.delete("/orders/{order_id}/items/{item_index}")
+async def remove_order_item(order_id: str, item_index: int, removal: ItemRemovalRequest, user_id: str = Depends(verify_token)):
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if item_index >= len(order["items"]):
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Get user info for tracking
+    user = await db.users.find_one({"id": user_id})
+    
+    # Store removed item info
+    removed_item = order["items"][item_index].copy()
+    removed_item["removal_info"] = {
+        "reason": removal.reason,
+        "notes": removal.notes,
+        "removed_by": user.get("full_name", "Unknown") if user else "Unknown",
+        "removed_at": datetime.utcnow()
+    }
+    
+    # Add to removed items list
+    removed_items = order.get("removed_items", [])
+    removed_items.append(removed_item)
+    
+    # Remove item from order
+    items = order["items"]
+    items.pop(item_index)
+    
+    # Recalculate totals
+    subtotal = sum(item["total_price"] for item in items)
+    tax = subtotal * 0.08
+    total = subtotal + tax + order.get("tip", 0)
+    
+    await db.orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {
+                "items": items,
+                "removed_items": removed_items,
+                "subtotal": subtotal,
+                "tax": tax,
+                "total": total,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    return {"message": "Item removed successfully"}
 
 @api_router.get("/orders", response_model=List[Order])
 async def get_orders(user_id: str = Depends(verify_token)):
@@ -542,9 +727,9 @@ async def get_orders(user_id: str = Depends(verify_token)):
     
     # Managers see all orders, employees see only their orders
     if user.get("role") == "manager":
-        orders = await db.orders.find().sort("created_at", -1).to_list(1000)
+        orders = await db.orders.find({"status": {"$ne": "draft"}}).sort("created_at", -1).to_list(1000)
     else:
-        orders = await db.orders.find({"created_by": user_id}).sort("created_at", -1).to_list(1000)
+        orders = await db.orders.find({"created_by": user_id, "status": {"$ne": "draft"}}).sort("created_at", -1).to_list(1000)
     
     return [Order(**order) for order in orders]
 
@@ -555,7 +740,7 @@ async def get_active_orders(user_id: str = Depends(verify_token)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Active orders are not delivered or cancelled
+    # Active orders are not delivered, cancelled, or paid
     active_statuses = ["pending", "confirmed", "preparing", "ready", "out_for_delivery"]
     
     if user.get("role") == "manager":
@@ -600,13 +785,6 @@ async def update_order_status(order_id: str, status: Dict[str, str], user_id: st
         {"id": order_id}, 
         {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
     )
-    
-    # If order is completed and has a table, free the table
-    if new_status in ["delivered", "cancelled"] and order.get("table_id"):
-        await db.tables.update_one(
-            {"id": order["table_id"]}, 
-            {"$set": {"status": "needs_cleaning", "current_order_id": None}}
-        )
     
     return {"message": "Order status updated successfully"}
 
@@ -678,6 +856,39 @@ async def clock_out(user_id: str = Depends(verify_token)):
 async def get_time_entries(user_id: str = Depends(verify_token)):
     entries = await db.time_entries.find({"user_id": user_id}).sort("date", -1).to_list(100)
     return [TimeEntry(**entry) for entry in entries]
+
+@api_router.get("/time/active-employees")
+async def get_active_employees(user_id: str = Depends(verify_token)):
+    # Check if user is manager
+    user = await db.users.find_one({"id": user_id})
+    if not user or user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Manager access required")
+    
+    today = datetime.utcnow().date().isoformat()
+    
+    # Get active time entries (clocked in but not out)
+    active_entries = await db.time_entries.find({
+        "date": today,
+        "clock_out": None
+    }).to_list(1000)
+    
+    # Get user details for each active entry
+    active_employees = []
+    for entry in active_entries:
+        user_data = await db.users.find_one({"id": entry["user_id"]})
+        if user_data:
+            clock_in_time = entry["clock_in"]
+            now = datetime.utcnow()
+            active_hours = (now - clock_in_time).total_seconds() / 3600
+            
+            active_employees.append({
+                "user_id": entry["user_id"],
+                "full_name": user_data.get("full_name", "Unknown"),
+                "clock_in_time": clock_in_time,
+                "active_hours": round(active_hours, 2)
+            })
+    
+    return {"active_employees": active_employees}
 
 # Include the router in the main app
 app.include_router(api_router)
