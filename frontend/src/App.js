@@ -1661,11 +1661,21 @@ const POSInterface = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const { user, logout } = useAuth();
 
-  const handleNewOrder = (table = null, action = 'new') => {
-    if (action === 'edit') {
-      setEditingOrder(table);
-    } else {
+  const handleNewOrder = (table = null) => {
+    setSelectedTable(table);
+    setEditingOrder(null);
+    setCurrentView('new-order');
+  };
+
+  const handleTableSelect = (table) => {
+    if (table.status === 'available') {
+      // Start new order for available table
       setSelectedTable(table);
+      setEditingOrder(null);
+    } else if (table.status === 'occupied') {
+      // Edit existing order for occupied table
+      setEditingOrder(table);
+      setSelectedTable(null);
     }
     setCurrentView('new-order');
   };
