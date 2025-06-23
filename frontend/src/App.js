@@ -750,6 +750,10 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                   <p className="text-sm text-gray-600">
                     {new Date(order.created_at).toLocaleTimeString()}
                   </p>
+                  {/* Order Timer */}
+                  <p className="text-xs font-semibold text-orange-600">
+                    ⏱️ {getTimeElapsed(order.created_at)} ago
+                  </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(order.status)}`}></span>
