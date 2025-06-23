@@ -1056,7 +1056,7 @@ async def get_active_employees(user_id: str = Depends(verify_token)):
     if not user or user.get("role") != "manager":
         raise HTTPException(status_code=403, detail="Manager access required")
     
-    today = datetime.utcnow().date().isoformat()
+    today = get_current_time().date().isoformat()
     
     # Get active time entries (clocked in but not out)
     active_entries = await db.time_entries.find({
