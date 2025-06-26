@@ -236,7 +236,6 @@ class ItemRemovalRequest(BaseModel):
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    pin: str
     role: UserRole
     full_name: str
     phone: str = ""
