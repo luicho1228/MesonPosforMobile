@@ -605,8 +605,8 @@ const OrderHistory = ({ onBack }) => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm">
-                            <div>{new Date(order.created_at).toLocaleDateString()}</div>
-                            <div className="text-gray-500">{new Date(order.created_at).toLocaleTimeString()}</div>
+                            <div>{formatLocalDate(order.created_at)}</div>
+                            <div className="text-gray-500">{formatLocalTime(order.created_at)}</div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
