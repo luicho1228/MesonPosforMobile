@@ -317,10 +317,10 @@ const PinVerificationModal = ({ isOpen, onClose, onSuccess, title = "Enter PIN t
   );
 };
 
-// Helper function to properly parse backend timestamps (EDT) and convert to local timezone
+// Helper function to properly parse backend timestamps (UTC) and convert to local timezone
 const parseBackendTimestamp = (timestamp) => {
-  // Simple approach: just parse the timestamp directly
-  // The backend should be sending proper timezone-aware timestamps
+  // Backend now sends proper UTC timestamps with timezone info (+00:00)
+  // JavaScript Date constructor will properly handle these and convert to local timezone
   return new Date(timestamp);
 };
 
