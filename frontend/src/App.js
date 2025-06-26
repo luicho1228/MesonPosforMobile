@@ -422,14 +422,14 @@ const OrderHistory = ({ onBack }) => {
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     if (dateFilter === 'today') {
-      filtered = filtered.filter(order => new Date(order.created_at) >= today);
+      filtered = filtered.filter(order => parseBackendTimestamp(order.created_at) >= today);
     } else if (dateFilter === 'yesterday') {
       filtered = filtered.filter(order => {
-        const orderDate = new Date(order.created_at);
+        const orderDate = parseBackendTimestamp(order.created_at);
         return orderDate >= yesterday && orderDate < today;
       });
     } else if (dateFilter === 'week') {
-      filtered = filtered.filter(order => new Date(order.created_at) >= weekAgo);
+      filtered = filtered.filter(order => parseBackendTimestamp(order.created_at) >= weekAgo);
     }
 
     // Filter by search term
