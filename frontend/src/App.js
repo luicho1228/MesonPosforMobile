@@ -820,7 +820,7 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                 <div>
                   <h4 className="font-bold text-lg">{order.order_number}</h4>
                   <p className="text-sm text-gray-600">
-                    {new Date(order.created_at).toLocaleTimeString()}
+                    {formatLocalTime(order.created_at)}
                   </p>
                   {/* Real-time Order Timer */}
                   <p className="text-xs font-semibold text-orange-600">
