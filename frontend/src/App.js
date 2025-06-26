@@ -375,7 +375,7 @@ const getTimeElapsed = (createdAt) => {
 // Helper function to get order age color
 const getOrderAgeColor = (createdAt) => {
   const now = new Date();
-  const orderTime = new Date(createdAt);
+  const orderTime = parseBackendTimestamp(createdAt);
   const minutesAgo = Math.floor((now - orderTime) / (1000 * 60));
   
   if (minutesAgo >= 45) return 'bg-red-100 border-red-500 text-red-800';
