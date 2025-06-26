@@ -19,8 +19,9 @@ import pytz
 EDT = pytz.timezone('US/Eastern')
 
 def get_current_time():
-    """Get current time in EDT timezone"""
-    return datetime.now(EDT)
+    """Get current time in EDT timezone with proper ISO format"""
+    edt_time = datetime.now(EDT)
+    return edt_time
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
