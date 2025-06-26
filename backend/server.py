@@ -6,6 +6,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
+import json
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -22,6 +23,13 @@ def get_current_time():
     """Get current time in EDT timezone with proper ISO format"""
     edt_time = datetime.now(EDT)
     return edt_time
+
+# Custom JSON encoder for timezone-aware datetime objects
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
