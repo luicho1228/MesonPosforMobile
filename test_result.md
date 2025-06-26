@@ -288,9 +288,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Order Management API"
-    - "Payment Processing Fix"
-    - "Order History Display Fix"
+    - "Frontend Timezone Handling"
+    - "Order Timestamp Display Fix"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
