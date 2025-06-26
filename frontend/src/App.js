@@ -441,7 +441,7 @@ const OrderHistory = ({ onBack }) => {
       );
     }
 
-    return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return filtered.sort((a, b) => parseBackendTimestamp(b.created_at) - parseBackendTimestamp(a.created_at));
   };
 
   const getStatusColor = (status) => {
