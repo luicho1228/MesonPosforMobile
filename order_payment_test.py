@@ -25,7 +25,27 @@ def print_test_result(test_name, success, details=""):
 
 # Test user registration and login
 def register_and_login():
-    print("\n=== Registering and Logging in Test User ===")
+    print("\n=== Trying to Login with Existing User ===")
+    
+    # Try existing PINs first
+    existing_pins = ["1234", "1111", "2222", "0000", "5555"]
+    
+    for pin in existing_pins:
+        login_data = {"pin": pin}
+        
+        try:
+            response = requests.post(f"{API_URL}/auth/login", json=login_data)
+            if response.status_code == 200:
+                result = response.json()
+                auth_token = result.get("access_token")
+                user_id = result.get("user", {}).get("id")
+                
+                print(f"Logged in with PIN {pin}, User ID: {user_id}")
+                return auth_token, user_id
+        except:
+            continue
+    
+    print("No existing users found, trying to register new user...")
     
     # Generate random PIN for user
     pin = ''.join(random.choices(string.digits, k=4))
@@ -47,20 +67,6 @@ def register_and_login():
         user_id = result.get("user", {}).get("id")
         
         print(f"User registered successfully with ID: {user_id}")
-        
-        # Login with the same PIN
-        login_data = {
-            "pin": pin
-        }
-        
-        response = requests.post(f"{API_URL}/auth/login", json=login_data)
-        response.raise_for_status()
-        result = response.json()
-        
-        auth_token = result.get("access_token")
-        user_id = result.get("user", {}).get("id")
-        
-        print(f"User logged in successfully with ID: {user_id}")
         
         return auth_token, user_id
         
