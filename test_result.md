@@ -143,11 +143,11 @@ backend:
         
   - task: "Order Management API"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -155,6 +155,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Successfully tested order creation, retrieval, and status updates. Tax calculation, tip handling, and customer information storage are working correctly. Order status updates are properly tracked."
+      - working: false
+        agent: "user"
+        comment: "User reported that paid orders are not showing up in order history. Multiple orders were paid today (cash and card) but only one appeared in payment/order history section. Orders should appear in history immediately after payment."
         
   - task: "Customer Management API"
     implemented: true
