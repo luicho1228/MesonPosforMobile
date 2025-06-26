@@ -285,8 +285,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Menu Management API"
-    - "Modifier Display Fix"
+    - "Order Management API"
+    - "Payment Processing Fix"
+    - "Order History Display Fix"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
