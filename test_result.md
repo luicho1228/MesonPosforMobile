@@ -279,12 +279,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication System"
     - "Menu Management API"
-    - "Order Management API"
-    - "Customer Management API"
-    - "Time Tracking API"
-    - "Dashboard Analytics API"
+    - "Modifier Display Fix"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
