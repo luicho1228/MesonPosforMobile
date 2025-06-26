@@ -317,10 +317,36 @@ const PinVerificationModal = ({ isOpen, onClose, onSuccess, title = "Enter PIN t
   );
 };
 
+// Helper function to properly parse backend timestamps (EDT) and convert to local timezone
+const parseBackendTimestamp = (timestamp) => {
+  // Backend sends timestamps in EDT timezone
+  // Convert to local timezone for display
+  const date = new Date(timestamp);
+  return date;
+};
+
+// Helper function to format date for display
+const formatLocalDate = (timestamp) => {
+  const date = parseBackendTimestamp(timestamp);
+  return date.toLocaleDateString();
+};
+
+// Helper function to format time for display
+const formatLocalTime = (timestamp) => {
+  const date = parseBackendTimestamp(timestamp);
+  return date.toLocaleTimeString();
+};
+
+// Helper function to format full datetime for display
+const formatLocalDateTime = (timestamp) => {
+  const date = parseBackendTimestamp(timestamp);
+  return date.toLocaleString();
+};
+
 // Helper function to calculate time elapsed
 const getTimeElapsed = (createdAt) => {
   const now = new Date();
-  const created = new Date(createdAt);
+  const created = parseBackendTimestamp(createdAt);
   
   // Ensure we're working with valid dates
   if (isNaN(created.getTime())) {
@@ -334,7 +360,7 @@ const getTimeElapsed = (createdAt) => {
   const diffMonths = Math.floor(diffDays / 30);
   
   if (diffMins < 1) {
-    return "less than 1 min ago";
+    return "just now";
   } else if (diffMins < 60) {
     return `${diffMins} min ago`;
   } else if (diffHours < 24) {
