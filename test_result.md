@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build a POS system for restaurant with menu manager, order list system, clock in system, delivery management, customer data storage system, payment processing, receipt functionality, cash register, user roles, and analytics dashboard. CURRENT ISSUE: Modifiers for menu items are not showing up in the menu section of the frontend."
+user_problem_statement: "Build a POS system for restaurant with menu manager, order list system, clock in system, delivery management, customer data storage system, payment processing, receipt functionality, cash register, user roles, and analytics dashboard. PREVIOUS ISSUE FIXED: Modifiers for menu items are not showing up in the menu section of the frontend. NEW ISSUE: Paid orders are not showing up in order history - user paid multiple orders today but only one appeared in payment/order history section."
 
 backend:
   - task: "Authentication System"
