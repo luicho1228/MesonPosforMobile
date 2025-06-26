@@ -1,3 +1,4 @@
+from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -20,18 +21,21 @@ import pytz
 EDT = pytz.timezone('US/Eastern')
 
 def get_current_time():
-    """Get current time in EDT timezone with proper ISO format"""
+    """Get current time in EDT timezone, convert to UTC for storage"""
     edt_time = datetime.now(EDT)
     # Convert to UTC for consistent storage
     utc_time = edt_time.astimezone(pytz.UTC)
     return utc_time
 
-# Custom JSON encoder for timezone-aware datetime objects
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return super().default(obj)
+# Custom serializer for proper datetime handling
+def serialize_datetime(dt):
+    """Serialize datetime to ISO format with timezone info"""
+    if isinstance(dt, datetime):
+        if dt.tzinfo is None:
+            # If timezone naive, assume UTC
+            dt = dt.replace(tzinfo=pytz.UTC)
+        return dt.isoformat()
+    return dt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
