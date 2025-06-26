@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build a POS system for restaurant with menu manager, order list system, clock in system, delivery management, customer data storage system, payment processing, receipt functionality, cash register, user roles, and analytics dashboard."
+user_problem_statement: "Build a POS system for restaurant with menu manager, order list system, clock in system, delivery management, customer data storage system, payment processing, receipt functionality, cash register, user roles, and analytics dashboard. CURRENT ISSUE: Modifiers for menu items are not showing up in the menu section of the frontend."
 
 backend:
   - task: "Authentication System"
