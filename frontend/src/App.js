@@ -2218,7 +2218,7 @@ const OrderDetailModal = ({ order, onClose }) => {
             <h4 className="font-medium text-gray-700 mb-2">Order Details</h4>
             <p><strong>Type:</strong> {order.order_type.replace('_', ' ').toUpperCase()}</p>
             <p><strong>Status:</strong> {order.status.replace('_', ' ').toUpperCase()}</p>
-            <p><strong>Time:</strong> {new Date(order.created_at).toLocaleString()}</p>
+            <p><strong>Time:</strong> {formatLocalDateTime(order.created_at)}</p>
             {order.table_number && <p><strong>Table:</strong> {order.table_number}</p>}
           </div>
 
