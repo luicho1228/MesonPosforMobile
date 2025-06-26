@@ -126,7 +126,7 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -134,6 +134,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Successfully tested all menu management endpoints. Create, read, update, and delete operations are working correctly. Category retrieval is also functioning properly."
+      - working: false
+        agent: "main"
+        comment: "CRITICAL FIX: Found that MenuItem model was missing modifier_groups field, causing modifiers to not be returned in API responses. Fixed by adding modifier_groups: List[str] = [] to MenuItem model. This was causing the frontend to not display modifiers for menu items."
         
   - task: "Order Management API"
     implemented: true
