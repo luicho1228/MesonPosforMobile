@@ -208,6 +208,7 @@ class Order(BaseModel):
     payment_status: str = "pending"
     cash_received: Optional[float] = None
     change_amount: Optional[float] = None
+    created_by: str = ""
     created_at: datetime = Field(default_factory=get_current_time)
     updated_at: datetime = Field(default_factory=get_current_time)
     delivery_instructions: str = ""
