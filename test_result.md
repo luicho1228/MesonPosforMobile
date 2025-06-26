@@ -291,8 +291,7 @@ test_plan:
     - "Order Management API"
     - "Payment Processing Fix"
     - "Order History Display Fix"
-  stuck_tasks:
-    - "Order Management API - Payment Processing"
+  stuck_tasks: []
   test_all: true
   test_priority: "high_first"
 
