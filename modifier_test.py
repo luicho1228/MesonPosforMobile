@@ -27,33 +27,30 @@ def print_test_result(test_name, success, details=""):
 def test_authentication():
     print("\n=== Testing Authentication ===")
     
-    # Generate random PIN for testing
-    pin = ''.join(random.choices(string.digits, k=4))
+    # Use a default PIN for testing (assuming this user exists)
+    pin = "1234"
     
-    # Test user registration
-    print("\nTesting user registration...")
-    register_data = {
-        "pin": pin,
-        "role": "manager",
-        "full_name": "Test Manager",
-        "phone": "1234567890"
+    # Test user login
+    print("\nTesting user login...")
+    login_data = {
+        "pin": pin
     }
     
     try:
-        response = requests.post(f"{API_URL}/auth/register", json=register_data)
+        response = requests.post(f"{API_URL}/auth/login", json=login_data)
         response.raise_for_status()
         result = response.json()
         
         auth_token = result.get("access_token")
         user_id = result.get("user", {}).get("id")
         
-        print(f"User registered successfully with ID: {user_id}")
+        print(f"User logged in successfully with ID: {user_id}")
         print(f"Auth token received: {auth_token[:10]}...")
         
         if not auth_token or not user_id:
-            return None, None, print_test_result("Authentication - Registration", False, "Failed to get auth token or user ID")
+            return None, None, print_test_result("Authentication - Login", False, "Failed to get auth token or user ID")
             
-        return auth_token, user_id, print_test_result("Authentication", True, "Registration successful")
+        return auth_token, user_id, print_test_result("Authentication", True, "Login successful")
         
     except requests.exceptions.RequestException as e:
         error_msg = f"Authentication test failed: {str(e)}"
