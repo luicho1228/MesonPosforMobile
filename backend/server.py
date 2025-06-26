@@ -48,6 +48,26 @@ db = client[os.environ['DB_NAME']]
 # Create the main app without a prefix
 app = FastAPI()
 
+# Custom JSON response for proper datetime serialization
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+
+class CustomJSONResponse(JSONResponse):
+    def render(self, content: Any) -> bytes:
+        # Custom serialization for datetime objects
+        def custom_serializer(obj):
+            if isinstance(obj, datetime):
+                if obj.tzinfo is None:
+                    # If timezone naive, assume UTC
+                    obj = obj.replace(tzinfo=pytz.UTC)
+                return obj.isoformat()
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+        
+        return json.dumps(content, default=custom_serializer, ensure_ascii=False, allow_nan=False, indent=None, separators=(",", ":")).encode("utf-8")
+
+# Set default response class
+app.default_response_class = CustomJSONResponse
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
