@@ -22,7 +22,9 @@ EDT = pytz.timezone('US/Eastern')
 def get_current_time():
     """Get current time in EDT timezone with proper ISO format"""
     edt_time = datetime.now(EDT)
-    return edt_time
+    # Convert to UTC for consistent storage
+    utc_time = edt_time.astimezone(pytz.UTC)
+    return utc_time
 
 # Custom JSON encoder for timezone-aware datetime objects
 class DateTimeEncoder(json.JSONEncoder):
