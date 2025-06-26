@@ -223,6 +223,11 @@ class Order(BaseModel):
     delivery_instructions: str = ""
     estimated_time: Optional[datetime] = None
 
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
 class OrderCreate(BaseModel):
     customer_name: str = ""
     customer_phone: str = ""
