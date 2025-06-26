@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build a POS system for restaurant with menu manager, order list system, clock in system, delivery management, customer data storage system, payment processing, receipt functionality, cash register, user roles, and analytics dashboard. PREVIOUS ISSUE FIXED: Modifiers for menu items are not showing up in the menu section of the frontend. NEW ISSUE: Paid orders are not showing up in order history - user paid multiple orders today but only one appeared in payment/order history section."
+user_problem_statement: "Build a POS system for restaurant with menu manager, order list system, clock in system, delivery management, customer data storage system, payment processing, receipt functionality, cash register, user roles, and analytics dashboard. FIXED ISSUES: 1) Modifiers for menu items not showing up in menu section. 2) Paid orders not showing up in order history due to timezone filtering. NEW ISSUE: Order timestamps display incorrectly - orders show wrong creation times and incorrect 'time ago' calculations due to timezone handling issues between backend (EDT) and frontend (local timezone)."
 
 backend:
   - task: "Authentication System"
