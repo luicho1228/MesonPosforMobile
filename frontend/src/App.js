@@ -319,29 +319,40 @@ const PinVerificationModal = ({ isOpen, onClose, onSuccess, title = "Enter PIN t
 
 // Helper function to properly parse backend timestamps (EDT) and convert to local timezone
 const parseBackendTimestamp = (timestamp) => {
-  // Backend sends timestamps in EDT timezone but without timezone info
-  // We need to interpret them as EDT and convert to local timezone
-  const backendTime = new Date(timestamp);
+  // Backend stores timestamps in EDT but without timezone info
+  // We need to create a proper EDT date and let the browser convert to local time
   
-  // The backend timestamp is in EDT (UTC-4 in summer, UTC-5 in winter)
-  // We need to adjust for this to get the correct local time
-  // Since it's currently EDT (summer), subtract 4 hours to get UTC, then let JS convert to local
+  // Parse the timestamp as a date (browser will assume local timezone)
+  const parsedDate = new Date(timestamp);
   
-  // However, JavaScript Date constructor assumes the timestamp is in local timezone
-  // when no timezone is specified. Since backend stores in EDT, we need to:
-  // 1. Parse the timestamp as if it were in EDT
-  // 2. Convert to the user's local timezone
+  // The backend actually stores EDT time, but the browser assumes it's local time
+  // We need to adjust for this difference
   
-  // Create a date assuming the timestamp is in EDT
-  // EDT is UTC-4, so we add 4 hours to convert to UTC, then JS will convert to local
-  const edtOffset = -4 * 60; // EDT is UTC-4 (in minutes)
-  const localOffset = backendTime.getTimezoneOffset(); // User's timezone offset from UTC
-  const totalOffset = edtOffset - localOffset; // Difference between EDT and user's timezone
+  // Get the current timezone offset for both EDT and local
+  const now = new Date();
+  const edtTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(now);
   
-  // Adjust the time by the offset difference
-  const adjustedTime = new Date(backendTime.getTime() + (totalOffset * 60 * 1000));
+  // Create EDT date string and parse it
+  const edtDateString = `${edtTime.find(p => p.type === 'year').value}-${edtTime.find(p => p.type === 'month').value}-${edtTime.find(p => p.type === 'day').value}T${edtTime.find(p => p.type === 'hour').value}:${edtTime.find(p => p.type === 'minute').value}:${edtTime.find(p => p.type === 'second').value}`;
+  const edtDate = new Date(edtDateString);
+  const localDate = new Date();
   
-  return adjustedTime;
+  // Calculate the offset between EDT and local time
+  const offsetDiff = localDate.getTime() - edtDate.getTime();
+  
+  // Apply this offset to our parsed timestamp
+  const correctedTime = new Date(parsedDate.getTime() + offsetDiff);
+  
+  return correctedTime;
 };
 
 // Helper function to format date for display
