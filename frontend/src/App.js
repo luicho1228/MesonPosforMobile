@@ -2061,8 +2061,10 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
-    address: ''
+    address: '',
+    apartment: ''
   });
+  const [showCustomerInfo, setShowCustomerInfo] = useState(false);
   const [orderType, setOrderType] = useState(selectedTable ? 'dine_in' : 'takeout');
   const [tip, setTip] = useState(0);
   const [showModifierModal, setShowModifierModal] = useState(false);
