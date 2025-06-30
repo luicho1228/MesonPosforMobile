@@ -180,13 +180,27 @@ class Customer(BaseModel):
     name: str
     phone: str
     email: str = ""
+    address: str = ""
+    notes: str = ""  # Additional notes about customer
+    total_orders: int = 0  # Total number of orders
+    total_spent: float = 0.0  # Total amount spent
+    last_order_date: Optional[datetime] = None  # Date of last order
     created_at: datetime = Field(default_factory=get_current_time)
+    updated_at: datetime = Field(default_factory=get_current_time)
 
 class CustomerCreate(BaseModel):
     name: str
     phone: str
     email: str = ""
     address: str = ""
+    notes: str = ""
+
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    notes: Optional[str] = None
 
 class OrderItemModifier(BaseModel):
     modifier_id: str
