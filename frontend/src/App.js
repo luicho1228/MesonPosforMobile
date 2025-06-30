@@ -750,6 +750,7 @@ const CustomerEditModal = ({ customer, onSave, onClose }) => {
     phone: customer.phone || '',
     email: customer.email || '',
     address: customer.address || '',
+    apartment: customer.apartment || '',
     notes: customer.notes || ''
   });
 
