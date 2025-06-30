@@ -815,14 +815,27 @@ const CustomerEditModal = ({ customer, onSave, onClose }) => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-            <textarea
-              value={formData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              rows="2"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+              <textarea
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                rows="2"
+                placeholder="Street address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Apartment/Unit</label>
+              <input
+                type="text"
+                value={formData.apartment}
+                onChange={(e) => handleChange('apartment', e.target.value)}
+                placeholder="Apt, Suite, Unit"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
           </div>
 
           <div>
