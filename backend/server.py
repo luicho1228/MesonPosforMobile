@@ -833,6 +833,7 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
         total=total,
         order_type=order_data.order_type,
         delivery_instructions=order_data.delivery_instructions,
+        order_notes=order_data.order_notes,
         created_by=user_id,
         status=OrderStatus.DRAFT  # Start as draft
     )
