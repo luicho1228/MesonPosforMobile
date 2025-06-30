@@ -1441,18 +1441,6 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
                 <div className="flex space-x-2">
-                  {/* Cancel button for non-paid orders */}
-                  {order.status !== 'paid' && order.status !== 'delivered' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCancelOrder(order.id);
-                      }}
-                      className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  )}
                   {/* Only show status buttons for delivery orders and not pending */}
                   {order.order_type === 'delivery' && order.status !== 'pending' && getNextStatus(order.status) && (
                     <button
