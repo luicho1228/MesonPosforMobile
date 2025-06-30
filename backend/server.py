@@ -636,7 +636,7 @@ async def create_customer(customer: CustomerCreate, user_id: str = Depends(verif
 
 @api_router.get("/customers", response_model=List[Customer])
 async def get_customers(user_id: str = Depends(verify_token)):
-    customers = await db.customers.find().to_list(1000)
+    customers = await db.customers.find().sort("created_at", -1).to_list(1000)
     return [Customer(**customer) for customer in customers]
 
 @api_router.get("/customers/{phone}")
@@ -645,6 +645,90 @@ async def get_customer_by_phone(phone: str, user_id: str = Depends(verify_token)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     return Customer(**customer)
+
+@api_router.put("/customers/{customer_id}", response_model=Customer)
+async def update_customer(customer_id: str, customer_update: CustomerUpdate, user_id: str = Depends(verify_token)):
+    existing_customer = await db.customers.find_one({"id": customer_id})
+    if not existing_customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Update only provided fields
+    update_data = {k: v for k, v in customer_update.dict().items() if v is not None}
+    update_data["updated_at"] = get_current_time()
+    
+    await db.customers.update_one({"id": customer_id}, {"$set": update_data})
+    
+    updated_customer = await db.customers.find_one({"id": customer_id})
+    return Customer(**updated_customer)
+
+@api_router.delete("/customers/{customer_id}")
+async def delete_customer(customer_id: str, user_id: str = Depends(verify_token)):
+    result = await db.customers.delete_one({"id": customer_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return {"message": "Customer deleted successfully"}
+
+@api_router.get("/customers/{customer_id}/orders", response_model=List[Order])
+async def get_customer_orders(customer_id: str, user_id: str = Depends(verify_token)):
+    # Get customer to verify they exist
+    customer = await db.customers.find_one({"id": customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Get all orders for this customer
+    orders = await db.orders.find({
+        "$or": [
+            {"customer_id": customer_id},
+            {"customer_phone": customer["phone"]}
+        ],
+        "status": {"$ne": "draft"}
+    }).sort("created_at", -1).to_list(1000)
+    
+    return [Order(**order) for order in orders]
+
+@api_router.get("/customers/{customer_id}/stats")
+async def get_customer_stats(customer_id: str, user_id: str = Depends(verify_token)):
+    # Get customer to verify they exist
+    customer = await db.customers.find_one({"id": customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Get all paid orders for this customer
+    orders = await db.orders.find({
+        "$or": [
+            {"customer_id": customer_id},
+            {"customer_phone": customer["phone"]}
+        ],
+        "status": "paid"
+    }).to_list(1000)
+    
+    total_orders = len(orders)
+    total_spent = sum(order.get("total", 0) for order in orders)
+    
+    # Find last order date
+    last_order_date = None
+    if orders:
+        last_order = max(orders, key=lambda o: o.get("created_at", datetime.min))
+        last_order_date = last_order.get("created_at")
+    
+    # Calculate days since last order
+    days_since_last_order = None
+    if last_order_date:
+        if isinstance(last_order_date, str):
+            last_order_date = datetime.fromisoformat(last_order_date.replace('Z', '+00:00'))
+        elif isinstance(last_order_date, datetime) and last_order_date.tzinfo is None:
+            last_order_date = last_order_date.replace(tzinfo=pytz.UTC)
+        
+        current_time = get_current_time()
+        days_since_last_order = (current_time - last_order_date).days
+    
+    return {
+        "total_orders": total_orders,
+        "total_spent": total_spent,
+        "last_order_date": last_order_date,
+        "days_since_last_order": days_since_last_order,
+        "average_order_value": total_spent / total_orders if total_orders > 0 else 0
+    }
 
 # Order routes
 @api_router.post("/orders", response_model=Order)
