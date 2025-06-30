@@ -2425,6 +2425,13 @@ const POSInterface = () => {
           >
             🏓 Table Management
           </button>
+          
+          <button
+            onClick={() => setCurrentView('customerManagement')}
+            className="bg-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg"
+          >
+            👥 Customer Management
+          </button>
         </div>
 
         {/* Active Orders */}
