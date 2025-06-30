@@ -219,42 +219,6 @@ backend:
         agent: "main"
         comment: "COMPREHENSIVE CUSTOMER MANAGEMENT IMPLEMENTED: Enhanced customer model with address, email, notes, total orders, total spent, last order date. Added full CRUD API endpoints including customer stats and order history retrieval. Created Customer Management UI with search, stats, detailed customer modals, and edit functionality. Added auto-fill feature for delivery orders - when phone number is entered (10+ digits), system automatically looks up customer and populates name and address. Customer statistics automatically update when orders are paid. Added Customer Management tab next to Table Management with purple theme."
 
-  - task: "Order Notes and Comments System"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py, /app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "COMPLETE ORDER NOTES SYSTEM: Added order_notes field to Order and OrderCreate models in backend. Added textarea input in NewOrder component for order comments. Notes appear in order detail modals and are included in order data for receipts. Fully tested and working."
-
-  - task: "Cancel Active Orders Feature"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py, /app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "CANCEL ORDERS FUNCTIONALITY: Added POST /api/orders/{order_id}/cancel endpoint that prevents canceling paid/delivered orders and frees up tables. Added red Cancel button to active orders section for all non-paid/non-delivered orders. Includes confirmation dialog and refreshes order list. Fully tested and working."
-
-  - task: "Enhanced Customer Management Features"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py, /app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "ENHANCED CUSTOMER FEATURES: Added 'Add Customer' purple button in delivery order section. Added automatic customer creation - when customer info is provided for first-time customers, they are automatically added to database with auto-generated notes. Enhanced customer modal integration in NewOrder component. Automatic customer lookup and creation working seamlessly."
-
 frontend:
   - task: "Authentication UI"
     implemented: true
