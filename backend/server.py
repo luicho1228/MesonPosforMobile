@@ -886,6 +886,38 @@ async def process_payment(order_id: str, payment: PaymentRequest, user_id: str =
     
     await db.orders.update_one({"id": order_id}, {"$set": update_data})
     
+    # Update customer statistics if customer exists
+    if order.get("customer_id") or order.get("customer_phone"):
+        customer = None
+        if order.get("customer_id"):
+            customer = await db.customers.find_one({"id": order["customer_id"]})
+        elif order.get("customer_phone"):
+            customer = await db.customers.find_one({"phone": order["customer_phone"]})
+        
+        if customer:
+            # Calculate new statistics
+            customer_orders = await db.orders.find({
+                "$or": [
+                    {"customer_id": customer["id"]},
+                    {"customer_phone": customer["phone"]}
+                ],
+                "status": "paid"
+            }).to_list(1000)
+            
+            total_orders = len(customer_orders)
+            total_spent = sum(order_item.get("total", 0) for order_item in customer_orders)
+            
+            # Update customer record
+            await db.customers.update_one(
+                {"id": customer["id"]},
+                {"$set": {
+                    "total_orders": total_orders,
+                    "total_spent": total_spent,
+                    "last_order_date": get_current_time(),
+                    "updated_at": get_current_time()
+                }}
+            )
+    
     # Free table if it's a table order
     if order.get("table_id"):
         await db.tables.update_one(
