@@ -2052,6 +2052,32 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
   const [showRemovalModal, setShowRemovalModal] = useState(false);
   const [removalItemIndex, setRemovalItemIndex] = useState(null);
 
+  // Auto-fill customer info when phone number is entered
+  const handlePhoneChange = async (phone) => {
+    setCustomerInfo(prev => ({ ...prev, phone }));
+    
+    // If phone number is complete (at least 10 digits), try to lookup customer
+    if (phone.length >= 10) {
+      try {
+        const response = await axios.get(`${API}/customers/${phone}`);
+        const customer = response.data;
+        
+        // Auto-fill name and address if found
+        setCustomerInfo(prev => ({
+          ...prev,
+          name: customer.name || prev.name,
+          address: customer.address || prev.address
+        }));
+        
+        // Show a brief notification that customer was found
+        // You could add a toast notification here if desired
+      } catch (error) {
+        // Customer not found, which is fine - just continue with manual entry
+        console.log('Customer not found, continuing with manual entry');
+      }
+    }
+  };
+
   useEffect(() => {
     if (editingOrder) {
       loadExistingTableOrder();
