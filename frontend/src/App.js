@@ -2458,6 +2458,16 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              
+              {/* Add Customer Button */}
+              <div className="flex items-center justify-center">
+                <button
+                  onClick={() => setShowCustomerModal(true)}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium"
+                >
+                  + Add Customer
+                </button>
+              </div>
             </div>
           )}
 
