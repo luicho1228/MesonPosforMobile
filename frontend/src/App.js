@@ -2104,11 +2104,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
         setCustomerInfo(prev => ({
           ...prev,
           name: customer.name || prev.name,
-          address: customer.address || prev.address
+          address: customer.address || prev.address,
+          apartment: customer.apartment || prev.apartment
         }));
         
-        // Show a brief notification that customer was found
-        // You could add a toast notification here if desired
+        // Show customer info section since we found a customer
+        setShowCustomerInfo(true);
       } catch (error) {
         // Customer not found, which is fine - just continue with manual entry
         console.log('Customer not found, continuing with manual entry');
