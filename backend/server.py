@@ -779,16 +779,35 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
     order_count = await db.orders.count_documents({})
     order_number = f"ORD-{order_count + 1:04d}"
     
-    # Create customer if provided
+    # Create or update customer if provided
     customer_id = None
     if order_data.customer_phone:
-        customer_data = CustomerCreate(
-            name=order_data.customer_name,
-            phone=order_data.customer_phone,
-            address=order_data.customer_address
-        )
-        customer = await create_customer(customer_data, user_id)
-        customer_id = customer.id
+        # Check if customer exists
+        existing_customer = await db.customers.find_one({"phone": order_data.customer_phone})
+        
+        if existing_customer:
+            # Update existing customer info if new data is provided
+            update_data = {}
+            if order_data.customer_name and order_data.customer_name != existing_customer.get("name", ""):
+                update_data["name"] = order_data.customer_name
+            if order_data.customer_address and order_data.customer_address != existing_customer.get("address", ""):
+                update_data["address"] = order_data.customer_address
+            
+            if update_data:
+                update_data["updated_at"] = get_current_time()
+                await db.customers.update_one({"id": existing_customer["id"]}, {"$set": update_data})
+            
+            customer_id = existing_customer["id"]
+        else:
+            # Create new customer
+            customer_data = CustomerCreate(
+                name=order_data.customer_name,
+                phone=order_data.customer_phone,
+                address=order_data.customer_address
+            )
+            new_customer = Customer(**customer_data.dict())
+            await db.customers.insert_one(new_customer.dict())
+            customer_id = new_customer.id
     
     # Get table info if dine-in
     table_number = None
