@@ -1459,6 +1459,32 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
           ))}
         </div>
       )}
+      
+      {/* Cancellation Reason Modal */}
+      {showCancelModal && (
+        <CancellationReasonModal
+          selectedOrders={Array.from(selectedOrders)}
+          onCancel={() => setShowCancelModal(false)}
+          onConfirm={async (reason, notes) => {
+            try {
+              // Cancel all selected orders
+              const cancelPromises = Array.from(selectedOrders).map(orderId =>
+                axios.post(`${API}/orders/${orderId}/cancel`, { reason, notes })
+              );
+              
+              await Promise.all(cancelPromises);
+              
+              alert(`${selectedOrders.size} order(s) cancelled successfully`);
+              setSelectedOrders(new Set());
+              setShowCancelModal(false);
+              fetchActiveOrders();
+            } catch (error) {
+              console.error('Error cancelling orders:', error);
+              alert('Error cancelling some orders. Please try again.');
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
