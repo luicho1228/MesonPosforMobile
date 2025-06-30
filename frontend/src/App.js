@@ -1199,6 +1199,19 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
     }
   };
 
+  const handleCancelOrder = async (orderId) => {
+    if (window.confirm('Are you sure you want to cancel this order?')) {
+      try {
+        await axios.post(`${API}/orders/${orderId}/cancel`);
+        alert('Order cancelled successfully');
+        fetchActiveOrders(); // Refresh the list
+      } catch (error) {
+        console.error('Error cancelling order:', error);
+        alert(error.response?.data?.detail || 'Error cancelling order');
+      }
+    }
+  };
+
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await axios.put(`${API}/orders/${orderId}/status`, { status: newStatus });
