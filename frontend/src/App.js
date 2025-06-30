@@ -2744,6 +2744,33 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
         onClose={() => setShowRemovalModal(false)}
         onRemove={removeFromCart}
       />
+
+      {/* Customer Modal */}
+      {showCustomerModal && (
+        <CustomerEditModal
+          customer={{}}
+          onSave={async (customerData) => {
+            try {
+              const response = await axios.post(`${API}/customers`, customerData);
+              const newCustomer = response.data;
+              
+              // Auto-fill the customer info
+              setCustomerInfo({
+                name: newCustomer.name,
+                phone: newCustomer.phone,
+                address: newCustomer.address
+              });
+              
+              setShowCustomerModal(false);
+              alert('Customer added successfully!');
+            } catch (error) {
+              console.error('Error adding customer:', error);
+              alert('Error adding customer');
+            }
+          }}
+          onClose={() => setShowCustomerModal(false)}
+        />
+      )}
     </div>
   );
 };
