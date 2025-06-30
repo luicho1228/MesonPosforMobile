@@ -2581,6 +2581,19 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
             </div>
           </div>
 
+          {/* Order Notes */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Order Notes</label>
+            <textarea
+              value={orderNotes}
+              onChange={(e) => setOrderNotes(e.target.value)}
+              placeholder="Add special instructions or comments for this order..."
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">These notes will appear on the receipt</p>
+          </div>
+
           {/* Action Buttons */}
           <div className="space-y-3">
             <button
