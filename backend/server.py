@@ -935,20 +935,38 @@ async def process_payment(order_id: str, payment: PaymentRequest, user_id: str =
         "order": Order(**updated_order)
     }
 
+class OrderCancellation(BaseModel):
+    reason: str  # "customer_canceled", "wrong_order", "other"
+    notes: str = ""  # Additional details, especially for "other"
+
 @api_router.post("/orders/{order_id}/cancel")
-async def cancel_order(order_id: str, user_id: str = Depends(verify_token)):
+async def cancel_order(order_id: str, cancellation: OrderCancellation, user_id: str = Depends(verify_token)):
     order = await db.orders.find_one({"id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
     # Only allow canceling orders that are not already paid or delivered
-    if order.get("status") in ["paid", "delivered"]:
-        raise HTTPException(status_code=400, detail="Cannot cancel paid or delivered orders")
+    if order.get("status") in ["paid", "delivered", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Cannot cancel paid, delivered, or already cancelled orders")
     
-    # Update order status to cancelled
+    # Get user info for tracking
+    user = await db.users.find_one({"id": user_id})
+    
+    # Update order status to cancelled with cancellation details
+    cancellation_info = {
+        "reason": cancellation.reason,
+        "notes": cancellation.notes,
+        "cancelled_by": user.get("full_name", "Unknown") if user else "Unknown",
+        "cancelled_at": get_current_time()
+    }
+    
     await db.orders.update_one(
         {"id": order_id},
-        {"$set": {"status": "cancelled", "updated_at": get_current_time()}}
+        {"$set": {
+            "status": "cancelled", 
+            "updated_at": get_current_time(),
+            "cancellation_info": cancellation_info
+        }}
     )
     
     # Free table if it's a table order
@@ -958,7 +976,7 @@ async def cancel_order(order_id: str, user_id: str = Depends(verify_token)):
             {"$set": {"status": "available", "current_order_id": None}}
         )
     
-    return {"message": "Order cancelled successfully"}
+    return {"message": "Order cancelled successfully", "cancellation_info": cancellation_info}
 
 @api_router.delete("/orders/{order_id}/items/{item_index}")
 async def remove_order_item(order_id: str, item_index: int, removal: ItemRemovalRequest, user_id: str = Depends(verify_token)):
