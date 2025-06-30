@@ -1371,19 +1371,31 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
           {filteredOrders.map((order) => (
             <div
               key={order.id}
-              className={`border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md ${getOrderAgeColor(order.created_at)}`}
-              onClick={() => onOrderClick(order)}
+              className={`border-2 rounded-xl p-4 transition-all hover:shadow-md ${getOrderAgeColor(order.created_at)} ${selectedOrders.has(order.id) ? 'ring-2 ring-red-500' : ''}`}
             >
               <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h4 className="font-bold text-lg">{order.order_number}</h4>
-                  <p className="text-sm text-gray-600">
-                    {formatLocalTime(order.created_at)}
-                  </p>
-                  {/* Real-time Order Timer */}
-                  <p className="text-xs font-semibold text-orange-600">
-                    ⏱️ {getTimeElapsed(order.created_at)}
-                  </p>
+                <div className="flex items-start space-x-3">
+                  {/* Checkbox for cancellable orders */}
+                  {order.status !== 'paid' && order.status !== 'delivered' && order.status !== 'cancelled' && (
+                    <input
+                      type="checkbox"
+                      checked={selectedOrders.has(order.id)}
+                      onChange={() => handleSelectOrder(order.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                    />
+                  )}
+                  
+                  <div onClick={() => onOrderClick(order)} className="cursor-pointer flex-1">
+                    <h4 className="font-bold text-lg">{order.order_number}</h4>
+                    <p className="text-sm text-gray-600">
+                      {formatLocalTime(order.created_at)}
+                    </p>
+                    {/* Real-time Order Timer */}
+                    <p className="text-xs font-semibold text-orange-600">
+                      ⏱️ {getTimeElapsed(order.created_at)}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   {/* Show status indicator only if not pending */}
