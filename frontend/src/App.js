@@ -1318,20 +1318,47 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-gray-800">Active Orders</h3>
         
-        {/* Order Type Filter */}
+        {/* Filter and Bulk Actions */}
         <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Filter:</label>
-          <select
-            value={orderTypeFilter}
-            onChange={(e) => setOrderTypeFilter(e.target.value)}
-            className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Orders</option>
-            <option value="dine_in">Dine In</option>
-            <option value="takeout">Takeout</option>
-            <option value="delivery">Delivery</option>
-            <option value="phone_order">Phone Order</option>
-          </select>
+          {/* Bulk Cancel Controls */}
+          <div className="flex items-center space-x-2">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={selectedOrders.size > 0 && selectedOrders.size === orders.filter(order => 
+                  order.status !== 'paid' && order.status !== 'delivered' && order.status !== 'cancelled'
+                ).length}
+                onChange={handleSelectAll}
+                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+              />
+              <span className="text-sm text-gray-700">Select All</span>
+            </label>
+            
+            {selectedOrders.size > 0 && (
+              <button
+                onClick={handleBulkCancel}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium"
+              >
+                Cancel Selected ({selectedOrders.size})
+              </button>
+            )}
+          </div>
+          
+          {/* Order Type Filter */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">Filter:</label>
+            <select
+              value={orderTypeFilter}
+              onChange={(e) => setOrderTypeFilter(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Orders</option>
+              <option value="dine_in">Dine In</option>
+              <option value="takeout">Takeout</option>
+              <option value="delivery">Delivery</option>
+              <option value="phone_order">Phone Order</option>
+            </select>
+          </div>
         </div>
       </div>
       
