@@ -390,7 +390,271 @@ const getOrderAgeColor = (createdAt) => {
   return 'bg-white border-gray-200';
 };
 
-// Order History Component
+// Customer Management Component
+const CustomerManagement = ({ onBack }) => {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [customerStats, setCustomerStats] = useState({});
+  const [customerOrders, setCustomerOrders] = useState([]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await axios.get(`${API}/customers`);
+      setCustomers(response.data);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCustomerStats = async (customerId) => {
+    try {
+      const [statsResponse, ordersResponse] = await Promise.all([
+        axios.get(`${API}/customers/${customerId}/stats`),
+        axios.get(`${API}/customers/${customerId}/orders`)
+      ]);
+      setCustomerStats(statsResponse.data);
+      setCustomerOrders(ordersResponse.data);
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+    }
+  };
+
+  const handleCustomerClick = async (customer) => {
+    setSelectedCustomer(customer);
+    setShowCustomerModal(true);
+    await fetchCustomerStats(customer.id);
+  };
+
+  const handleEditCustomer = (customer) => {
+    setEditingCustomer(customer);
+  };
+
+  const handleSaveCustomer = async (customerData) => {
+    try {
+      if (editingCustomer) {
+        // Update existing customer
+        await axios.put(`${API}/customers/${editingCustomer.id}`, customerData);
+      } else {
+        // Create new customer
+        await axios.post(`${API}/customers`, customerData);
+      }
+      await fetchCustomers();
+      setEditingCustomer(null);
+    } catch (error) {
+      console.error('Error saving customer:', error);
+      alert('Error saving customer');
+    }
+  };
+
+  const handleDeleteCustomer = async (customerId) => {
+    if (window.confirm('Are you sure you want to delete this customer?')) {
+      try {
+        await axios.delete(`${API}/customers/${customerId}`);
+        await fetchCustomers();
+        setShowCustomerModal(false);
+        setSelectedCustomer(null);
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+        alert('Error deleting customer');
+      }
+    }
+  };
+
+  const getFilteredCustomers = () => {
+    if (!searchTerm) return customers;
+    return customers.filter(customer => 
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone.includes(searchTerm) ||
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.address.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  const getDaysSinceLastOrder = (lastOrderDate) => {
+    if (!lastOrderDate) return 'Never ordered';
+    const lastOrder = parseBackendTimestamp(lastOrderDate);
+    const now = new Date();
+    const diffTime = Math.abs(now - lastOrder);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    return `${diffDays} days ago`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Customer Management</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setEditingCustomer({})}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            >
+              Add Customer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {/* Search and Stats */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
+              <input
+                type="text"
+                placeholder="Search by name, phone, email, or address..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{customers.length}</div>
+              <div className="text-sm text-gray-600">Total Customers</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                ${customers.reduce((sum, c) => sum + (c.total_spent || 0), 0).toFixed(2)}
+              </div>
+              <div className="text-sm text-gray-600">Total Revenue</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Customer List */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Order</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {getFilteredCustomers().map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleCustomerClick(customer)}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                        {customer.address && (
+                          <div className="text-sm text-gray-500">{customer.address}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{customer.phone}</div>
+                      {customer.email && (
+                        <div className="text-sm text-gray-500">{customer.email}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-900">
+                        {customer.total_orders || 0}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-green-600">
+                        ${(customer.total_spent || 0).toFixed(2)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-500">
+                        {getDaysSinceLastOrder(customer.last_order_date)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCustomer(customer);
+                        }}
+                        className="text-purple-600 hover:text-purple-900 mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCustomer(customer.id);
+                        }}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer Detail Modal */}
+      {showCustomerModal && selectedCustomer && (
+        <CustomerDetailModal
+          customer={selectedCustomer}
+          stats={customerStats}
+          orders={customerOrders}
+          onClose={() => {
+            setShowCustomerModal(false);
+            setSelectedCustomer(null);
+          }}
+          onEdit={() => {
+            setEditingCustomer(selectedCustomer);
+            setShowCustomerModal(false);
+          }}
+        />
+      )}
+
+      {/* Customer Edit Modal */}
+      {editingCustomer && (
+        <CustomerEditModal
+          customer={editingCustomer}
+          onSave={handleSaveCustomer}
+          onClose={() => setEditingCustomer(null)}
+        />
+      )}
+    </div>
+  );
+};
 const OrderHistory = ({ onBack }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
