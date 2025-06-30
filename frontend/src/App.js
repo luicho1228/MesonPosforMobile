@@ -655,6 +655,215 @@ const CustomerManagement = ({ onBack }) => {
     </div>
   );
 };
+// Customer Detail Modal Component
+const CustomerDetailModal = ({ customer, stats, orders, onClose, onEdit }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-96 overflow-y-auto">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-800">{customer.name}</h3>
+            <p className="text-gray-600">{customer.phone}</p>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={onEdit}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            >
+              Edit
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-xl"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Customer Info */}
+          <div>
+            <h4 className="font-medium text-gray-700 mb-3">Customer Information</h4>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Email:</span> {customer.email || 'Not provided'}</p>
+              <p><span className="font-medium">Address:</span> {customer.address || 'Not provided'}</p>
+              <p><span className="font-medium">Notes:</span> {customer.notes || 'None'}</p>
+              <p><span className="font-medium">Customer Since:</span> {formatLocalDate(customer.created_at)}</p>
+            </div>
+          </div>
+
+          {/* Customer Stats */}
+          <div>
+            <h4 className="font-medium text-gray-700 mb-3">Statistics</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{stats.total_orders || 0}</div>
+                <div className="text-blue-700">Total Orders</div>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">${(stats.total_spent || 0).toFixed(2)}</div>
+                <div className="text-green-700">Total Spent</div>
+              </div>
+              <div className="bg-purple-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">${(stats.average_order_value || 0).toFixed(2)}</div>
+                <div className="text-purple-700">Avg Order</div>
+              </div>
+              <div className="bg-orange-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">
+                  {stats.days_since_last_order !== null ? stats.days_since_last_order : 'N/A'}
+                </div>
+                <div className="text-orange-700">Days Since Last</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Orders */}
+        <div className="mt-6">
+          <h4 className="font-medium text-gray-700 mb-3">Recent Orders</h4>
+          <div className="max-h-48 overflow-y-auto">
+            {orders.length > 0 ? (
+              <div className="space-y-2">
+                {orders.slice(0, 10).map((order) => (
+                  <div key={order.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">{order.order_number}</span>
+                      <span className="text-gray-500 text-sm ml-2">
+                        {formatLocalDateTime(order.created_at)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-green-600">${order.total.toFixed(2)}</div>
+                      <div className="text-xs text-gray-500">{order.order_type.replace('_', ' ')}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No orders found</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Customer Edit Modal Component
+const CustomerEditModal = ({ customer, onSave, onClose }) => {
+  const [formData, setFormData] = useState({
+    name: customer.name || '',
+    phone: customer.phone || '',
+    email: customer.email || '',
+    address: customer.address || '',
+    notes: customer.notes || ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.phone.trim()) {
+      alert('Name and phone are required');
+      return;
+    }
+    onSave(formData);
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-800">
+            {customer.id ? 'Edit Customer' : 'Add New Customer'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              rows="2"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              rows="2"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Special dietary requirements, preferences, etc."
+            />
+          </div>
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700"
+            >
+              {customer.id ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Order History Component
 const OrderHistory = ({ onBack }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
