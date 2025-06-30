@@ -2335,7 +2335,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
         })),
         order_type: orderType,
         tip: 0,
-        delivery_instructions: ''
+        delivery_instructions: '',
+        order_notes: orderNotes
       };
 
       // Update the existing order (keeps same order number)
