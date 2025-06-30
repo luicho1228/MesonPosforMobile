@@ -319,16 +319,9 @@ const PinVerificationModal = ({ isOpen, onClose, onSuccess, title = "Enter PIN t
 
 // Helper function to properly parse backend timestamps (UTC) and convert to local timezone
 const parseBackendTimestamp = (timestamp) => {
-  // Debug: Let's see what's actually happening
-  console.log('Raw timestamp from backend:', timestamp);
-  
-  const date = new Date(timestamp);
-  console.log('Parsed date object:', date);
-  console.log('Date in local timezone:', date.toLocaleString());
-  console.log('Date in UTC:', date.toUTCString());
-  console.log('User timezone offset (minutes from UTC):', date.getTimezoneOffset());
-  
-  return date;
+  // Backend now sends proper UTC timestamps with timezone info (+00:00)
+  // JavaScript Date constructor will properly handle these and convert to local timezone
+  return new Date(timestamp);
 };
 
 // Helper function to format date for display
