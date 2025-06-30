@@ -1355,18 +1355,32 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
 
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
-                {/* Only show status buttons for delivery orders and not pending */}
-                {order.order_type === 'delivery' && order.status !== 'pending' && getNextStatus(order.status) && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateOrderStatus(order.id, getNextStatus(order.status));
-                    }}
-                    className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                  >
-                    {getNextStatusLabel(order.status)}
-                  </button>
-                )}
+                <div className="flex space-x-2">
+                  {/* Cancel button for non-paid orders */}
+                  {order.status !== 'paid' && order.status !== 'delivered' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCancelOrder(order.id);
+                      }}
+                      className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  {/* Only show status buttons for delivery orders and not pending */}
+                  {order.order_type === 'delivery' && order.status !== 'pending' && getNextStatus(order.status) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateOrderStatus(order.id, getNextStatus(order.status));
+                      }}
+                      className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      {getNextStatusLabel(order.status)}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
