@@ -1228,6 +1228,36 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
     }
   };
 
+  const handleSelectOrder = (orderId) => {
+    const newSelected = new Set(selectedOrders);
+    if (newSelected.has(orderId)) {
+      newSelected.delete(orderId);
+    } else {
+      newSelected.add(orderId);
+    }
+    setSelectedOrders(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    const cancelableOrders = orders.filter(order => 
+      order.status !== 'paid' && order.status !== 'delivered' && order.status !== 'cancelled'
+    );
+    
+    if (selectedOrders.size === cancelableOrders.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(cancelableOrders.map(order => order.id)));
+    }
+  };
+
+  const handleBulkCancel = () => {
+    if (selectedOrders.size === 0) {
+      alert('Please select orders to cancel');
+      return;
+    }
+    setShowCancelModal(true);
+  };
+
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await axios.put(`${API}/orders/${orderId}/status`, { status: newStatus });
