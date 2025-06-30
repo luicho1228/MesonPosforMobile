@@ -934,6 +934,31 @@ async def process_payment(order_id: str, payment: PaymentRequest, user_id: str =
         "order": Order(**updated_order)
     }
 
+@api_router.post("/orders/{order_id}/cancel")
+async def cancel_order(order_id: str, user_id: str = Depends(verify_token)):
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Only allow canceling orders that are not already paid or delivered
+    if order.get("status") in ["paid", "delivered"]:
+        raise HTTPException(status_code=400, detail="Cannot cancel paid or delivered orders")
+    
+    # Update order status to cancelled
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"status": "cancelled", "updated_at": get_current_time()}}
+    )
+    
+    # Free table if it's a table order
+    if order.get("table_id"):
+        await db.tables.update_one(
+            {"id": order["table_id"]},
+            {"$set": {"status": "available", "current_order_id": None}}
+        )
+    
+    return {"message": "Order cancelled successfully"}
+
 @api_router.delete("/orders/{order_id}/items/{item_index}")
 async def remove_order_item(order_id: str, item_index: int, removal: ItemRemovalRequest, user_id: str = Depends(verify_token)):
     order = await db.orders.find_one({"id": order_id})
