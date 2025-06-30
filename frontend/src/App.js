@@ -2288,6 +2288,32 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
       return;
     }
 
+    // Auto-create customer if they don't exist and we have customer info
+    if (customerInfo.phone && customerInfo.name && !currentOrder) {
+      try {
+        const response = await axios.get(`${API}/customers/${customerInfo.phone}`);
+        // Customer exists, we're good
+      } catch (error) {
+        if (error.response?.status === 404) {
+          // Customer doesn't exist, create them
+          try {
+            const newCustomerData = {
+              name: customerInfo.name,
+              phone: customerInfo.phone,
+              address: customerInfo.address || '',
+              email: '',
+              notes: `Auto-created from order on ${new Date().toLocaleDateString()}`
+            };
+            await axios.post(`${API}/customers`, newCustomerData);
+            console.log('New customer auto-created successfully');
+          } catch (createError) {
+            console.error('Error auto-creating customer:', createError);
+            // Continue with order creation even if customer creation fails
+          }
+        }
+      }
+    }
+
     try {
       const orderData = {
         customer_name: customerInfo.name,
