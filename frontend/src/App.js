@@ -2827,6 +2827,12 @@ const POSInterface = () => {
     );
   }
 
+  if (currentView === 'customerManagement') {
+    return (
+      <CustomerManagement onBack={handleBackToMain} />
+    );
+  }
+
   if (currentView === 'table-management') {
     return (
       <div className="min-h-screen bg-gray-50">
