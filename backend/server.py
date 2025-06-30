@@ -261,6 +261,7 @@ class Order(BaseModel):
     created_at: datetime = Field(default_factory=get_current_time)
     updated_at: datetime = Field(default_factory=get_current_time)
     delivery_instructions: str = ""
+    order_notes: str = ""  # Notes/comments for the order (appears on receipt)
     estimated_time: Optional[datetime] = None
 
     class Config:
