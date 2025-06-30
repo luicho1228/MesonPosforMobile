@@ -2450,7 +2450,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
                   type="tel"
                   placeholder="Phone Number"
                   value={customerInfo.phone}
-                  onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <input
