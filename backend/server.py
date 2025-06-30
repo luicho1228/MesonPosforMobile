@@ -278,6 +278,7 @@ class OrderCreate(BaseModel):
     order_type: OrderType
     tip: float = 0.0
     delivery_instructions: str = ""
+    order_notes: str = ""  # Notes/comments for the order
 
 class PaymentRequest(BaseModel):
     payment_method: PaymentMethod
