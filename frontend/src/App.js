@@ -1575,6 +1575,7 @@ const CancellationReasonModal = ({ selectedOrders, onCancel, onConfirm }) => {
       </div>
     </div>
   );
+};
 
 // Employee Status Component
 const EmployeeStatus = () => {
