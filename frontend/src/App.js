@@ -1489,6 +1489,93 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
   );
 };
 
+// Cancellation Reason Modal Component
+const CancellationReasonModal = ({ selectedOrders, onCancel, onConfirm }) => {
+  const [reason, setReason] = useState('customer_canceled');
+  const [customNotes, setCustomNotes] = useState('');
+
+  const reasonOptions = [
+    { value: 'customer_canceled', label: 'Customer Canceled' },
+    { value: 'wrong_order', label: 'Wrong Order' },
+    { value: 'other', label: 'Other' }
+  ];
+
+  const handleConfirm = () => {
+    const notes = reason === 'other' ? customNotes : '';
+    if (reason === 'other' && !customNotes.trim()) {
+      alert('Please provide a reason for cancellation');
+      return;
+    }
+    onConfirm(reason, notes);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-800">Cancel Orders</h3>
+          <button
+            onClick={onCancel}
+            className="text-gray-500 hover:text-gray-700 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <p className="text-gray-600 mb-4">
+            You are about to cancel {selectedOrders.length} order(s). Please select a reason:
+          </p>
+          
+          <div className="space-y-3">
+            {reasonOptions.map((option) => (
+              <label key={option.value} className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  value={option.value}
+                  checked={reason === option.value}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="text-red-600 focus:ring-red-500"
+                />
+                <span className="text-gray-700">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {reason === 'other' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Please specify the reason:
+            </label>
+            <textarea
+              value={customNotes}
+              onChange={(e) => setCustomNotes(e.target.value)}
+              rows="3"
+              placeholder="Enter the reason for cancellation..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+        )}
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+          >
+            Confirm Cancellation
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
 // Employee Status Component
 const EmployeeStatus = () => {
   const [activeEmployees, setActiveEmployees] = useState([]);
