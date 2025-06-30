@@ -2836,6 +2836,13 @@ const OrderDetailModal = ({ order, onClose }) => {
             </div>
           )}
 
+          {order.order_notes && (
+            <div>
+              <h4 className="font-medium text-gray-700 mb-2">Order Notes</h4>
+              <p className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">{order.order_notes}</p>
+            </div>
+          )}
+
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Items</h4>
             {order.items.map((item, index) => (
