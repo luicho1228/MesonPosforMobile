@@ -2044,6 +2044,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showRemovalModal, setShowRemovalModal] = useState(false);
   const [removalItemIndex, setRemovalItemIndex] = useState(null);
+  const [orderNotes, setOrderNotes] = useState('');
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
 
   // Auto-fill customer info when phone number is entered
   const handlePhoneChange = async (phone) => {
