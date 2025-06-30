@@ -2822,8 +2822,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
               setCustomerInfo({
                 name: newCustomer.name,
                 phone: newCustomer.phone,
-                address: newCustomer.address
+                address: newCustomer.address,
+                apartment: ''
               });
+              
+              // Show customer info section
+              setShowCustomerInfo(true);
               
               setShowCustomerModal(false);
               alert('Customer added successfully!');
