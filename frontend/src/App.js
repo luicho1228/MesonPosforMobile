@@ -2489,40 +2489,76 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
           {/* Customer Info for Delivery */}
           {orderType === 'delivery' && (
             <div className="mb-6 bg-white rounded-xl p-4">
-              <h3 className="font-bold text-lg mb-4">Customer Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input
-                  type="text"
-                  placeholder="Customer Name"
-                  value={customerInfo.name}
-                  onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  value={customerInfo.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Address"
-                  value={customerInfo.address}
-                  onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              {/* Add Customer Button */}
-              <div className="flex items-center justify-center">
-                <button
-                  onClick={() => setShowCustomerModal(true)}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium"
-                >
-                  + Add Customer
-                </button>
-              </div>
+              {!showCustomerInfo ? (
+                // Show only Add Customer button initially
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowCustomerModal(true)}
+                    className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 text-lg font-medium"
+                  >
+                    + Add Customer
+                  </button>
+                </div>
+              ) : (
+                // Show customer information section
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg">Customer Information</h3>
+                    <button
+                      onClick={() => setShowCustomerModal(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+                    >
+                      Edit Customer
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                      <input
+                        type="text"
+                        placeholder="Customer Name"
+                        value={customerInfo.name}
+                        onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={customerInfo.phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                      <input
+                        type="text"
+                        placeholder="Street Address"
+                        value={customerInfo.address}
+                        onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Apartment/Unit</label>
+                      <input
+                        type="text"
+                        placeholder="Apt, Suite, Unit"
+                        value={customerInfo.apartment}
+                        onChange={(e) => setCustomerInfo({...customerInfo, apartment: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
