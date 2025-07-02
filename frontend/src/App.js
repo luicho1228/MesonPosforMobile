@@ -2483,6 +2483,15 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
     fetchTables();
   }, [editingOrder, editingActiveOrder]);
 
+  const fetchTables = async () => {
+    try {
+      const response = await axios.get(`${API}/tables`);
+      setTables(response.data);
+    } catch (error) {
+      console.error('Error fetching tables:', error);
+    }
+  };
+
   const loadExistingTableOrder = async () => {
     try {
       const response = await axios.get(`${API}/orders/${editingOrder.current_order_id}`);
