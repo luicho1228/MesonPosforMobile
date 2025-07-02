@@ -3269,6 +3269,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
               alert('Error adding customer');
             }
           }}
+          onClose={() => setShowCustomerModal(false)}
+        />
       )}
       
       {/* Table Selection Modal */}
