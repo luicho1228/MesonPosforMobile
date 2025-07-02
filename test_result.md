@@ -354,16 +354,19 @@ agent_communication:
   - agent: "testing"
     message: "COMPLETED ORDER CANCELLATION API FIX TESTING: Successfully verified that the order cancellation API now properly accepts 'other' as a valid reason value. Created a comprehensive test that verified the complete workflow: 1) Created a test menu item, table, and dine-in order, 2) Sent the order to kitchen which correctly set the table status to occupied and populated current_order_id, 3) Successfully cancelled the order using 'other' as the reason with custom notes 'Table X cancelled via table management', 4) Verified the order status changed to 'cancelled' with proper cancellation details recorded, 5) Confirmed the table status was automatically updated to 'available' with current_order_id set to null after cancellation, 6) Directly tested the table update endpoint to verify it properly handles setting current_order_id to null. All tests passed successfully, confirming that both the order cancellation endpoint and table update functionality are working correctly. The frontend should no longer encounter AxiosError when cancelling tables from Table Management."
 
-  - task: "Table Management Multi-Fix - Auto-assign, Dine-in Mode, Multi-cancel"
+  - task: "Order Cancellation API Fix"
     implemented: true
-    working: false
-    file: "/app/frontend/src/App.js"
+    working: true
+    file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "COMPREHENSIVE TABLE MANAGEMENT FIXES: User reported 3 issues: 1) Available tables should auto-assign instead of asking again 2) Table Management should only show dine-in option 3) Cancel Table should allow multi-select instead of alert. Fixed by: Adding fromTableManagement prop, auto-setting assignedTable from selectedTable, conditional order type rendering, and implementing multi-select cancel workflow with selection and confirmation modals. All fixes integrate seamlessly with existing table management functionality."
+        comment: "Fixed order cancellation API to accept 'other' as a valid reason value instead of 'table_cancelled'. Updated updateTableStatus to properly set current_order_id to null when making table available."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the order cancellation API fix. Created a comprehensive test that verified: 1) Order cancel endpoint accepts 'other' as a valid reason with custom notes, 2) Order status correctly changes to 'cancelled' after cancellation, 3) Table status is properly updated to 'available' with current_order_id set to null after cancellation, 4) Table update endpoint correctly handles setting current_order_id to null. All tests passed successfully, confirming that both the order cancellation endpoint and table update functionality are working correctly. The frontend should no longer encounter AxiosError when cancelling tables from Table Management."
 
   - task: "Enhanced UI/UX Improvements - Final Implementation"
