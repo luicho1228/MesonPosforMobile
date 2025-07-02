@@ -938,6 +938,8 @@ const OrderHistory = ({ onBack }) => {
   const [filter, setFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   useEffect(() => {
     fetchAllOrders();
