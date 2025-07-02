@@ -1259,6 +1259,19 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
     setShowCancelModal(true);
   };
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedOrders(new Set()); // Clear selections when toggling mode
+  };
+
+  const handleOrderClick = (order) => {
+    if (selectionMode) {
+      handleSelectOrder(order.id);
+    } else {
+      onOrderClick(order);
+    }
+  };
+
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await axios.put(`${API}/orders/${orderId}/status`, { status: newStatus });
