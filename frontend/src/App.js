@@ -1833,6 +1833,8 @@ const TableManagement = ({ onTableSelect }) => {
   const [selectedDestTable, setSelectedDestTable] = useState(null);
   const [showMergeConfirm, setShowMergeConfirm] = useState(false);
   const [step, setStep] = useState('select-source'); // 'select-source', 'select-destination'
+  const [showCancelTableModal, setShowCancelTableModal] = useState(false);
+  const [selectedTableForCancel, setSelectedTableForCancel] = useState(null);
 
   useEffect(() => {
     fetchTables();
