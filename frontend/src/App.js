@@ -1188,6 +1188,7 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
   const [orderTypeFilter, setOrderTypeFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   useEffect(() => {
     fetchActiveOrders();
