@@ -2491,6 +2491,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
     fetchMenuItems();
     fetchCategories();
     fetchModifierData();
+    fetchTables();
   }, [editingOrder, editingActiveOrder]);
 
   const loadExistingTableOrder = async () => {
