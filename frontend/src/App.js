@@ -1851,10 +1851,11 @@ const TableManagement = ({ onTableSelect }) => {
 
   const updateTableStatus = async (tableId, status) => {
     try {
-      await axios.put(`${API}/tables/${tableId}`, { 
-        status,
-        current_order_id: status === 'available' ? null : undefined
-      });
+      const updateData = { status };
+      if (status === 'available') {
+        updateData.current_order_id = null;
+      }
+      await axios.put(`${API}/tables/${tableId}`, updateData);
       fetchTables();
     } catch (error) {
       console.error('Error updating table:', error);
