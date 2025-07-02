@@ -2885,6 +2885,36 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
             </div>
           </div>
 
+          {/* Table Selection for Dine In */}
+          {orderType === 'dine_in' && (
+            <div className="mb-6 bg-white rounded-xl p-4">
+              <h3 className="font-bold text-lg mb-4">Select Table</h3>
+              {selectedTable ? (
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div>
+                    <span className="font-medium">Table {selectedTable.number}</span>
+                    <span className="text-sm text-gray-600 ml-2">({selectedTable.status})</span>
+                  </div>
+                  <button
+                    onClick={() => setShowTableModal(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+                  >
+                    Change Table
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowTableModal(true)}
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 text-lg font-medium"
+                  >
+                    Choose Table
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Customer Info for Delivery */}
           {orderType === 'delivery' && (
             <div className="mb-6 bg-white rounded-xl p-4">
