@@ -1239,6 +1239,17 @@ const OrderHistory = ({ onBack }) => {
           </div>
         </div>
       </div>
+      
+      {/* Order Detail Modal */}
+      {showOrderModal && selectedOrder && (
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => {
+            setShowOrderModal(false);
+            setSelectedOrder(null);
+          }}
+        />
+      )}
     </div>
   );
 };
