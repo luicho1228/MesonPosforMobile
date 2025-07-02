@@ -3419,6 +3419,7 @@ const POSInterface = () => {
   const [editingOrder, setEditingOrder] = useState(null);
   const [editingActiveOrder, setEditingActiveOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { user, logout } = useAuth();
 
