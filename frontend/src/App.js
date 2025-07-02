@@ -2405,6 +2405,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
   const [removalItemIndex, setRemovalItemIndex] = useState(null);
   const [orderNotes, setOrderNotes] = useState('');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
   const [tables, setTables] = useState([]);
   const [showTableModal, setShowTableModal] = useState(false);
