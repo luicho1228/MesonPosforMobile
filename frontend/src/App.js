@@ -3269,8 +3269,60 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
               alert('Error adding customer');
             }
           }}
-          onClose={() => setShowCustomerModal(false)}
-        />
+      )}
+      
+      {/* Table Selection Modal */}
+      {showTableModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Select Table</h3>
+              <button
+                onClick={() => setShowTableModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {tables.map((table) => (
+                <button
+                  key={table.id}
+                  onClick={() => {
+                    if (table.status === 'occupied') {
+                      // Show warning for occupied table
+                      if (window.confirm(`Table ${table.number} is occupied. Do you want to merge orders with this table?`)) {
+                        // Handle merge logic here
+                        setAssignedTable(table);
+                        setShowTableModal(false);
+                        alert(`Order will be merged with Table ${table.number}`);
+                      }
+                    } else {
+                      // Assign available table
+                      setAssignedTable(table);
+                      setShowTableModal(false);
+                    }
+                  }}
+                  className={`p-4 rounded-lg border-2 text-center font-medium transition-colors ${
+                    table.status === 'available' 
+                      ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100' 
+                      : table.status === 'occupied'
+                      ? 'border-orange-500 bg-orange-50 text-orange-700 hover:bg-orange-100'
+                      : 'border-red-500 bg-red-50 text-red-700 cursor-not-allowed'
+                  }`}
+                  disabled={table.status === 'cleaning'}
+                >
+                  <div className="text-lg font-bold">Table {table.number}</div>
+                  <div className="text-sm capitalize">{table.status}</div>
+                  {table.status === 'occupied' && (
+                    <div className="text-xs mt-1">Click to merge</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
