@@ -1943,14 +1943,15 @@ const TableManagement = ({ onTableSelect }) => {
               <button
                 onClick={() => {
                   if (occupiedTables.length === 1) {
-                    updateTableStatus(occupiedTables[0].id, 'problem');
+                    setSelectedTableForCancel(occupiedTables[0]);
+                    setShowCancelTableModal(true);
                   } else {
                     alert('Please select a specific table');
                   }
                 }}
                 className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700"
               >
-                Mark Problem
+                Cancel Table
               </button>
             </>
           )}
