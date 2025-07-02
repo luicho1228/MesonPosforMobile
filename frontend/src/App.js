@@ -3364,7 +3364,7 @@ const OrderDetailModal = ({ order, onClose }) => {
 // Main POS Interface
 const POSInterface = () => {
   const [currentView, setCurrentView] = useState('main');
-  const [selectedTable, setSelectedTable] = useState(null);
+  const [assignedTable, setAssignedTable] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [editingActiveOrder, setEditingActiveOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
