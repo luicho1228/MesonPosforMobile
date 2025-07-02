@@ -162,6 +162,7 @@ class Table(BaseModel):
     number: int
     capacity: int = 4
     status: TableStatus = TableStatus.AVAILABLE
+    current_order_id: Optional[str] = None
     created_at: datetime = Field(default_factory=get_current_time)
 
 class TableCreate(BaseModel):
