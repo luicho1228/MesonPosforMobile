@@ -221,15 +221,18 @@ backend:
 
   - task: "Table Management Bug Fix - Current Order ID"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "CRITICAL TABLE MANAGEMENT BUG: User reported that clicking occupied table from Table Management doesn't load existing order items into cart (works from dine-in orders). Root cause: Table model missing current_order_id field that's stored in database. Fixed by adding current_order_id: Optional[str] = None to Table model. Backend needs testing to verify tables endpoint now returns current_order_id field."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the Table Management Bug Fix. Verified that the current_order_id field is now properly included in the Table model and returned by the /api/tables endpoint. Created a comprehensive test that verified: 1) current_order_id field exists in all table responses, 2) occupied tables have current_order_id populated with the correct order ID, 3) available tables have current_order_id set to null, 4) sending an order to kitchen properly sets the table status to occupied and populates current_order_id, 5) payment completion clears current_order_id from table, and 6) order cancellation clears current_order_id from table. All tests passed successfully, confirming the bug fix is working as expected."
     implemented: true
     working: true
     file: "/app/backend/server.py, /app/frontend/src/App.js"
