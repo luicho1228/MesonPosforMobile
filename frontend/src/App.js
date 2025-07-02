@@ -2775,7 +2775,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
                         type="text"
                         placeholder="Street Address"
                         value={customerInfo.address}
-                        onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                        onChange={(e) => handleAddressChange(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
