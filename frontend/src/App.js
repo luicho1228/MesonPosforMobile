@@ -767,6 +767,67 @@ const CustomerEditModal = ({ customer, onSave, onClose }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Auto-fill functionality for customer modal
+  const handlePhoneChangeModal = async (phone) => {
+    setFormData(prev => ({ ...prev, phone }));
+    
+    if (phone.length >= 10) {
+      await lookupCustomerByPhoneModal(phone);
+    }
+  };
+
+  const handleAddressChangeModal = async (address) => {
+    setFormData(prev => ({ ...prev, address }));
+    
+    if (address.length >= 10) {
+      await lookupCustomerByAddressModal(address);
+    }
+  };
+
+  const lookupCustomerByPhoneModal = async (phone) => {
+    try {
+      const response = await axios.get(`${API}/customers/${phone}`);
+      const customer = response.data;
+      
+      setFormData(prev => ({
+        ...prev,
+        name: customer.name || prev.name,
+        address: customer.address || prev.address,
+        apartment: customer.apartment || prev.apartment,
+        email: customer.email || prev.email,
+        notes: customer.notes || prev.notes
+      }));
+    } catch (error) {
+      console.log('Customer not found by phone in modal');
+    }
+  };
+
+  const lookupCustomerByAddressModal = async (address) => {
+    try {
+      const response = await axios.get(`${API}/customers`);
+      const customers = response.data;
+      
+      const matchingCustomer = customers.find(customer => 
+        customer.address && 
+        customer.address.toLowerCase().includes(address.toLowerCase()) &&
+        customer.address.length > 0
+      );
+      
+      if (matchingCustomer) {
+        setFormData(prev => ({
+          ...prev,
+          name: matchingCustomer.name || prev.name,
+          phone: matchingCustomer.phone || prev.phone,
+          apartment: matchingCustomer.apartment || prev.apartment,
+          email: matchingCustomer.email || prev.email,
+          notes: matchingCustomer.notes || prev.notes
+        }));
+      }
+    } catch (error) {
+      console.log('Error looking up customer by address in modal:', error);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl p-6 max-w-md w-full">
