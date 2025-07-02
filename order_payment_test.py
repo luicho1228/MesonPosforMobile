@@ -8,7 +8,7 @@ import random
 import string
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://749cc320-2c29-4761-9b5c-71c3715536b5.preview.emergentagent.com"
+BACKEND_URL = "https://9975ee4b-0f49-4fa9-a42c-42d367fc1ef8.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 # Helper function to generate random string
