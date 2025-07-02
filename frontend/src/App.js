@@ -956,6 +956,11 @@ const OrderHistory = ({ onBack }) => {
     }
   };
 
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setShowOrderModal(true);
+  };
+
   const getFilteredOrders = () => {
     let filtered = orders;
 
