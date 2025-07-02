@@ -1153,7 +1153,11 @@ const OrderHistory = ({ onBack }) => {
                   </thead>
                   <tbody>
                     {filteredOrders.map((order) => (
-                      <tr key={order.id} className="border-b hover:bg-gray-50">
+                      <tr 
+                        key={order.id} 
+                        className="border-b hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleOrderClick(order)}
+                      >
                         <td className="px-4 py-3">
                           <div className="font-medium text-blue-600">{order.order_number}</div>
                         </td>
