@@ -3423,6 +3423,7 @@ const POSInterface = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [fromTableManagement, setFromTableManagement] = useState(false);
   const { user, logout } = useAuth();
 
   const handleNewOrder = (table = null) => {
