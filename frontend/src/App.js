@@ -2269,24 +2269,69 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
     
     // If phone number is complete (at least 10 digits), try to lookup customer
     if (phone.length >= 10) {
-      try {
-        const response = await axios.get(`${API}/customers/${phone}`);
-        const customer = response.data;
-        
-        // Auto-fill name and address if found
+      await lookupCustomerByPhone(phone);
+    }
+  };
+
+  // Auto-fill customer info when address is entered (at least 10 characters)
+  const handleAddressChange = async (address) => {
+    setCustomerInfo(prev => ({ ...prev, address }));
+    
+    // If address is substantial (at least 10 characters), try to lookup customer
+    if (address.length >= 10) {
+      await lookupCustomerByAddress(address);
+    }
+  };
+
+  // Lookup customer by phone number
+  const lookupCustomerByPhone = async (phone) => {
+    try {
+      const response = await axios.get(`${API}/customers/${phone}`);
+      const customer = response.data;
+      
+      // Auto-fill name and address if found
+      setCustomerInfo(prev => ({
+        ...prev,
+        name: customer.name || prev.name,
+        address: customer.address || prev.address,
+        apartment: customer.apartment || prev.apartment
+      }));
+      
+      // Show customer info section since we found a customer
+      setShowCustomerInfo(true);
+    } catch (error) {
+      // Customer not found, which is fine - just continue with manual entry
+      console.log('Customer not found by phone, continuing with manual entry');
+    }
+  };
+
+  // Lookup customer by address (search through all customers)
+  const lookupCustomerByAddress = async (address) => {
+    try {
+      const response = await axios.get(`${API}/customers`);
+      const customers = response.data;
+      
+      // Find customer with matching address (case insensitive partial match)
+      const matchingCustomer = customers.find(customer => 
+        customer.address && 
+        customer.address.toLowerCase().includes(address.toLowerCase()) &&
+        customer.address.length > 0
+      );
+      
+      if (matchingCustomer) {
+        // Auto-fill other fields if found
         setCustomerInfo(prev => ({
           ...prev,
-          name: customer.name || prev.name,
-          address: customer.address || prev.address,
-          apartment: customer.apartment || prev.apartment
+          name: matchingCustomer.name || prev.name,
+          phone: matchingCustomer.phone || prev.phone,
+          apartment: matchingCustomer.apartment || prev.apartment
         }));
         
         // Show customer info section since we found a customer
         setShowCustomerInfo(true);
-      } catch (error) {
-        // Customer not found, which is fine - just continue with manual entry
-        console.log('Customer not found, continuing with manual entry');
       }
+    } catch (error) {
+      console.log('Error looking up customer by address:', error);
     }
   };
 
