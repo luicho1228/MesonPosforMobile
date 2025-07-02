@@ -2562,15 +2562,6 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
     }
   };
 
-  const fetchTables = async () => {
-    try {
-      const response = await axios.get(`${API}/tables`);
-      setTables(response.data);
-    } catch (error) {
-      console.error('Error fetching tables:', error);
-    }
-  };
-
   const addToCart = (item) => {
     if (item.modifier_groups && item.modifier_groups.length > 0) {
       setSelectedMenuItem(item);
