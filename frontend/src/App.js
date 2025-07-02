@@ -1837,6 +1837,15 @@ const TableManagement = ({ onTableSelect }) => {
     fetchTables();
   }, []);
 
+  const fetchTables = async () => {
+    try {
+      const response = await axios.get(`${API}/tables`);
+      setTables(response.data);
+    } catch (error) {
+      console.error('Error fetching tables:', error);
+    }
+  };
+
 
 
   const updateTableStatus = async (tableId, status) => {
