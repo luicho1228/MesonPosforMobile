@@ -1041,10 +1041,6 @@ const OrderHistory = ({ onBack }) => {
               <div className="text-2xl font-bold text-blue-600">{getOrderCount()}</div>
               <div className="text-sm text-gray-600">Orders</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">${getTotalRevenue().toFixed(2)}</div>
-              <div className="text-sm text-gray-600">Revenue</div>
-            </div>
           </div>
         </div>
       </div>
