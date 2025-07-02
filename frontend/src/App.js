@@ -2399,7 +2399,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
   const [orderNotes, setOrderNotes] = useState('');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
-  const [selectedTable, setSelectedTable] = useState(null);
+  const [assignedTable, setAssignedTable] = useState(null);
   const [tables, setTables] = useState([]);
 
   // Auto-fill customer info when phone number is entered
