@@ -2863,11 +2863,11 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
           {orderType === 'dine_in' && (
             <div className="mb-6 bg-white rounded-xl p-4">
               <h3 className="font-bold text-lg mb-4">Select Table</h3>
-              {selectedTable ? (
+              {assignedTable ? (
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div>
-                    <span className="font-medium">Table {selectedTable.number}</span>
-                    <span className="text-sm text-gray-600 ml-2">({selectedTable.status})</span>
+                    <span className="font-medium">Table {assignedTable.number}</span>
+                    <span className="text-sm text-gray-600 ml-2">({assignedTable.status})</span>
                   </div>
                   <button
                     onClick={() => setShowTableModal(true)}
