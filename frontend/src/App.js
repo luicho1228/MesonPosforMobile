@@ -2852,27 +2852,39 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         {/* Menu Items */}
         <div className="flex-1 p-6">
           {/* Order Type Selection */}
-          <div className="mb-6">
-            <div className="flex space-x-2">
-              {[
-                { value: 'dine_in', label: 'Dine In' },
-                { value: 'takeout', label: 'Takeout' },
-                { value: 'delivery', label: 'Delivery' }
-              ].map(type => (
-                <button
-                  key={type.value}
-                  onClick={() => setOrderType(type.value)}
-                  className={`px-4 py-2 rounded-lg font-medium ${
-                    orderType === type.value
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border hover:bg-gray-50'
-                  }`}
-                >
-                  {type.label}
-                </button>
-              ))}
+          {!fromTableManagement && (
+            <div className="mb-6">
+              <div className="flex space-x-2">
+                {[
+                  { value: 'dine_in', label: 'Dine In' },
+                  { value: 'takeout', label: 'Takeout' },
+                  { value: 'delivery', label: 'Delivery' }
+                ].map(type => (
+                  <button
+                    key={type.value}
+                    onClick={() => setOrderType(type.value)}
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      orderType === type.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 border hover:bg-gray-50'
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+          
+          {/* Show order type indicator when from table management */}
+          {fromTableManagement && (
+            <div className="mb-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <span className="text-blue-800 font-medium">Order Type: Dine In</span>
+                <span className="text-blue-600 text-sm ml-2">(Table Management Mode)</span>
+              </div>
+            </div>
+          )}
 
           {/* Table Selection for Dine In */}
           {orderType === 'dine_in' && (
