@@ -3430,10 +3430,12 @@ const POSInterface = () => {
     setSelectedTable(table);
     setEditingOrder(null);
     setEditingActiveOrder(null);
+    setFromTableManagement(false);
     setCurrentView('new-order');
   };
 
   const handleTableSelect = (table) => {
+    setFromTableManagement(true);
     if (table.status === 'available') {
       // Start new order for available table
       setSelectedTable(table);
