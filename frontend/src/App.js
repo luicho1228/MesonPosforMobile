@@ -615,10 +615,7 @@ const CustomerManagement = ({ onBack }) => {
             setShowCustomerModal(false);
             setSelectedCustomer(null);
           }}
-          onEdit={() => {
-            setEditingCustomer(selectedCustomer);
-            setShowCustomerModal(false);
-          }}
+          onClose={() => setShowCustomerModal(false)}
         />
       )}
 
