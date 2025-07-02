@@ -2379,7 +2379,7 @@ const ItemRemovalModal = ({ isOpen, onClose, onRemove }) => {
 };
 
 // New Order Component
-const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) => {
+const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fromTableManagement = false }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [modifierGroups, setModifierGroups] = useState([]);
   const [modifiers, setModifiers] = useState([]);
@@ -2394,7 +2394,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
     apartment: ''
   });
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
-  const [orderType, setOrderType] = useState(selectedTable ? 'dine_in' : 'takeout');
+  const [orderType, setOrderType] = useState(fromTableManagement ? 'dine_in' : (selectedTable ? 'dine_in' : 'takeout'));
   const [tip, setTip] = useState(0);
   const [showModifierModal, setShowModifierModal] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState(null);
@@ -2405,7 +2405,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack }) =
   const [orderNotes, setOrderNotes] = useState('');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
-  const [assignedTable, setAssignedTable] = useState(null);
+  const [assignedTable, setAssignedTable] = useState(selectedTable || null);
   const [tables, setTables] = useState([]);
 
   // Auto-fill customer info when phone number is entered
