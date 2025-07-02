@@ -1216,19 +1216,10 @@ const OrderHistory = ({ onBack }) => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex space-x-2">
-                            <button
-                              onClick={() => {
-                                // View order details in console for now
-                                console.log('Order Details:', order);
-                                alert(`Order ${order.order_number} details logged to console`);
-                              }}
-                              className="text-blue-600 hover:text-blue-800 text-sm"
-                            >
-                              View
-                            </button>
                             {order.status === 'paid' && (
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   console.log('Print receipt for:', order);
                                   alert(`Receipt for ${order.order_number} sent to printer`);
                                 }}
