@@ -1403,12 +1403,13 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
           {filteredOrders.map((order) => (
             <div
               key={order.id}
-              className={`border-2 rounded-xl p-4 transition-all hover:shadow-md ${getOrderAgeColor(order.created_at)} ${selectedOrders.has(order.id) ? 'ring-2 ring-red-500' : ''}`}
+              className={`border-2 rounded-xl p-4 transition-all hover:shadow-md ${getOrderAgeColor(order.created_at)} ${selectedOrders.has(order.id) ? 'ring-2 ring-red-500' : ''} ${selectionMode ? '' : 'cursor-pointer'}`}
+              onClick={() => handleOrderClick(order)}
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-start space-x-3">
-                  {/* Checkbox for cancellable orders */}
-                  {order.status !== 'paid' && order.status !== 'delivered' && order.status !== 'cancelled' && (
+                  {/* Checkbox for cancellable orders - only show in selection mode */}
+                  {selectionMode && order.status !== 'paid' && order.status !== 'delivered' && order.status !== 'cancelled' && (
                     <input
                       type="checkbox"
                       checked={selectedOrders.has(order.id)}
@@ -1418,7 +1419,7 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                     />
                   )}
                   
-                  <div onClick={() => onOrderClick(order)} className="cursor-pointer flex-1">
+                  <div className="flex-1">
                     <h4 className="font-bold text-lg">{order.order_number}</h4>
                     <p className="text-sm text-gray-600">
                       {formatLocalTime(order.created_at)}
