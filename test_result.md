@@ -350,3 +350,17 @@ agent_communication:
     message: "TABLE MANAGEMENT MULTI-FIX COMPLETED: User reported 3 issues with table management functionality. Successfully implemented comprehensive fixes: 1) AUTO-ASSIGN SELECTED TABLE: When clicking available table from Table Management, it now automatically assigns that table in NewOrder instead of asking again. Added assignedTable state initialization with selectedTable. 2) DINE-IN ONLY MODE: When accessing menu through Table Management, now only shows dine-in option and locks order type. Added fromTableManagement prop and conditional rendering of order type selection. Shows 'Table Management Mode' indicator. 3) MULTI-SELECT CANCEL TABLES: Replaced single-table alert with proper multi-select interface. Users can now select multiple occupied tables and cancel them in bulk. Added new modals: table selection with checkboxes and confirmation modal showing selected tables. All three fixes implemented and integrated into existing Table Management workflow."
   - agent: "testing"
     message: "COMPLETED TABLE MANAGEMENT BUG FIX TESTING: Successfully verified that the current_order_id field is now properly included in the Table model and returned by the /api/tables endpoint. Created a comprehensive test that verified the complete workflow: 1) current_order_id field exists in all table responses, 2) occupied tables have current_order_id populated with the correct order ID, 3) available tables have current_order_id set to null, 4) sending an order to kitchen properly sets the table status to occupied and populates current_order_id, 5) payment completion clears current_order_id from table, and 6) order cancellation clears current_order_id from table. All tests passed successfully, confirming the bug fix is working as expected. The frontend should now be able to load existing orders when clicking occupied tables."
+
+  - task: "Table Management Multi-Fix - Auto-assign, Dine-in Mode, Multi-cancel"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "COMPREHENSIVE TABLE MANAGEMENT FIXES: User reported 3 issues: 1) Available tables should auto-assign instead of asking again 2) Table Management should only show dine-in option 3) Cancel Table should allow multi-select instead of alert. Fixed by: Adding fromTableManagement prop, auto-setting assignedTable from selectedTable, conditional order type rendering, and implementing multi-select cancel workflow with selection and confirmation modals. All fixes integrate seamlessly with existing table management functionality."
+
+  - task: "Enhanced UI/UX Improvements - Final Implementation"
