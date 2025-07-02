@@ -2092,6 +2092,58 @@ const TableManagement = ({ onTableSelect }) => {
           </div>
         </div>
       )}
+      
+      {/* Cancel Table Modal */}
+      {showCancelTableModal && selectedTableForCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4 text-red-600">Cancel Table</h3>
+            
+            <p className="mb-4">
+              Are you sure you want to cancel Table {selectedTableForCancel.number}? 
+              This will cancel the associated order and free up the table.
+            </p>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowCancelTableModal(false);
+                  setSelectedTableForCancel(null);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    // Cancel the order associated with this table
+                    if (selectedTableForCancel.current_order_id) {
+                      await axios.post(`${API}/orders/${selectedTableForCancel.current_order_id}/cancel`, {
+                        reason: 'table_cancelled',
+                        notes: `Table ${selectedTableForCancel.number} cancelled via table management`
+                      });
+                    }
+                    
+                    // Free the table
+                    await updateTableStatus(selectedTableForCancel.id, 'available');
+                    
+                    setShowCancelTableModal(false);
+                    setSelectedTableForCancel(null);
+                    alert('Table cancelled successfully');
+                  } catch (error) {
+                    console.error('Error cancelling table:', error);
+                    alert('Error cancelling table');
+                  }
+                }}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+              >
+                Confirm Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
