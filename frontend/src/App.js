@@ -2089,22 +2089,101 @@ const TableManagement = ({ onTableSelect }) => {
         </div>
       )}
       
-      {/* Cancel Table Modal */}
-      {showCancelTableModal && selectedTableForCancel && (
+      {/* Cancel Table Selection Modal */}
+      {showCancelTableSelection && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h3 className="text-lg font-bold mb-4 text-red-600">Select Tables to Cancel</h3>
+            
+            <p className="mb-4 text-gray-600">
+              Select one or more occupied tables to cancel their orders and free them up.
+            </p>
+            
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {occupiedTables.map((table) => (
+                <div
+                  key={table.id}
+                  onClick={() => {
+                    const isSelected = selectedTablesForCancel.includes(table.id);
+                    if (isSelected) {
+                      setSelectedTablesForCancel(prev => prev.filter(id => id !== table.id));
+                    } else {
+                      setSelectedTablesForCancel(prev => [...prev, table.id]);
+                    }
+                  }}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    selectedTablesForCancel.includes(table.id)
+                      ? 'border-red-500 bg-red-50 text-red-700'
+                      : 'border-gray-300 bg-gray-50 text-gray-700 hover:border-red-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-xl font-bold">Table {table.number}</div>
+                    <div className="text-sm">Occupied</div>
+                    {selectedTablesForCancel.includes(table.id) && (
+                      <div className="text-xs text-red-600 mt-1">✓ Selected</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {occupiedTables.length === 0 && (
+              <p className="text-center text-gray-500 py-4">No occupied tables to cancel</p>
+            )}
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowCancelTableSelection(false);
+                  setSelectedTablesForCancel([]);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              {selectedTablesForCancel.length > 0 && (
+                <button
+                  onClick={() => {
+                    setShowCancelTableSelection(false);
+                    setShowCancelTableModal(true);
+                  }}
+                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+                >
+                  Cancel Selected ({selectedTablesForCancel.length})
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Table Confirmation Modal */}
+      {showCancelTableModal && selectedTablesForCancel.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4 text-red-600">Cancel Table</h3>
+            <h3 className="text-lg font-bold mb-4 text-red-600">Confirm Table Cancellation</h3>
             
             <p className="mb-4">
-              Are you sure you want to cancel Table {selectedTableForCancel.number}? 
-              This will cancel the associated order and free up the table.
+              Are you sure you want to cancel {selectedTablesForCancel.length} table(s)? 
+              This will cancel the associated orders and free up the tables.
             </p>
+            
+            <div className="mb-4 bg-gray-50 rounded-lg p-3">
+              <div className="text-sm font-medium text-gray-700 mb-2">Tables to cancel:</div>
+              <div className="text-sm text-gray-600">
+                {selectedTablesForCancel.map(tableId => {
+                  const table = tables.find(t => t.id === tableId);
+                  return table ? `Table ${table.number}` : '';
+                }).filter(Boolean).join(', ')}
+              </div>
+            </div>
             
             <div className="flex space-x-3">
               <button
                 onClick={() => {
                   setShowCancelTableModal(false);
-                  setSelectedTableForCancel(null);
+                  setSelectedTablesForCancel([]);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
               >
@@ -2113,23 +2192,26 @@ const TableManagement = ({ onTableSelect }) => {
               <button
                 onClick={async () => {
                   try {
-                    // Cancel the order associated with this table
-                    if (selectedTableForCancel.current_order_id) {
-                      await axios.post(`${API}/orders/${selectedTableForCancel.current_order_id}/cancel`, {
-                        reason: 'table_cancelled',
-                        notes: `Table ${selectedTableForCancel.number} cancelled via table management`
-                      });
+                    // Cancel orders for all selected tables
+                    for (const tableId of selectedTablesForCancel) {
+                      const table = tables.find(t => t.id === tableId);
+                      if (table && table.current_order_id) {
+                        await axios.post(`${API}/orders/${table.current_order_id}/cancel`, {
+                          reason: 'table_cancelled',
+                          notes: `Table ${table.number} cancelled via table management`
+                        });
+                      }
+                      
+                      // Free the table
+                      await updateTableStatus(tableId, 'available');
                     }
                     
-                    // Free the table
-                    await updateTableStatus(selectedTableForCancel.id, 'available');
-                    
                     setShowCancelTableModal(false);
-                    setSelectedTableForCancel(null);
-                    alert('Table cancelled successfully');
+                    setSelectedTablesForCancel([]);
+                    alert(`${selectedTablesForCancel.length} table(s) cancelled successfully`);
                   } catch (error) {
-                    console.error('Error cancelling table:', error);
-                    alert('Error cancelling table');
+                    console.error('Error cancelling tables:', error);
+                    alert('Error cancelling tables');
                   }
                 }}
                 className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
