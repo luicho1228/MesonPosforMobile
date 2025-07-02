@@ -598,18 +598,9 @@ const CustomerManagement = ({ onBack }) => {
                           e.stopPropagation();
                           handleEditCustomer(customer);
                         }}
-                        className="text-purple-600 hover:text-purple-900 mr-3"
+                        className="text-purple-600 hover:text-purple-900"
                       >
                         Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteCustomer(customer.id);
-                        }}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
                       </button>
                     </td>
                   </tr>
