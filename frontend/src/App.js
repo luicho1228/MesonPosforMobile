@@ -3482,6 +3482,7 @@ const POSInterface = () => {
         editingOrder={editingOrder}
         editingActiveOrder={editingActiveOrder}
         onBack={handleBackToMain}
+        fromTableManagement={fromTableManagement}
       />
     );
   }
