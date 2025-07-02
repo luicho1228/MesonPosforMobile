@@ -522,8 +522,8 @@ const CustomerManagement = ({ onBack }) => {
       <div className="p-6">
         {/* Search and Stats */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
               <input
                 type="text"
@@ -536,12 +536,6 @@ const CustomerManagement = ({ onBack }) => {
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">{customers.length}</div>
               <div className="text-sm text-gray-600">Total Customers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                ${customers.reduce((sum, c) => sum + (c.total_spent || 0), 0).toFixed(2)}
-              </div>
-              <div className="text-sm text-gray-600">Total Revenue</div>
             </div>
           </div>
         </div>
