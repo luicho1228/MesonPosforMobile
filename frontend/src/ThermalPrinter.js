@@ -61,11 +61,6 @@ const ThermalPrinter = () => {
         }
       } else {
         console.log('Requesting new device authorization');
-        // Make sure this is only called from user action
-        if (!event || !event.isTrusted) {
-          throw new Error('Must be called from user interaction');
-        }
-        
         device = await navigator.usb.requestDevice({
           filters: [
             { vendorId: 0x0519 }, // Star Micronics vendor ID
