@@ -369,6 +369,24 @@ def test_time_tracking():
     headers = {"Authorization": f"Bearer {auth_token}"}
     
     try:
+        # First check if already clocked in
+        print("\nChecking current time entries...")
+        response = requests.get(f"{API_URL}/time/entries", headers=headers)
+        response.raise_for_status()
+        entries = response.json()
+        
+        # If there's an active entry, clock out first
+        active_entry = False
+        for entry in entries:
+            if entry.get("clock_out") is None:
+                active_entry = True
+                print("Found active time entry, clocking out first...")
+                try:
+                    requests.post(f"{API_URL}/time/clock-out", headers=headers)
+                except:
+                    pass
+                break
+        
         # Test clock in
         print("\nTesting clock in...")
         response = requests.post(f"{API_URL}/time/clock-in", headers=headers)
