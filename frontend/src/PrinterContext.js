@@ -76,53 +76,53 @@ export const PrinterProvider = ({ children }) => {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="text-sm font-medium text-gray-700 mb-1">Status:</div>
                 <div className={`text-sm ${
-                  thermalPrinter.connected ? 'text-green-600' : 
-                  thermalPrinter.status.includes('failed') || thermalPrinter.status.includes('Error') ? 'text-red-600' : 
+                  activePrinter.connected ? 'text-green-600' : 
+                  activePrinter.status.includes('failed') || activePrinter.status.includes('Error') ? 'text-red-600' : 
                   'text-gray-600'
                 }`}>
-                  {thermalPrinter.status}
+                  {activePrinter.status}
                 </div>
               </div>
 
               {/* Connection Buttons */}
-              {!thermalPrinter.connected ? (
+              {!activePrinter.connected ? (
                 <button
-                  onClick={thermalPrinter.requestPrinter}
-                  disabled={thermalPrinter.isConnecting}
+                  onClick={activePrinter.requestPrinter}
+                  disabled={activePrinter.isConnecting}
                   className={`w-full py-2 px-4 rounded-lg font-medium ${
-                    thermalPrinter.isConnecting
+                    activePrinter.isConnecting
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  {thermalPrinter.isConnecting ? 'Connecting...' : 'Connect Printer'}
+                  {activePrinter.isConnecting ? 'Connecting...' : 'Connect Printer'}
                 </button>
               ) : (
                 <div className="space-y-2">
                   <button
-                    onClick={thermalPrinter.disconnectPrinter}
+                    onClick={activePrinter.disconnectPrinter}
                     className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 font-medium"
                   >
                     Disconnect
                   </button>
                   <button
-                    onClick={thermalPrinter.reconnectPrinter}
-                    disabled={thermalPrinter.isConnecting}
+                    onClick={activePrinter.reconnectPrinter}
+                    disabled={activePrinter.isConnecting}
                     className={`w-full py-2 px-4 rounded-lg font-medium ${
-                      thermalPrinter.isConnecting
+                      activePrinter.isConnecting
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         : 'bg-orange-600 text-white hover:bg-orange-700'
                     }`}
                   >
-                    {thermalPrinter.isConnecting ? 'Reconnecting...' : 'Reconnect'}
+                    {activePrinter.isConnecting ? 'Reconnecting...' : 'Reconnect'}
                   </button>
                 </div>
               )}
 
               {/* Test Print Button */}
-              {thermalPrinter.connected && (
+              {activePrinter.connected && (
                 <button
-                  onClick={thermalPrinter.testPrint}
+                  onClick={activePrinter.testPrint}
                   className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 font-medium"
                 >
                   Test Print
