@@ -148,19 +148,6 @@ const ThermalPrinter = () => {
       throw error;
     }
   };
-    if (!printer) {
-      throw new Error('Printer not connected');
-    }
-
-    try {
-      const flatArray = commandArray.flat();
-      const data = new Uint8Array(flatArray);
-      await printer.transferOut(1, data);
-    } catch (error) {
-      console.error('Print command error:', error);
-      throw error;
-    }
-  };
 
   const formatPrice = (price) => {
     return `$${parseFloat(price).toFixed(2)}`;
