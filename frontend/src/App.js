@@ -3674,7 +3674,9 @@ const POSInterface = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <PrinterProvider>
+        <AppContent />
+      </PrinterProvider>
     </AuthProvider>
   );
 }
