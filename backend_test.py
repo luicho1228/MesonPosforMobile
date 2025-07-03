@@ -456,6 +456,301 @@ def test_dashboard_analytics():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Dashboard Analytics API", False, error_msg)
 
+# 7. Test Table Management API
+def test_table_management():
+    global auth_token, table_id
+    print("\n=== Testing Table Management API ===")
+    
+    if not auth_token:
+        return print_test_result("Table Management API", False, "No auth token available")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Test create table
+    print("\nTesting create table...")
+    table_data = {
+        "number": random.randint(1, 100),
+        "capacity": 4
+    }
+    
+    try:
+        response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+        response.raise_for_status()
+        result = response.json()
+        
+        table_id = result.get("id")
+        print(f"Table created with ID: {table_id}")
+        
+        if not table_id:
+            return print_test_result("Table Management - Create Table", False, "Failed to get table ID")
+        
+        # Test get all tables
+        print("\nTesting get all tables...")
+        response = requests.get(f"{API_URL}/tables")
+        response.raise_for_status()
+        tables = response.json()
+        
+        print(f"Retrieved {len(tables)} tables")
+        
+        # Verify current_order_id field exists in table response
+        if "current_order_id" not in tables[0]:
+            return print_test_result("Table Management API", False, "current_order_id field missing from table response")
+        
+        # Test update table status
+        print("\nTesting update table status...")
+        update_data = {
+            "status": "occupied",
+            "current_order_id": "test_order_id"
+        }
+        
+        response = requests.put(f"{API_URL}/tables/{table_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        updated_table = response.json()
+        
+        print(f"Table status updated: {updated_table.get('status')}")
+        
+        if updated_table.get("status") != "occupied" or updated_table.get("current_order_id") != "test_order_id":
+            return print_test_result("Table Management - Status Update", False, "Table status or current_order_id not updated correctly")
+        
+        # Reset table status
+        update_data = {
+            "status": "available",
+            "current_order_id": None
+        }
+        
+        response = requests.put(f"{API_URL}/tables/{table_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+            
+        return print_test_result("Table Management API", True, "All table management operations successful")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Table management test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Table Management API", False, error_msg)
+
+# 8. Test Receipt Data Requirements
+def test_receipt_data_requirements():
+    global auth_token, menu_item_id, customer_id, table_id
+    print("\n=== Testing Receipt Data Requirements ===")
+    
+    if not auth_token or not menu_item_id or not customer_id or not table_id:
+        return print_test_result("Receipt Data Requirements", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Test creating an order with all required receipt data
+    print("\nTesting order creation with receipt data requirements...")
+    
+    # Create a modifier group and modifier for testing
+    global modifier_group_id, modifier_id
+    
+    try:
+        # Create modifier group
+        modifier_group_data = {
+            "name": f"Test Group {random_string(4)}",
+            "required": False,
+            "max_selections": 3
+        }
+        
+        response = requests.post(f"{API_URL}/modifiers/groups", json=modifier_group_data, headers=headers)
+        response.raise_for_status()
+        modifier_group = response.json()
+        modifier_group_id = modifier_group.get("id")
+        
+        # Create modifier
+        modifier_data = {
+            "name": f"Test Modifier {random_string(4)}",
+            "price": 1.50,
+            "group_id": modifier_group_id
+        }
+        
+        response = requests.post(f"{API_URL}/modifiers", json=modifier_data, headers=headers)
+        response.raise_for_status()
+        modifier = response.json()
+        modifier_id = modifier.get("id")
+        
+        # Create order with all required receipt data
+        order_data = {
+            "customer_name": "Receipt Test Customer",
+            "customer_phone": "5551234567",
+            "customer_address": "123 Receipt St, Test City, TS 12345",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "modifiers": [
+                        {
+                            "modifier_id": modifier_id
+                        }
+                    ],
+                    "special_instructions": "Extra crispy"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 5.00,
+            "order_notes": "Test order notes for receipt"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        
+        receipt_order_id = order.get("id")
+        
+        # Verify order has all required receipt data fields
+        required_fields = [
+            "order_number", "created_at", "items", "customer_name", 
+            "customer_phone", "customer_address", "table_number", 
+            "subtotal", "tax", "tip", "total", "order_type", "order_notes"
+        ]
+        
+        missing_fields = [field for field in required_fields if field not in order]
+        
+        if missing_fields:
+            return print_test_result("Receipt Data Requirements", False, f"Missing required fields: {missing_fields}")
+        
+        # Verify items have modifiers
+        if not order.get("items")[0].get("modifiers"):
+            return print_test_result("Receipt Data Requirements", False, "Order items missing modifiers")
+        
+        # Send order to kitchen
+        print("\nSending order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{receipt_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Process payment
+        print("\nProcessing payment...")
+        payment_data = {
+            "payment_method": "cash",
+            "cash_received": 50.00,
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{receipt_order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        payment_result = response.json()
+        
+        # Verify payment data
+        if "change_amount" not in payment_result:
+            return print_test_result("Receipt Data Requirements", False, "Payment result missing change_amount")
+        
+        # Get the paid order and verify it has all required payment fields
+        response = requests.get(f"{API_URL}/orders/{receipt_order_id}", headers=headers)
+        response.raise_for_status()
+        paid_order = response.json()
+        
+        payment_fields = ["payment_method", "payment_status", "cash_received", "change_amount"]
+        missing_payment_fields = [field for field in payment_fields if field not in paid_order]
+        
+        if missing_payment_fields:
+            return print_test_result("Receipt Data Requirements", False, f"Paid order missing payment fields: {missing_payment_fields}")
+            
+        return print_test_result("Receipt Data Requirements", True, "Order contains all required receipt data")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Receipt data requirements test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Receipt Data Requirements", False, error_msg)
+
+# 9. Test Order Processing Workflow
+def test_order_processing_workflow():
+    global auth_token, menu_item_id, table_id
+    print("\n=== Testing Order Processing Workflow ===")
+    
+    if not auth_token or not menu_item_id or not table_id:
+        return print_test_result("Order Processing Workflow", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # 1. Create a new order
+        print("\nStep 1: Creating new order...")
+        order_data = {
+            "customer_name": "Workflow Test Customer",
+            "customer_phone": "5559876543",
+            "customer_address": "456 Workflow Ave, Test City, TS 12345",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Test workflow"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 2.00,
+            "order_notes": "Complete workflow test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        
+        workflow_order_id = order.get("id")
+        print(f"Order created with ID: {workflow_order_id}")
+        
+        # Verify order status is draft
+        if order.get("status") != "draft":
+            return print_test_result("Order Processing Workflow", False, "Initial order status is not draft")
+        
+        # 2. Send order to kitchen
+        print("\nStep 2: Sending order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{workflow_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify order status is updated
+        response = requests.get(f"{API_URL}/orders/{workflow_order_id}", headers=headers)
+        response.raise_for_status()
+        updated_order = response.json()
+        
+        if updated_order.get("status") != "pending":
+            return print_test_result("Order Processing Workflow", False, "Order status not updated to pending after sending to kitchen")
+        
+        # Verify table status is updated
+        response = requests.get(f"{API_URL}/tables/{table_id}", headers=headers)
+        response.raise_for_status()
+        table = response.json()
+        
+        if table.get("status") != "occupied" or table.get("current_order_id") != workflow_order_id:
+            return print_test_result("Order Processing Workflow", False, "Table status not updated correctly after sending order to kitchen")
+        
+        # 3. Process payment
+        print("\nStep 3: Processing payment...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{workflow_order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        # Verify order status is paid
+        response = requests.get(f"{API_URL}/orders/{workflow_order_id}", headers=headers)
+        response.raise_for_status()
+        paid_order = response.json()
+        
+        if paid_order.get("status") != "paid" or paid_order.get("payment_method") != "card":
+            return print_test_result("Order Processing Workflow", False, "Order not marked as paid correctly")
+        
+        # Verify table is available again
+        response = requests.get(f"{API_URL}/tables/{table_id}", headers=headers)
+        response.raise_for_status()
+        updated_table = response.json()
+        
+        if updated_table.get("status") != "available" or updated_table.get("current_order_id") is not None:
+            return print_test_result("Order Processing Workflow", False, "Table not marked as available after payment")
+            
+        return print_test_result("Order Processing Workflow", True, "Complete order workflow processed successfully")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Order processing workflow test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Order Processing Workflow", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
