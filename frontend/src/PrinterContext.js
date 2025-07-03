@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import ThermalPrinter from './ThermalPrinter';
+import StarWebPRNTPrinter from './StarWebPRNTPrinter';
 
 const PrinterContext = createContext();
 
@@ -13,12 +14,17 @@ export const usePrinter = () => {
 
 export const PrinterProvider = ({ children }) => {
   const [showPrinterManager, setShowPrinterManager] = useState(false);
-  const thermalPrinter = ThermalPrinter();
+  const [printerType, setPrinterType] = useState('webusb'); // 'webusb' or 'webprnt'
+  
+  const webUSBPrinter = ThermalPrinter();
+  const webPRNTPrinter = StarWebPRNTPrinter();
+  
+  const activePrinter = printerType === 'webprnt' ? webPRNTPrinter : webUSBPrinter;
 
   const printOrderReceipt = async (order) => {
     try {
       const context = order.order_type === 'delivery' ? 'delivery' : 'dine_in';
-      await thermalPrinter.printReceipt(order, context);
+      await activePrinter.printReceipt(order, context);
     } catch (error) {
       console.error('Print order receipt error:', error);
       alert('Failed to print receipt. Please check printer connection.');
@@ -33,12 +39,18 @@ export const PrinterProvider = ({ children }) => {
     setShowPrinterManager(false);
   };
 
+  const switchPrinterType = (type) => {
+    setPrinterType(type);
+  };
+
   const value = {
-    ...thermalPrinter,
+    ...activePrinter,
     printOrderReceipt,
     openPrinterManager,
     closePrinterManager,
-    showPrinterManager
+    showPrinterManager,
+    printerType,
+    switchPrinterType
   };
 
   return (
