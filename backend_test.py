@@ -30,6 +30,9 @@ user_id = None
 menu_item_id = None
 customer_id = None
 order_id = None
+table_id = None
+modifier_group_id = None
+modifier_id = None
 
 # Helper function to generate random string
 def random_string(length=8):
