@@ -72,8 +72,8 @@ export const PrinterProvider = ({ children }) => {
                 </div>
               </div>
 
-              {/* Connection Button */}
-              {!thermalPrinter.connected && (
+              {/* Connection Buttons */}
+              {!thermalPrinter.connected ? (
                 <button
                   onClick={thermalPrinter.requestPrinter}
                   disabled={thermalPrinter.isConnecting}
@@ -85,6 +85,26 @@ export const PrinterProvider = ({ children }) => {
                 >
                   {thermalPrinter.isConnecting ? 'Connecting...' : 'Connect Printer'}
                 </button>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    onClick={thermalPrinter.disconnectPrinter}
+                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 font-medium"
+                  >
+                    Disconnect
+                  </button>
+                  <button
+                    onClick={thermalPrinter.reconnectPrinter}
+                    disabled={thermalPrinter.isConnecting}
+                    className={`w-full py-2 px-4 rounded-lg font-medium ${
+                      thermalPrinter.isConnecting
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-orange-600 text-white hover:bg-orange-700'
+                    }`}
+                  >
+                    {thermalPrinter.isConnecting ? 'Reconnecting...' : 'Reconnect'}
+                  </button>
+                </div>
               )}
 
               {/* Test Print Button */}
