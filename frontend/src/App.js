@@ -2969,16 +2969,35 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     setShowPaymentModal(true);
   };
 
-  const printReceipt = () => {
-    // In a real implementation, this would interface with a receipt printer
-    const receiptData = {
-      order: currentOrder || { items: cart, ...calculateTotal() },
-      customer: customerInfo,
-      timestamp: new Date().toLocaleString()
-    };
+  const printReceipt = async () => {
+    const { printOrderReceipt, connected, openPrinterManager } = usePrinter();
     
-    console.log('Printing receipt:', receiptData);
-    alert('Receipt sent to printer');
+    if (!connected) {
+      const shouldSetup = window.confirm('Printer not connected. Would you like to set up the printer now?');
+      if (shouldSetup) {
+        openPrinterManager();
+      }
+      return;
+    }
+
+    try {
+      const orderData = currentOrder || {
+        ...calculateTotal(),
+        items: cart,
+        customer_name: customerInfo.name,
+        customer_phone: customerInfo.phone,
+        customer_address: customerInfo.address,
+        order_type: orderType,
+        table_number: assignedTable?.number || selectedTable?.number,
+        created_at: new Date().toISOString(),
+        order_number: `TEMP-${Date.now()}`
+      };
+
+      await printOrderReceipt(orderData);
+    } catch (error) {
+      console.error('Print receipt error:', error);
+      alert('Failed to print receipt. Please check printer connection.');
+    }
   };
 
 
