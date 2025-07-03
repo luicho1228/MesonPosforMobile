@@ -3647,6 +3647,7 @@ const POSInterface = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [fromTableManagement, setFromTableManagement] = useState(false);
   const { user, logout } = useAuth();
+  const { connected, openPrinterManager } = usePrinter();
 
   const handleNewOrder = (table = null) => {
     setSelectedTable(table);
