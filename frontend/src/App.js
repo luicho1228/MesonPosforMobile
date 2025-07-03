@@ -3515,19 +3515,46 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
 
 // Order Detail Modal
 const OrderDetailModal = ({ order, onClose }) => {
+  const { printOrderReceipt, connected, openPrinterManager } = usePrinter();
+  
   if (!order) return null;
+
+  const handlePrintOrder = async () => {
+    if (!connected) {
+      const shouldSetup = window.confirm('Printer not connected. Would you like to set up the printer now?');
+      if (shouldSetup) {
+        openPrinterManager();
+      }
+      return;
+    }
+
+    try {
+      await printOrderReceipt(order);
+    } catch (error) {
+      alert('Failed to print receipt. Please check printer connection.');
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-96 overflow-y-auto">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-xl font-bold">Order {order.order_number}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-xl"
-          >
-            ×
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handlePrintOrder}
+              className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center space-x-1"
+            >
+              <span>🖨️</span>
+              <span>Print</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-xl"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -3591,6 +3618,17 @@ const OrderDetailModal = ({ order, onClose }) => {
               <span>Total:</span>
               <span>${order.total.toFixed(2)}</span>
             </div>
+            
+            {/* Payment Information */}
+            {order.payment_method && (
+              <div className="mt-4 pt-4 border-t">
+                <h4 className="font-medium text-gray-700 mb-2">Payment Information</h4>
+                <p><strong>Method:</strong> {order.payment_method.toUpperCase()}</p>
+                {order.change_amount > 0 && (
+                  <p><strong>Change Given:</strong> ${order.change_amount.toFixed(2)}</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
