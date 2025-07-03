@@ -2401,6 +2401,28 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
             <label className="text-sm">Print Receipt</label>
           </div>
           
+          {/* Printer Status */}
+          {printReceipt && (
+            <div className="mb-2 p-2 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="text-xs">
+                  <span className="font-medium">Printer: </span>
+                  <span className={connected ? 'text-green-600' : 'text-red-600'}>
+                    {connected ? 'Connected' : 'Not Connected'}
+                  </span>
+                </div>
+                {!connected && (
+                  <button
+                    onClick={openPrinterManager}
+                    className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                  >
+                    Setup
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          
           <div className="mb-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Email Receipt (optional)</label>
             <input
@@ -2412,6 +2434,21 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
             />
           </div>
         </div>
+
+        {/* Print Receipt Button (shows after payment) */}
+        {showPrintButton && paidOrder && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-green-700">Payment successful!</span>
+              <button
+                onClick={handlePrintReceipt}
+                className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+              >
+                🖨️ Print Receipt
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex space-x-3">
           <button
