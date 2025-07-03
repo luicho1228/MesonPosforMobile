@@ -117,15 +117,24 @@ export const PrinterProvider = ({ children }) => {
                 </button>
               )}
 
-              {/* Requirements */}
+              {/* Requirements & Troubleshooting */}
               <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
                 <div className="font-medium mb-1">Requirements:</div>
-                <ul className="list-disc list-inside space-y-1">
+                <ul className="list-disc list-inside space-y-1 mb-3">
                   <li>Star TSP III in ESC/POS mode</li>
                   <li>USB cable connected</li>
                   <li>Chrome or Edge browser</li>
                   <li>HTTPS connection (or localhost)</li>
                 </ul>
+                
+                <div className="font-medium mb-1">If "Access Denied" error:</div>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li>Disconnect USB cable from printer</li>
+                  <li>Close any printer software or POS apps</li>
+                  <li>Reconnect USB cable</li>
+                  <li>Click "Connect Printer" again</li>
+                  <li>If still failing, try "Reconnect" button</li>
+                </ol>
               </div>
             </div>
           </div>
