@@ -462,14 +462,17 @@ def test_table_management():
     
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # Test create table
-    print("\nTesting create table...")
-    table_data = {
-        "number": random.randint(1, 100),
-        "capacity": 4
-    }
-    
     try:
+        # Generate a random table number that's unlikely to exist
+        table_number = random.randint(1000, 9999)
+        
+        # Test create table
+        print(f"\nTesting create table with number {table_number}...")
+        table_data = {
+            "number": table_number,
+            "capacity": 4
+        }
+        
         response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
         response.raise_for_status()
         result = response.json()
