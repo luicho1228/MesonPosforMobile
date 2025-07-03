@@ -18,7 +18,10 @@ test_results = {
     "Customer Management API": {"success": False, "details": ""},
     "Order Management API": {"success": False, "details": ""},
     "Time Tracking API": {"success": False, "details": ""},
-    "Dashboard Analytics API": {"success": False, "details": ""}
+    "Dashboard Analytics API": {"success": False, "details": ""},
+    "Table Management API": {"success": False, "details": ""},
+    "Receipt Data Requirements": {"success": False, "details": ""},
+    "Order Processing Workflow": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
