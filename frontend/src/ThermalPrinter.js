@@ -35,24 +35,77 @@ const ThermalPrinter = () => {
 
     setIsConnecting(true);
     try {
-      const device = await navigator.usb.requestDevice({
-        filters: [
-          { vendorId: 0x0519 }, // Star Micronics vendor ID
-          { vendorId: 0x0519, productId: 0x0003 } // TSP III specific
-        ]
-      });
+      // First, try to get already authorized devices
+      const existingDevices = await navigator.usb.getDevices();
+      const starDevice = existingDevices.find(device => 
+        device.vendorId === 0x0519 && 
+        (device.productId === 0x0003 || device.productId === 0x0001)
+      );
 
+      let device;
+      if (starDevice) {
+        console.log('Found existing authorized Star device');
+        device = starDevice;
+      } else {
+        console.log('Requesting new device authorization');
+        device = await navigator.usb.requestDevice({
+          filters: [
+            { vendorId: 0x0519 }, // Star Micronics vendor ID
+            { vendorId: 0x0519, productId: 0x0003 }, // TSP III specific
+            { vendorId: 0x0519, productId: 0x0001 }, // TSP100 alternative
+          ]
+        });
+      }
+
+      // Check if device is already open and close it first
+      if (device.opened) {
+        console.log('Device already open, closing first...');
+        await device.close();
+        // Wait a moment for the device to fully close
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      console.log('Opening device...');
       await device.open();
-      await device.selectConfiguration(1);
+      
+      console.log('Selecting configuration...');
+      if (device.configuration === null) {
+        await device.selectConfiguration(1);
+      }
+      
+      console.log('Claiming interface...');
       await device.claimInterface(0);
       
       setPrinter(device);
       setStatus('Connected to Star TSP III');
+      
+      // Test the connection with a simple command
+      try {
+        await device.transferOut(1, new Uint8Array([0x1B, 0x40])); // Initialize command
+        console.log('Connection test successful');
+      } catch (testError) {
+        console.warn('Connection test failed, but device seems connected:', testError);
+      }
+      
       return true;
       
     } catch (error) {
       console.error('Printer connection error:', error);
-      setStatus(`Connection failed: ${error.message}`);
+      
+      let errorMessage = 'Connection failed: ';
+      if (error.name === 'NotFoundError') {
+        errorMessage += 'No printer selected or printer not found';
+      } else if (error.name === 'SecurityError') {
+        errorMessage += 'Access denied. Please ensure printer is not in use by another application';
+      } else if (error.name === 'NetworkError') {
+        errorMessage += 'Device communication error. Try disconnecting and reconnecting the USB cable';
+      } else if (error.message.includes('Access denied')) {
+        errorMessage += 'Access denied. Please try: 1) Disconnect USB cable 2) Close any printer software 3) Reconnect USB cable 4) Try again';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      setStatus(errorMessage);
       return false;
     } finally {
       setIsConnecting(false);
