@@ -2238,6 +2238,9 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
   const [emailReceipt, setEmailReceipt] = useState('');
   const [printReceipt, setPrintReceipt] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [showPrintButton, setShowPrintButton] = useState(false);
+  const [paidOrder, setPaidOrder] = useState(null);
+  const { printOrderReceipt, connected, openPrinterManager } = usePrinter();
 
   const calculateChange = () => {
     if (paymentMethod === 'cash' && cashReceived) {
@@ -2263,9 +2266,39 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
 
       const response = await axios.post(`${API}/orders/${order.id}/pay`, paymentData);
       
+      // Store the paid order for printing
+      const orderWithPayment = {
+        ...order,
+        payment_method: paymentMethod,
+        change_amount: response.data.change_amount || 0,
+        paid_at: new Date().toISOString()
+      };
+      setPaidOrder(orderWithPayment);
+      
       alert(`Payment successful! ${paymentMethod === 'cash' ? `Change: $${response.data.change_amount.toFixed(2)}` : ''}`);
-      onPaymentComplete();
-      onClose();
+      
+      // Auto-print if enabled and printer connected
+      if (printReceipt && connected) {
+        try {
+          await printOrderReceipt(orderWithPayment);
+        } catch (error) {
+          console.error('Auto-print failed:', error);
+        }
+      }
+      
+      // Show print button option for a few seconds
+      if (printReceipt) {
+        setShowPrintButton(true);
+        setTimeout(() => setShowPrintButton(false), 10000); // Hide after 10 seconds
+      }
+      
+      setTimeout(() => {
+        onPaymentComplete();
+        onClose();
+        setShowPrintButton(false);
+        setPaidOrder(null);
+      }, showPrintButton ? 3000 : 1000);
+      
     } catch (error) {
       alert(error.response?.data?.detail || 'Payment failed');
     } finally {
@@ -2285,6 +2318,16 @@ const PaymentModal = ({ isOpen, order, onClose, onPaymentComplete }) => {
       alert(error.response?.data?.detail || 'Error processing pay later');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handlePrintReceipt = async () => {
+    if (paidOrder) {
+      try {
+        await printOrderReceipt(paidOrder);
+      } catch (error) {
+        alert('Print failed. Please check printer connection.');
+      }
     }
   };
 
