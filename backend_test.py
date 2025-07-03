@@ -774,6 +774,10 @@ def run_all_tests():
         test_results["Customer Management API"]["success"] = customer_success
         test_results["Customer Management API"]["details"] = customer_details
         
+        table_success, table_details = test_table_management()
+        test_results["Table Management API"]["success"] = table_success
+        test_results["Table Management API"]["details"] = table_details
+        
         order_success, order_details = test_order_management()
         test_results["Order Management API"]["success"] = order_success
         test_results["Order Management API"]["details"] = order_details
@@ -785,6 +789,14 @@ def run_all_tests():
         dashboard_success, dashboard_details = test_dashboard_analytics()
         test_results["Dashboard Analytics API"]["success"] = dashboard_success
         test_results["Dashboard Analytics API"]["details"] = dashboard_details
+        
+        receipt_success, receipt_details = test_receipt_data_requirements()
+        test_results["Receipt Data Requirements"]["success"] = receipt_success
+        test_results["Receipt Data Requirements"]["details"] = receipt_details
+        
+        workflow_success, workflow_details = test_order_processing_workflow()
+        test_results["Order Processing Workflow"]["success"] = workflow_success
+        test_results["Order Processing Workflow"]["details"] = workflow_details
     
     # Print summary
     print("\n========================================")
