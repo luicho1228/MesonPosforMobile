@@ -3755,6 +3755,19 @@ const POSInterface = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800">Restaurant POS</h1>
           <div className="flex items-center space-x-4">
+            {/* Printer Status */}
+            <button
+              onClick={openPrinterManager}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                connected 
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+              }`}
+            >
+              <span>🖨️</span>
+              <span>{connected ? 'Printer Connected' : 'Setup Printer'}</span>
+            </button>
+            
             <span className="text-sm text-gray-600">
               Welcome, {user?.full_name} ({user?.role})
             </span>
