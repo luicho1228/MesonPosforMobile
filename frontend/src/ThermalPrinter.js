@@ -381,6 +381,8 @@ const ThermalPrinter = () => {
     status,
     isConnecting,
     requestPrinter,
+    disconnectPrinter,
+    reconnectPrinter,
     printReceipt,
     testPrint,
     connected: !!printer
