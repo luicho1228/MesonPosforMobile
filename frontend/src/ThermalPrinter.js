@@ -112,7 +112,27 @@ const ThermalPrinter = () => {
     }
   };
 
-  const sendCommand = async (commandArray) => {
+  const disconnectPrinter = async () => {
+    if (printer) {
+      try {
+        console.log('Disconnecting printer...');
+        await printer.close();
+        setPrinter(null);
+        setStatus('Disconnected');
+      } catch (error) {
+        console.error('Error disconnecting printer:', error);
+        setPrinter(null);
+        setStatus('Disconnected (forced)');
+      }
+    }
+  };
+
+  const reconnectPrinter = async () => {
+    await disconnectPrinter();
+    // Wait a moment before reconnecting
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return await requestPrinter();
+  };
     if (!printer) {
       throw new Error('Printer not connected');
     }
