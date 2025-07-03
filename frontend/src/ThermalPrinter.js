@@ -133,6 +133,21 @@ const ThermalPrinter = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     return await requestPrinter();
   };
+
+  const sendCommand = async (commandArray) => {
+    if (!printer) {
+      throw new Error('Printer not connected');
+    }
+
+    try {
+      const flatArray = commandArray.flat();
+      const data = new Uint8Array(flatArray);
+      await printer.transferOut(1, data);
+    } catch (error) {
+      console.error('Print command error:', error);
+      throw error;
+    }
+  };
     if (!printer) {
       throw new Error('Printer not connected');
     }
