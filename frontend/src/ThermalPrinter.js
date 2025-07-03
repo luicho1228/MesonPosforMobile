@@ -35,6 +35,8 @@ const ThermalPrinter = () => {
 
     setIsConnecting(true);
     try {
+      let device;
+      
       // First, try to get already authorized devices
       const existingDevices = await navigator.usb.getDevices();
       const starDevice = existingDevices.find(device => 
@@ -42,10 +44,21 @@ const ThermalPrinter = () => {
         (device.productId === 0x0003 || device.productId === 0x0001)
       );
 
-      let device;
       if (starDevice) {
         console.log('Found existing authorized Star device');
         device = starDevice;
+        
+        // If device is open, close it first
+        if (device.opened) {
+          console.log('Device already open, closing...');
+          try {
+            await device.close();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } catch (closeError) {
+            console.warn('Error closing device:', closeError);
+            // Continue anyway
+          }
+        }
       } else {
         console.log('Requesting new device authorization');
         device = await navigator.usb.requestDevice({
@@ -55,14 +68,6 @@ const ThermalPrinter = () => {
             { vendorId: 0x0519, productId: 0x0001 }, // TSP100 alternative
           ]
         });
-      }
-
-      // Check if device is already open and close it first
-      if (device.opened) {
-        console.log('Device already open, closing first...');
-        await device.close();
-        // Wait a moment for the device to fully close
-        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       console.log('Opening device...');
@@ -94,15 +99,15 @@ const ThermalPrinter = () => {
       
       let errorMessage = 'Connection failed: ';
       if (error.name === 'NotFoundError') {
-        errorMessage += 'No printer selected or printer not found';
-      } else if (error.name === 'SecurityError') {
-        errorMessage += 'Access denied. Please ensure printer is not in use by another application';
+        errorMessage += 'No printer selected. Please try again.';
+      } else if (error.name === 'SecurityError' || error.message.includes('Access denied')) {
+        errorMessage += 'USB Access denied. Try this: 1) Disconnect USB cable 2) Close other printer apps 3) Reconnect USB cable 4) Click Connect again';
       } else if (error.name === 'NetworkError') {
-        errorMessage += 'Device communication error. Try disconnecting and reconnecting the USB cable';
-      } else if (error.message.includes('Access denied')) {
-        errorMessage += 'Access denied. Please try: 1) Disconnect USB cable 2) Close any printer software 3) Reconnect USB cable 4) Try again';
+        errorMessage += 'Device communication error. Disconnect and reconnect USB cable.';
+      } else if (error.name === 'InvalidStateError') {
+        errorMessage += 'Device in use. Close other apps using the printer and try again.';
       } else {
-        errorMessage += error.message;
+        errorMessage += error.message || 'Unknown error';
       }
       
       setStatus(errorMessage);
