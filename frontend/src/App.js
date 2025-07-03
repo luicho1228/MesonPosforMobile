@@ -3785,7 +3785,7 @@ const POSInterface = () => {
 
       <div className="p-6 space-y-6">
         {/* Quick Actions */}
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 flex-wrap">
           <button
             onClick={() => handleNewOrder()}
             className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
@@ -3812,6 +3812,17 @@ const POSInterface = () => {
             className="bg-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg"
           >
             👥 Customer Management
+          </button>
+          
+          <button
+            onClick={openPrinterManager}
+            className={`px-8 py-4 rounded-xl text-lg font-semibold transition-colors shadow-lg ${
+              connected 
+                ? 'bg-green-600 text-white hover:bg-green-700' 
+                : 'bg-orange-600 text-white hover:bg-orange-700'
+            }`}
+          >
+            🖨️ Printer Manager
           </button>
         </div>
 
