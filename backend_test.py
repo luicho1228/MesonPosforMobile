@@ -51,17 +51,13 @@ def test_authentication():
     global auth_token, user_id
     print("\n=== Testing Authentication System ===")
     
-    # Generate random username to avoid conflicts
-    username = f"manager_{random_string()}"
-    email = f"{username}@example.com"
-    password = "Password123!"
+    # Generate random pin for testing
+    pin = ''.join(random.choices(string.digits, k=4))
     
     # Test user registration
     print("\nTesting user registration...")
     register_data = {
-        "username": username,
-        "email": email,
-        "password": password,
+        "pin": pin,
         "role": "manager",
         "full_name": "Test Manager",
         "phone": "1234567890"
@@ -84,8 +80,7 @@ def test_authentication():
         # Test login
         print("\nTesting user login...")
         login_data = {
-            "username": username,
-            "password": password
+            "pin": pin
         }
         
         response = requests.post(f"{API_URL}/auth/login", json=login_data)
@@ -95,7 +90,7 @@ def test_authentication():
         login_token = result.get("access_token")
         login_user = result.get("user", {})
         
-        print(f"User logged in successfully: {login_user.get('username')}")
+        print(f"User logged in successfully: {login_user.get('full_name')}")
         print(f"Login token received: {login_token[:10]}...")
         
         if not login_token:
@@ -109,7 +104,7 @@ def test_authentication():
         response.raise_for_status()
         user_data = response.json()
         
-        print(f"Current user retrieved: {user_data.get('username')}")
+        print(f"Current user retrieved: {user_data.get('full_name')}")
         
         if user_data.get("id") != user_id:
             return print_test_result("Authentication - Get Current User", False, "User ID mismatch")
