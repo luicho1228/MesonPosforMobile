@@ -72,6 +72,35 @@ export const PrinterProvider = ({ children }) => {
             </div>
             
             <div className="space-y-4">
+              {/* Printer Type Selector */}
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="text-sm font-medium text-blue-800 mb-2">Printer Connection Type:</div>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="printerType"
+                      value="webusb"
+                      checked={printerType === 'webusb'}
+                      onChange={(e) => switchPrinterType(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">WebUSB (Direct USB)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="printerType"
+                      value="webprnt"
+                      checked={printerType === 'webprnt'}
+                      onChange={(e) => switchPrinterType(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Star WebPRNT (Recommended)</span>
+                  </label>
+                </div>
+              </div>
+
               {/* Status */}
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="text-sm font-medium text-gray-700 mb-1">Status:</div>
