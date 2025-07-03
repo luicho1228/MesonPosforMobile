@@ -2971,8 +2971,6 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   };
 
   const printReceipt = async () => {
-    const { printOrderReceipt, connected, openPrinterManager } = usePrinter();
-    
     if (!connected) {
       const shouldSetup = window.confirm('Printer not connected. Would you like to set up the printer now?');
       if (shouldSetup) {
