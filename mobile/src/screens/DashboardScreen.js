@@ -229,6 +229,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#2563eb',
+    marginRight: 12,
+  },
   printerButton: {
     padding: 8,
     borderRadius: 8,
