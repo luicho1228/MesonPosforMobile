@@ -378,12 +378,15 @@ agent_communication:
 
   - task: "React Native Settings Screens Implementation"
     implemented: true
-    working: false
+    working: true
     file: "/app/mobile/src/screens/StaffManagementScreen.js, /app/mobile/src/screens/TaxSettingsScreen.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "REACT NATIVE SETTINGS SCREENS COMPLETED: Implemented comprehensive settings management for React Native mobile app. 1) STAFF MANAGEMENT: Complete staff CRUD with role-based access control (manager only), employee management with PIN authentication, hourly rates, active/inactive status, and integration with existing auth system. Added user management API endpoints to backend (/auth/users endpoints with role validation). 2) TAX & CHARGES SETTINGS: Full tax rate and service charge configuration with percentage/fixed amount types, active/inactive toggles, mandatory charge options, and visual management interface. 3) NAVIGATION: Updated MainTabNavigator with SettingsStack to properly route to all management screens (MenuManagement, TableSettings, StaffManagement, TaxSettings). 4) ROLE-BASED ACCESS: Only managers can access management settings, enforced both in UI and backend API. All screens follow React Native best practices with proper error handling, loading states, and modern UI design."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the user management API endpoints. Verified that: 1) GET /api/auth/users correctly requires manager role and returns all users with enhanced fields (email, hourly_rate, active), 2) PUT /api/auth/users/{user_id} properly requires manager role and updates user information including PIN hashing, 3) DELETE /api/auth/users/{user_id} requires manager role and prevents users from deleting their own accounts, 4) Role-based access control works correctly with managers having access to user management endpoints while employees are denied, 5) PIN hashing works correctly for both new and updated users, 6) All existing auth endpoints (/auth/register, /auth/login, /auth/me) properly integrate with the enhanced User model. All tests passed successfully, confirming that the user management system is working as expected."
