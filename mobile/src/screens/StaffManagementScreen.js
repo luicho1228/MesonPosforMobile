@@ -103,8 +103,8 @@ const StaffManagementScreen = ({ navigation }) => {
       email: employee.email,
       phone: employee.phone || '',
       role: employee.role,
-      pin: employee.pin,
-      is_active: employee.is_active,
+      pin: '', // Don't pre-fill PIN for security
+      active: employee.active,
       hourly_rate: employee.hourly_rate?.toString() || '15.00'
     });
     setEditingEmployee(employee);
