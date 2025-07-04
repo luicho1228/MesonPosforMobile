@@ -262,17 +262,11 @@ backend:
         agent: "testing"
         comment: "Successfully tested the order cancellation API fix. Created a comprehensive test that verified: 1) Order cancel endpoint accepts 'other' as a valid reason with custom notes, 2) Order status correctly changes to 'cancelled' after cancellation, 3) Table status is properly updated to 'available' with current_order_id set to null after cancellation, 4) Table update endpoint correctly handles setting current_order_id to null. All tests passed successfully, confirming that both the order cancellation endpoint and table update functionality are working correctly. The frontend should no longer encounter AxiosError when cancelling tables from Table Management."
         
-  - task: "Dashboard UI"
-    implemented: true
-    working: "NA"
-    file: "/app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented dashboard with real-time stats display for orders, revenue, pending orders, and active staff"
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 2
+  run_ui: false
         
   - task: "Menu Manager UI"
     implemented: true
