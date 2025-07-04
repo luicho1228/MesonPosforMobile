@@ -421,8 +421,8 @@ const StaffManagementScreen = ({ navigation }) => {
                 <View style={styles.switchRow}>
                   <Text style={styles.inputLabel}>Active Employee</Text>
                   <Switch
-                    value={employeeForm.is_active}
-                    onValueChange={(value) => setEmployeeForm({...employeeForm, is_active: value})}
+                    value={employeeForm.active}
+                    onValueChange={(value) => setEmployeeForm({...employeeForm, active: value})}
                   />
                 </View>
               </View>
