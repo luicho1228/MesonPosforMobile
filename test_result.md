@@ -247,18 +247,20 @@ backend:
         agent: "main"
         comment: "COMPLETE UI/UX OVERHAUL: 1) CUSTOMER SECTION REDESIGN: Removed always-visible customer fields, replaced with single 'Add Customer' button that shows customer info section only after adding. Added apartment/unit field to address inputs. Added 'Edit Customer' button in active customer section. 2) APARTMENT SUPPORT: Enhanced customer modal and auto-fill to include apartment/unit field for building deliveries. 3) MULTI-SELECT BULK CANCELLATION: Moved cancel functionality from individual order cards to filter section with multi-select checkboxes, Select All functionality, and bulk 'Cancel Selected' button. 4) CANCELLATION REASON SYSTEM: Added comprehensive cancellation modal with reason selection (Customer Canceled, Wrong Order, Other) and custom text input for 'Other' option. Backend tracks cancellation details including reason, notes, cancelled_by, and timestamp. 5) ENHANCED ACTIVE ORDERS: Orders with checkboxes for selection, visual indicators for selected orders, improved layout without individual cancel buttons. All features fully tested and operational."
 
-frontend:
-  - task: "Authentication UI"
+  - task: "Order Cancellation API Fix"
     implemented: true
-    working: "NA"
-    file: "/app/frontend/src/App.js"
+    working: true
+    file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Implemented login form with JWT token handling, authentication context, and automatic token validation"
+        comment: "Fixed order cancellation API to accept 'other' as a valid reason value instead of 'table_cancelled'. Updated updateTableStatus to properly set current_order_id to null when making table available."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the order cancellation API fix. Created a comprehensive test that verified: 1) Order cancel endpoint accepts 'other' as a valid reason with custom notes, 2) Order status correctly changes to 'cancelled' after cancellation, 3) Table status is properly updated to 'available' with current_order_id set to null after cancellation, 4) Table update endpoint correctly handles setting current_order_id to null. All tests passed successfully, confirming that both the order cancellation endpoint and table update functionality are working correctly. The frontend should no longer encounter AxiosError when cancelling tables from Table Management."
         
   - task: "Dashboard UI"
     implemented: true
