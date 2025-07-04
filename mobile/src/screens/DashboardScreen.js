@@ -132,6 +132,12 @@ const DashboardScreen = ({ navigation }) => {
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Icon name="settings" size={20} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.printerButton, connected ? styles.printerConnected : styles.printerDisconnected]}
             onPress={openPrinterManager}
           >
