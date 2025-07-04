@@ -137,9 +137,8 @@ const StaffManagementScreen = ({ navigation }) => {
 
   const toggleEmployeeStatus = async (employee) => {
     try {
-      await axios.put(`${API}/employees/${employee.id}`, {
-        ...employee,
-        is_active: !employee.is_active
+      await axios.put(`${API}/auth/users/${employee.id}`, {
+        active: !employee.active
       });
       fetchEmployees();
     } catch (error) {
