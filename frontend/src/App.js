@@ -3634,6 +3634,831 @@ const OrderDetailModal = ({ order, onClose }) => {
   );
 };
 
+// Menu Management Component
+const MenuManagementComponent = ({ onBack }) => {
+  const [menuItems, setMenuItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [modifierGroups, setModifierGroups] = useState([]);
+  const [modifiers, setModifiers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('items');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showModifierModal, setShowModifierModal] = useState(false);
+  const [showModifierGroupModal, setShowModifierGroupModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editingModifier, setEditingModifier] = useState(null);
+  const [editingModifierGroup, setEditingModifierGroup] = useState(null);
+
+  const [itemForm, setItemForm] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    image_url: '',
+    available: true,
+    modifier_groups: []
+  });
+
+  const [categoryForm, setCategoryForm] = useState({
+    name: ''
+  });
+
+  const [modifierForm, setModifierForm] = useState({
+    name: '',
+    price: '',
+    group_id: ''
+  });
+
+  const [modifierGroupForm, setModifierGroupForm] = useState({
+    name: '',
+    required: false,
+    max_selections: 1
+  });
+
+  useEffect(() => {
+    fetchMenuData();
+  }, []);
+
+  const fetchMenuData = async () => {
+    try {
+      setLoading(true);
+      const [itemsRes, categoriesRes, modifierGroupsRes, modifiersRes] = await Promise.all([
+        axios.get(`${API}/menu/items/all`),
+        axios.get(`${API}/menu/categories`),
+        axios.get(`${API}/modifiers/groups`),
+        axios.get(`${API}/modifiers`)
+      ]);
+
+      setMenuItems(itemsRes.data);
+      setCategories(['all', ...categoriesRes.data.categories]);
+      setModifierGroups(modifierGroupsRes.data);
+      setModifiers(modifiersRes.data);
+    } catch (error) {
+      console.error('Error fetching menu data:', error);
+      alert('Failed to load menu data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveItem = async () => {
+    if (!itemForm.name || !itemForm.price || !itemForm.category) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const itemData = {
+        ...itemForm,
+        price: parseFloat(itemForm.price)
+      };
+
+      if (editingItem) {
+        await axios.put(`${API}/menu/items/${editingItem.id}`, itemData);
+        alert('Menu item updated successfully');
+      } else {
+        await axios.post(`${API}/menu/items`, itemData);
+        alert('Menu item added successfully');
+      }
+
+      setShowItemModal(false);
+      setEditingItem(null);
+      setItemForm({
+        name: '',
+        description: '',
+        price: '',
+        category: '',
+        image_url: '',
+        available: true,
+        modifier_groups: []
+      });
+      fetchMenuData();
+    } catch (error) {
+      console.error('Error saving item:', error);
+      alert('Failed to save menu item');
+    }
+  };
+
+  const handleEditItem = (item) => {
+    setItemForm({
+      name: item.name,
+      description: item.description || '',
+      price: item.price.toString(),
+      category: item.category,
+      image_url: item.image_url || '',
+      available: item.available,
+      modifier_groups: item.modifier_groups || []
+    });
+    setEditingItem(item);
+    setShowItemModal(true);
+  };
+
+  const handleDeleteItem = async (item) => {
+    if (window.confirm(`Are you sure you want to delete "${item.name}"?`)) {
+      try {
+        await axios.delete(`${API}/menu/items/${item.id}`);
+        alert('Menu item deleted successfully');
+        fetchMenuData();
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('Failed to delete menu item');
+      }
+    }
+  };
+
+  const handleSaveModifierGroup = async () => {
+    if (!modifierGroupForm.name) {
+      alert('Please enter a group name');
+      return;
+    }
+
+    try {
+      const groupData = {
+        ...modifierGroupForm,
+        max_selections: parseInt(modifierGroupForm.max_selections)
+      };
+
+      await axios.post(`${API}/modifiers/groups`, groupData);
+      alert('Modifier group added successfully');
+      setShowModifierGroupModal(false);
+      setModifierGroupForm({
+        name: '',
+        required: false,
+        max_selections: 1
+      });
+      fetchMenuData();
+    } catch (error) {
+      console.error('Error saving modifier group:', error);
+      alert('Failed to save modifier group');
+    }
+  };
+
+  const handleDeleteModifierGroup = async (group) => {
+    if (window.confirm(`Are you sure you want to delete "${group.name}" and all its modifiers?`)) {
+      try {
+        await axios.delete(`${API}/modifiers/groups/${group.id}`);
+        alert('Modifier group deleted successfully');
+        fetchMenuData();
+      } catch (error) {
+        console.error('Error deleting modifier group:', error);
+        alert('Failed to delete modifier group');
+      }
+    }
+  };
+
+  const handleSaveModifier = async () => {
+    if (!modifierForm.name || !modifierForm.price || !modifierForm.group_id) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      const modifierData = {
+        ...modifierForm,
+        price: parseFloat(modifierForm.price)
+      };
+
+      await axios.post(`${API}/modifiers`, modifierData);
+      alert('Modifier added successfully');
+      setShowModifierModal(false);
+      setModifierForm({
+        name: '',
+        price: '',
+        group_id: ''
+      });
+      fetchMenuData();
+    } catch (error) {
+      console.error('Error saving modifier:', error);
+      alert('Failed to save modifier');
+    }
+  };
+
+  const handleDeleteModifier = async (modifier) => {
+    if (window.confirm(`Are you sure you want to delete "${modifier.name}"?`)) {
+      try {
+        await axios.delete(`${API}/modifiers/${modifier.id}`);
+        alert('Modifier deleted successfully');
+        fetchMenuData();
+      } catch (error) {
+        console.error('Error deleting modifier:', error);
+        alert('Failed to delete modifier');
+      }
+    }
+  };
+
+  const filteredItems = menuItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading menu data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back to Settings</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowItemModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            >
+              <span>+</span>
+              <span>Add Item</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white border-b">
+        <div className="flex space-x-8 px-6">
+          {[
+            { id: 'items', name: 'Menu Items', icon: '🍽️' },
+            { id: 'categories', name: 'Categories', icon: '📂' },
+            { id: 'modifiers', name: 'Modifiers', icon: '🔧' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-6">
+        {/* Menu Items Tab */}
+        {activeTab === 'items' && (
+          <div className="space-y-6">
+            {/* Search and Filter */}
+            <div className="bg-white p-4 rounded-lg border">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search menu items..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="absolute right-3 top-2.5 text-gray-400">🔍</span>
+                  </div>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {categories.map(category => (
+                      <option key={category} value={category}>
+                        {category === 'all' ? 'All Categories' : category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {filteredItems.length} items found
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Items Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.map(item => (
+                <div key={item.id} className="bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-lg text-gray-800">{item.name}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        item.available 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.available ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-lg font-bold text-green-600">${item.price.toFixed(2)}</span>
+                      <span className="text-sm bg-gray-100 px-2 py-1 rounded">{item.category}</span>
+                    </div>
+                    {item.modifier_groups && item.modifier_groups.length > 0 && (
+                      <div className="mb-3">
+                        <span className="text-xs text-gray-500">Modifiers: {item.modifier_groups.length} groups</span>
+                      </div>
+                    )}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEditItem(item)}
+                        className="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded text-sm font-medium hover:bg-blue-100"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteItem(item)}
+                        className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded text-sm font-medium hover:bg-red-100"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredItems.length === 0 && (
+              <div className="text-center py-12">
+                <span className="text-6xl mb-4 block">🍽️</span>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No menu items found</h3>
+                <p className="text-gray-500 mb-4">Get started by adding your first menu item</p>
+                <button
+                  onClick={() => setShowItemModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Add Menu Item
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Menu Categories</h2>
+              <button
+                onClick={() => setShowCategoryModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <span>+</span>
+                <span>Add Category</span>
+              </button>
+            </div>
+
+            <div className="bg-white border rounded-lg">
+              <div className="divide-y">
+                {categories.filter(cat => cat !== 'all').map((category, index) => {
+                  const itemCount = menuItems.filter(item => item.category === category).length;
+                  return (
+                    <div key={category} className="p-4 flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{category}</h3>
+                        <p className="text-sm text-gray-500">{itemCount} items</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            setCategoryForm({ name: category });
+                            setShowCategoryModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modifiers Tab */}
+        {activeTab === 'modifiers' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Modifier Groups & Options</h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowModifierGroupModal(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                >
+                  <span>+</span>
+                  <span>Add Group</span>
+                </button>
+                <button
+                  onClick={() => setShowModifierModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                >
+                  <span>+</span>
+                  <span>Add Modifier</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {modifierGroups.map(group => {
+                const groupModifiers = modifiers.filter(mod => mod.group_id === group.id);
+                return (
+                  <div key={group.id} className="bg-white border rounded-lg">
+                    <div className="p-4 bg-gray-50 border-b">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-medium text-gray-900">{group.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            {group.required ? 'Required' : 'Optional'} • 
+                            Max {group.max_selections} selection{group.max_selections !== 1 ? 's' : ''} • 
+                            {groupModifiers.length} modifier{groupModifiers.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteModifierGroup(group)}
+                          className="text-red-600 hover:text-red-800 px-3 py-1 text-sm"
+                        >
+                          Delete Group
+                        </button>
+                      </div>
+                    </div>
+                    <div className="divide-y">
+                      {groupModifiers.map(modifier => (
+                        <div key={modifier.id} className="p-4 flex justify-between items-center">
+                          <div>
+                            <span className="font-medium">{modifier.name}</span>
+                            <span className="ml-2 text-green-600 font-medium">+${modifier.price.toFixed(2)}</span>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteModifier(modifier)}
+                            className="text-red-600 hover:text-red-800 px-3 py-1 text-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ))}
+                      {groupModifiers.length === 0 && (
+                        <div className="p-4 text-center text-gray-500">
+                          No modifiers in this group
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {modifierGroups.length === 0 && (
+              <div className="text-center py-12">
+                <span className="text-6xl mb-4 block">🔧</span>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No modifier groups found</h3>
+                <p className="text-gray-500 mb-4">Create modifier groups to add options to your menu items</p>
+                <button
+                  onClick={() => setShowModifierGroupModal(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                >
+                  Add Modifier Group
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Item Modal */}
+      {showItemModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">
+                {editingItem ? 'Edit Menu Item' : 'Add Menu Item'}
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={itemForm.name}
+                  onChange={(e) => setItemForm({...itemForm, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter item name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={itemForm.description}
+                  onChange={(e) => setItemForm({...itemForm, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  rows="3"
+                  placeholder="Enter description"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={itemForm.price}
+                    onChange={(e) => setItemForm({...itemForm, price: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                  <input
+                    type="text"
+                    value={itemForm.category}
+                    onChange={(e) => setItemForm({...itemForm, category: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter category"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                <input
+                  type="url"
+                  value={itemForm.image_url}
+                  onChange={(e) => setItemForm({...itemForm, image_url: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Modifier Groups</label>
+                <div className="space-y-2">
+                  {modifierGroups.map(group => (
+                    <label key={group.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={itemForm.modifier_groups.includes(group.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setItemForm({
+                              ...itemForm,
+                              modifier_groups: [...itemForm.modifier_groups, group.id]
+                            });
+                          } else {
+                            setItemForm({
+                              ...itemForm,
+                              modifier_groups: itemForm.modifier_groups.filter(id => id !== group.id)
+                            });
+                          }
+                        }}
+                        className="mr-2"
+                      />
+                      <span>{group.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={itemForm.available}
+                    onChange={(e) => setItemForm({...itemForm, available: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Available for ordering</span>
+                </label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowItemModal(false);
+                  setEditingItem(null);
+                  setItemForm({
+                    name: '',
+                    description: '',
+                    price: '',
+                    category: '',
+                    image_url: '',
+                    available: true,
+                    modifier_groups: []
+                  });
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveItem}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                {editingItem ? 'Update' : 'Add'} Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Add Category</h2>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+              <input
+                type="text"
+                value={categoryForm.name}
+                onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter category name"
+              />
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCategoryModal(false);
+                  setCategoryForm({ name: '' });
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // Just close modal for now - categories are auto-created when items are added
+                  setShowCategoryModal(false);
+                  setCategoryForm({ name: '' });
+                  alert('Categories are automatically created when you add menu items with that category');
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Modifier Group Modal */}
+      {showModifierGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Add Modifier Group</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+                <input
+                  type="text"
+                  value={modifierGroupForm.name}
+                  onChange={(e) => setModifierGroupForm({...modifierGroupForm, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Size, Toppings"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Maximum Selections</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={modifierGroupForm.max_selections}
+                  onChange={(e) => setModifierGroupForm({...modifierGroupForm, max_selections: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={modifierGroupForm.required}
+                    onChange={(e) => setModifierGroupForm({...modifierGroupForm, required: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Required selection</span>
+                </label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowModifierGroupModal(false);
+                  setModifierGroupForm({
+                    name: '',
+                    required: false,
+                    max_selections: 1
+                  });
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveModifierGroup}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Add Group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Modifier Modal */}
+      {showModifierModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Add Modifier</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Modifier Name</label>
+                <input
+                  type="text"
+                  value={modifierForm.name}
+                  onChange={(e) => setModifierForm({...modifierForm, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Extra Cheese, Large"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Price</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={modifierForm.price}
+                  onChange={(e) => setModifierForm({...modifierForm, price: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Modifier Group</label>
+                <select
+                  value={modifierForm.group_id}
+                  onChange={(e) => setModifierForm({...modifierForm, group_id: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select a group</option>
+                  {modifierGroups.map(group => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowModifierModal(false);
+                  setModifierForm({
+                    name: '',
+                    price: '',
+                    group_id: ''
+                  });
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveModifier}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Add Modifier
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main POS Interface
 const POSInterface = () => {
   const [currentView, setCurrentView] = useState('main');
