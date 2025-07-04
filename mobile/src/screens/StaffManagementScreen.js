@@ -219,9 +219,9 @@ const StaffManagementScreen = ({ navigation }) => {
             <TouchableOpacity onPress={() => toggleEmployeeStatus(employee)}>
               <Text style={[
                 styles.statValue,
-                { color: employee.is_active ? '#10b981' : '#dc2626' }
+                { color: employee.active ? '#10b981' : '#dc2626' }
               ]}>
-                {employee.is_active ? 'Active' : 'Inactive'}
+                {employee.active ? 'Active' : 'Inactive'}
               </Text>
             </TouchableOpacity>
           </View>
