@@ -368,7 +368,7 @@ const StaffManagementScreen = ({ navigation }) => {
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Role *</Text>
                 <View style={styles.roleSelector}>
-                  {['manager', 'cashier', 'kitchen', 'delivery'].map(role => (
+                  {['manager', 'employee'].map(role => (
                     <TouchableOpacity
                       key={role}
                       style={[
