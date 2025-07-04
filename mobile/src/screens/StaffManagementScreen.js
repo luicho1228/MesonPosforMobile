@@ -40,7 +40,7 @@ const StaffManagementScreen = ({ navigation }) => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axios.get(`${API}/employees`);
+      const response = await axios.get(`${API}/auth/users`);
       setEmployees(response.data);
     } catch (error) {
       console.error('Error fetching employees:', error);
