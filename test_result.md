@@ -268,9 +268,9 @@ metadata:
   test_sequence: 2
   run_ui: false
         
-  - task: "Menu Manager UI"
+  - task: "Dashboard UI"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
@@ -278,7 +278,10 @@ metadata:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Implemented complete menu management interface with add/edit/delete functionality, category management, and availability toggle"
+        comment: "Implemented dashboard with real-time stats display for orders, revenue, pending orders, and active staff"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the Dashboard UI. Verified that the dashboard displays real-time stats for orders, revenue, pending orders, and active staff. The dashboard is properly rendered and accessible after login."
         
   - task: "Order Management UI"
     implemented: true
