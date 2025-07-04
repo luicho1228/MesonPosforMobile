@@ -423,6 +423,74 @@ async def get_current_user(user_id: str = Depends(verify_token)):
         raise HTTPException(status_code=404, detail="User not found")
     return User(**{k: v for k, v in user.items() if k not in ['hashed_pin', 'password']})
 
+# User Management Routes
+@api_router.get("/auth/users", response_model=List[User])
+async def get_all_users(user_id: str = Depends(verify_token)):
+    # Only managers can access user list
+    current_user = await db.users.find_one({"id": user_id})
+    if not current_user or current_user.get('role') != 'manager':
+        raise HTTPException(status_code=403, detail="Access denied. Manager role required.")
+    
+    users = await db.users.find().to_list(1000)
+    return [User(**{k: v for k, v in user.items() if k not in ['hashed_pin', 'password']}) for user in users]
+
+@api_router.put("/auth/users/{target_user_id}", response_model=User)
+async def update_user(target_user_id: str, user_data: UserUpdate, user_id: str = Depends(verify_token)):
+    # Only managers can update users
+    current_user = await db.users.find_one({"id": user_id})
+    if not current_user or current_user.get('role') != 'manager':
+        raise HTTPException(status_code=403, detail="Access denied. Manager role required.")
+    
+    # Find target user
+    target_user = await db.users.find_one({"id": target_user_id})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prepare update data
+    update_data = {}
+    if user_data.role is not None:
+        update_data['role'] = user_data.role
+    if user_data.full_name is not None:
+        update_data['full_name'] = user_data.full_name
+    if user_data.email is not None:
+        update_data['email'] = user_data.email
+    if user_data.phone is not None:
+        update_data['phone'] = user_data.phone
+    if user_data.hourly_rate is not None:
+        update_data['hourly_rate'] = user_data.hourly_rate
+    if user_data.active is not None:
+        update_data['active'] = user_data.active
+    if user_data.pin is not None:
+        # Hash the new PIN
+        update_data['hashed_pin'] = hash_pin(user_data.pin)
+    
+    if update_data:
+        await db.users.update_one({"id": target_user_id}, {"$set": update_data})
+    
+    # Return updated user
+    updated_user = await db.users.find_one({"id": target_user_id})
+    return User(**{k: v for k, v in updated_user.items() if k not in ['hashed_pin', 'password']})
+
+@api_router.delete("/auth/users/{target_user_id}")
+async def delete_user(target_user_id: str, user_id: str = Depends(verify_token)):
+    # Only managers can delete users
+    current_user = await db.users.find_one({"id": user_id})
+    if not current_user or current_user.get('role') != 'manager':
+        raise HTTPException(status_code=403, detail="Access denied. Manager role required.")
+    
+    # Cannot delete yourself
+    if target_user_id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Find target user
+    target_user = await db.users.find_one({"id": target_user_id})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete user
+    await db.users.delete_one({"id": target_user_id})
+    return {"message": "User deleted successfully"}
+
 # Modifier Groups routes
 @api_router.post("/modifiers/groups", response_model=ModifierGroup)
 async def create_modifier_group(group: ModifierGroupCreate, user_id: str = Depends(verify_token)):
