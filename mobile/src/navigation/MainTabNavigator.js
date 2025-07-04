@@ -141,7 +141,7 @@ const MainTabNavigator = () => {
       />
       <Tab.Screen 
         name="Settings" 
-        component={SettingsScreen}
+        component={SettingsStack}
         options={{ title: 'Settings' }}
       />
     </Tab.Navigator>
