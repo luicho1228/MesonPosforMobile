@@ -376,14 +376,14 @@ agent_communication:
         agent: "testing"
         comment: "Successfully tested the order cancellation API fix. Created a comprehensive test that verified: 1) Order cancel endpoint accepts 'other' as a valid reason with custom notes, 2) Order status correctly changes to 'cancelled' after cancellation, 3) Table status is properly updated to 'available' with current_order_id set to null after cancellation, 4) Table update endpoint correctly handles setting current_order_id to null. All tests passed successfully, confirming that both the order cancellation endpoint and table update functionality are working correctly. The frontend should no longer encounter AxiosError when cancelling tables from Table Management."
 
-  - task: "Table Management Multi-Fix - Auto-assign, Dine-in Mode, Multi-cancel"
+  - task: "React Native Settings Screens Implementation"
     implemented: true
     working: false
-    file: "/app/frontend/src/App.js"
+    file: "/app/mobile/src/screens/StaffManagementScreen.js, /app/mobile/src/screens/TaxSettingsScreen.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "COMPREHENSIVE TABLE MANAGEMENT FIXES: User reported 3 issues: 1) Available tables should auto-assign instead of asking again 2) Table Management should only show dine-in option 3) Cancel Table should allow multi-select instead of alert. Fixed by: Adding fromTableManagement prop, auto-setting assignedTable from selectedTable, conditional order type rendering, and implementing multi-select cancel workflow with selection and confirmation modals. All fixes integrate seamlessly with existing table management functionality."
+        comment: "REACT NATIVE SETTINGS SCREENS COMPLETED: Implemented comprehensive settings management for React Native mobile app. 1) STAFF MANAGEMENT: Complete staff CRUD with role-based access control (manager only), employee management with PIN authentication, hourly rates, active/inactive status, and integration with existing auth system. Added user management API endpoints to backend (/auth/users endpoints with role validation). 2) TAX & CHARGES SETTINGS: Full tax rate and service charge configuration with percentage/fixed amount types, active/inactive toggles, mandatory charge options, and visual management interface. 3) NAVIGATION: Updated MainTabNavigator with SettingsStack to properly route to all management screens (MenuManagement, TableSettings, StaffManagement, TaxSettings). 4) ROLE-BASED ACCESS: Only managers can access management settings, enforced both in UI and backend API. All screens follow React Native best practices with proper error handling, loading states, and modern UI design."
