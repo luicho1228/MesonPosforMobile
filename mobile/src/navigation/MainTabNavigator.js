@@ -70,6 +70,36 @@ const ManagementStack = () => (
   </Stack.Navigator>
 );
 
+const SettingsStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen 
+      name="SettingsMain" 
+      component={SettingsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen 
+      name="MenuManagement" 
+      component={MenuManagementScreen}
+      options={{ title: 'Menu Management' }}
+    />
+    <Stack.Screen 
+      name="TableSettings" 
+      component={TableSettingsScreen}
+      options={{ title: 'Table Settings' }}
+    />
+    <Stack.Screen 
+      name="StaffManagement" 
+      component={StaffManagementScreen}
+      options={{ title: 'Staff Management' }}
+    />
+    <Stack.Screen 
+      name="TaxSettings" 
+      component={TaxSettingsScreen}
+      options={{ title: 'Tax & Charges' }}
+    />
+  </Stack.Navigator>
+);
+
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator
