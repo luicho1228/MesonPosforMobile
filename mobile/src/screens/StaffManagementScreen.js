@@ -175,7 +175,7 @@ const StaffManagementScreen = ({ navigation }) => {
             <Text style={styles.employeeName}>{employee.full_name}</Text>
             <View style={[
               styles.statusIndicator,
-              { backgroundColor: employee.is_active ? '#10b981' : '#dc2626' }
+              { backgroundColor: employee.active ? '#10b981' : '#dc2626' }
             ]} />
           </View>
           <Text style={styles.employeeEmail}>{employee.email}</Text>
