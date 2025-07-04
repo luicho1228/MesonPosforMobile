@@ -295,14 +295,29 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     role: UserRole
     full_name: str
+    email: str = ""
     phone: str = ""
+    hourly_rate: float = 15.00
+    active: bool = True
     created_at: datetime = Field(default_factory=get_current_time)
 
 class UserCreate(BaseModel):
     pin: str
     role: UserRole
     full_name: str
+    email: str = ""
     phone: str = ""
+    hourly_rate: float = 15.00
+    active: bool = True
+
+class UserUpdate(BaseModel):
+    role: Optional[UserRole] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    hourly_rate: Optional[float] = None
+    active: Optional[bool] = None
+    pin: Optional[str] = None
 
 class UserLogin(BaseModel):
     pin: str
