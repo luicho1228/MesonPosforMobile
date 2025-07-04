@@ -328,7 +328,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Table Management Multi-Fix - Auto-assign, Dine-in Mode, Multi-cancel"
+    - "React Native Settings Screens Implementation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
