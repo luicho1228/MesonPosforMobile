@@ -11,6 +11,10 @@ import OrderHistoryScreen from '../screens/OrderHistoryScreen';
 import TableManagementScreen from '../screens/TableManagementScreen';
 import CustomerManagementScreen from '../screens/CustomerManagementScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import MenuManagementScreen from '../screens/MenuManagementScreen';
+import TableSettingsScreen from '../screens/TableSettingsScreen';
+import StaffManagementScreen from '../screens/StaffManagementScreen';
+import TaxSettingsScreen from '../screens/TaxSettingsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
