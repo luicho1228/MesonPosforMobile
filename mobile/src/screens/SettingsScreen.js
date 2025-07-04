@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -27,14 +27,54 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
-  const settingsOptions = [
+  const managementSettings = [
+    {
+      title: 'Menu Management',
+      subtitle: 'Manage menu items, categories, prices & modifiers',
+      icon: 'restaurant-menu',
+      onPress: () => navigation.navigate('MenuManagement'),
+      rightText: '',
+      rightColor: '#6b7280',
+      requiresManager: true
+    },
+    {
+      title: 'Table Settings',
+      subtitle: 'Configure tables, capacity & layout',
+      icon: 'table-restaurant',
+      onPress: () => navigation.navigate('TableSettings'),
+      rightText: '',
+      rightColor: '#6b7280',
+      requiresManager: true
+    },
+    {
+      title: 'Staff Management',
+      subtitle: 'Manage employees, roles & permissions',
+      icon: 'people',
+      onPress: () => navigation.navigate('StaffManagement'),
+      rightText: '',
+      rightColor: '#6b7280',
+      requiresManager: true
+    },
+    {
+      title: 'Tax & Charges',
+      subtitle: 'Configure tax rates, service charges & fees',
+      icon: 'receipt',
+      onPress: () => navigation.navigate('TaxSettings'),
+      rightText: '',
+      rightColor: '#6b7280',
+      requiresManager: true
+    }
+  ];
+
+  const systemSettings = [
     {
       title: 'Printer Settings',
       subtitle: connected ? 'Printer Connected' : 'Setup Printer',
       icon: 'print',
       onPress: openPrinterManager,
       rightText: connected ? 'Connected' : 'Setup',
-      rightColor: connected ? '#10b981' : '#f59e0b'
+      rightColor: connected ? '#10b981' : '#f59e0b',
+      requiresManager: false
     },
     {
       title: 'User Profile',
@@ -42,7 +82,8 @@ const SettingsScreen = ({ navigation }) => {
       icon: 'person',
       onPress: () => Alert.alert('Info', 'User profile editing coming soon'),
       rightText: '',
-      rightColor: '#6b7280'
+      rightColor: '#6b7280',
+      requiresManager: false
     },
     {
       title: 'App Version',
@@ -50,27 +91,42 @@ const SettingsScreen = ({ navigation }) => {
       icon: 'info',
       onPress: () => Alert.alert('App Info', 'Restaurant POS Mobile\nVersion 1.0.0\nBuilt with React Native'),
       rightText: 'v1.0.0',
-      rightColor: '#6b7280'
-    },
-    {
-      title: 'About',
-      subtitle: 'El Meson Restaurant POS System',
-      icon: 'restaurant',
-      onPress: () => Alert.alert(
-        'About El Meson POS',
-        'A comprehensive point-of-sale system for El Meson Restaurant.\n\n' +
-        'Features:\n' +
-        '• Order Management\n' +
-        '• Table Management\n' +
-        '• Customer Management\n' +
-        '• Thermal Receipt Printing\n' +
-        '• Real-time Order Tracking\n' +
-        '• Sales Analytics'
-      ),
-      rightText: '',
-      rightColor: '#6b7280'
+      rightColor: '#6b7280',
+      requiresManager: false
     }
   ];
+
+  const renderSettingItem = (option) => {
+    if (option.requiresManager && user?.role !== 'manager') {
+      return null;
+    }
+
+    return (
+      <TouchableOpacity
+        key={option.title}
+        style={styles.settingItem}
+        onPress={option.onPress}
+      >
+        <View style={styles.settingLeft}>
+          <View style={styles.settingIcon}>
+            <Icon name={option.icon} size={24} color="#2563eb" />
+          </View>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingTitle}>{option.title}</Text>
+            <Text style={styles.settingSubtitle}>{option.subtitle}</Text>
+          </View>
+        </View>
+        <View style={styles.settingRight}>
+          {option.rightText && (
+            <Text style={[styles.settingRightText, { color: option.rightColor }]}>
+              {option.rightText}
+            </Text>
+          )}
+          <Icon name="chevron-right" size={20} color="#6b7280" />
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -92,34 +148,39 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Settings Options */}
+        {/* Management Settings */}
+        {user?.role === 'manager' && (
+          <View style={styles.settingsSection}>
+            <Text style={styles.sectionTitle}>Management Settings</Text>
+            {managementSettings.map(renderSettingItem)}
+          </View>
+        )}
+
+        {/* System Settings */}
         <View style={styles.settingsSection}>
-          <Text style={styles.sectionTitle}>Application Settings</Text>
-          {settingsOptions.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.settingItem}
-              onPress={option.onPress}
-            >
-              <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <Icon name={option.icon} size={24} color="#2563eb" />
-                </View>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingTitle}>{option.title}</Text>
-                  <Text style={styles.settingSubtitle}>{option.subtitle}</Text>
-                </View>
-              </View>
-              <View style={styles.settingRight}>
-                {option.rightText && (
-                  <Text style={[styles.settingRightText, { color: option.rightColor }]}>
-                    {option.rightText}
-                  </Text>
-                )}
-                <Icon name="chevron-right" size={20} color="#6b7280" />
-              </View>
-            </TouchableOpacity>
-          ))}
+          <Text style={styles.sectionTitle}>System Settings</Text>
+          {systemSettings.map(renderSettingItem)}
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.actionsSection}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('Home', { screen: 'NewOrder' })}
+          >
+            <Icon name="add-shopping-cart" size={24} color="white" />
+            <Text style={styles.actionButtonText}>New Order</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.secondaryActionButton]}
+            onPress={() => navigation.navigate('Orders', { screen: 'ActiveOrders' })}
+          >
+            <Icon name="receipt" size={24} color="#2563eb" />
+            <Text style={[styles.actionButtonText, styles.secondaryActionText]}>View Active Orders</Text>
+          </TouchableOpacity>
         </View>
 
         {/* System Info */}
@@ -150,27 +211,6 @@ const SettingsScreen = ({ navigation }) => {
               </Text>
             </View>
           </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.actionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Home', { screen: 'NewOrder' })}
-          >
-            <Icon name="add-shopping-cart" size={24} color="white" />
-            <Text style={styles.actionButtonText}>New Order</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryActionButton]}
-            onPress={() => navigation.navigate('Orders', { screen: 'ActiveOrders' })}
-          >
-            <Icon name="receipt" size={24} color="#2563eb" />
-            <Text style={[styles.actionButtonText, styles.secondaryActionText]}>View Active Orders</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Logout Button */}
