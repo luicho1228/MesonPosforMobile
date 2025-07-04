@@ -150,9 +150,7 @@ const StaffManagementScreen = ({ navigation }) => {
   const getRoleColor = (role) => {
     switch (role) {
       case 'manager': return '#7c3aed';
-      case 'cashier': return '#2563eb';
-      case 'kitchen': return '#059669';
-      case 'delivery': return '#f59e0b';
+      case 'employee': return '#2563eb';
       default: return '#6b7280';
     }
   };
@@ -160,9 +158,7 @@ const StaffManagementScreen = ({ navigation }) => {
   const getRoleIcon = (role) => {
     switch (role) {
       case 'manager': return 'admin-panel-settings';
-      case 'cashier': return 'point-of-sale';
-      case 'kitchen': return 'restaurant';
-      case 'delivery': return 'delivery-dining';
+      case 'employee': return 'person';
       default: return 'person';
     }
   };
