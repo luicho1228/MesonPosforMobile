@@ -230,8 +230,8 @@ const StaffManagementScreen = ({ navigation }) => {
     </View>
   );
 
-  const activeEmployees = employees.filter(emp => emp.is_active);
-  const inactiveEmployees = employees.filter(emp => !emp.is_active);
+  const activeEmployees = employees.filter(emp => emp.active);
+  const inactiveEmployees = employees.filter(emp => !emp.active);
 
   return (
     <SafeAreaView style={styles.container}>
