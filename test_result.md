@@ -322,11 +322,12 @@ backend:
         agent: "main"
         comment: "Implemented time clock interface with clock-in/out buttons, time entry history, and current status display"
 
-metadata:
-  created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 1
-  run_ui: false
+test_plan:
+  current_focus:
+    - "Settings Button Implementation"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
 
 frontend:
   - task: "Authentication UI"
