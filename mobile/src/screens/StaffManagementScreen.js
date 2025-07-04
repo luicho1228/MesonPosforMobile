@@ -122,7 +122,7 @@ const StaffManagementScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(`${API}/employees/${employee.id}`);
+              await axios.delete(`${API}/auth/users/${employee.id}`);
               Alert.alert('Success', 'Employee deleted successfully');
               fetchEmployees();
             } catch (error) {
