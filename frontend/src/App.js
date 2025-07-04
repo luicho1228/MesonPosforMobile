@@ -3948,6 +3948,135 @@ const POSInterface = () => {
     );
   }
 
+  // Add placeholder management screens
+  if (currentView === 'menu-management') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentView('settings')}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back to Settings</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="bg-white p-8 rounded-lg shadow-sm border text-center">
+            <span className="text-6xl mb-4 block">🍽️</span>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Menu Management</h2>
+            <p className="text-gray-600 mb-6">Comprehensive menu management interface will be implemented here.</p>
+            <div className="space-y-2 text-left max-w-md mx-auto">
+              <p className="text-sm text-gray-500">• Add/edit/delete menu items</p>
+              <p className="text-sm text-gray-500">• Manage categories and pricing</p>
+              <p className="text-sm text-gray-500">• Configure modifiers and options</p>
+              <p className="text-sm text-gray-500">• Set availability and visibility</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentView === 'table-settings') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentView('settings')}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back to Settings</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Table Settings</h1>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="bg-white p-8 rounded-lg shadow-sm border text-center">
+            <span className="text-6xl mb-4 block">🪑</span>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Table Settings</h2>
+            <p className="text-gray-600 mb-6">Table configuration and layout management interface will be implemented here.</p>
+            <div className="space-y-2 text-left max-w-md mx-auto">
+              <p className="text-sm text-gray-500">• Add/remove/edit tables</p>
+              <p className="text-sm text-gray-500">• Set table capacity and numbers</p>
+              <p className="text-sm text-gray-500">• Configure table layout</p>
+              <p className="text-sm text-gray-500">• Manage table status and reservations</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentView === 'staff-management') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentView('settings')}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back to Settings</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Staff Management</h1>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="bg-white p-8 rounded-lg shadow-sm border text-center">
+            <span className="text-6xl mb-4 block">👥</span>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Staff Management</h2>
+            <p className="text-gray-600 mb-6">Employee management and administration interface will be implemented here.</p>
+            <div className="space-y-2 text-left max-w-md mx-auto">
+              <p className="text-sm text-gray-500">• Add/edit/remove employees</p>
+              <p className="text-sm text-gray-500">• Manage roles and permissions</p>
+              <p className="text-sm text-gray-500">• Set hourly rates and schedules</p>
+              <p className="text-sm text-gray-500">• Track time and attendance</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentView === 'tax-settings') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentView('settings')}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back to Settings</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Tax & Charges Settings</h1>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="bg-white p-8 rounded-lg shadow-sm border text-center">
+            <span className="text-6xl mb-4 block">💰</span>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Tax & Charges</h2>
+            <p className="text-gray-600 mb-6">Tax rates and service charges configuration interface will be implemented here.</p>
+            <div className="space-y-2 text-left max-w-md mx-auto">
+              <p className="text-sm text-gray-500">• Configure tax rates and types</p>
+              <p className="text-sm text-gray-500">• Set service charges and fees</p>
+              <p className="text-sm text-gray-500">• Manage automatic gratuity rules</p>
+              <p className="text-sm text-gray-500">• Configure discount policies</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
