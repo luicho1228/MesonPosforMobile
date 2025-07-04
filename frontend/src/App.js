@@ -3746,6 +3746,208 @@ const POSInterface = () => {
     );
   }
 
+  if (currentView === 'settings') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBackToMain}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+              >
+                <span>←</span>
+                <span>Back</span>
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                Welcome, {user?.full_name} ({user?.role})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Settings Sections */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Menu Management */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">🍽️</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Menu Management</h3>
+                  <p className="text-sm text-gray-600">Manage menu items, categories, prices & modifiers</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCurrentView('menu-management')}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Manage Menu
+              </button>
+            </div>
+
+            {/* Table Settings */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">🪑</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Table Settings</h3>
+                  <p className="text-sm text-gray-600">Configure tables, capacity & layout</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCurrentView('table-settings')}
+                className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Configure Tables
+              </button>
+            </div>
+
+            {/* Staff Management - Manager Only */}
+            {user?.role === 'manager' && (
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="flex items-center space-x-3 mb-4">
+                  <span className="text-2xl">👥</span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">Staff Management</h3>
+                    <p className="text-sm text-gray-600">Manage employees, roles & permissions</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setCurrentView('staff-management')}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Manage Staff
+                </button>
+              </div>
+            )}
+
+            {/* Tax & Charges - Manager Only */}
+            {user?.role === 'manager' && (
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="flex items-center space-x-3 mb-4">
+                  <span className="text-2xl">💰</span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">Tax & Charges</h3>
+                    <p className="text-sm text-gray-600">Configure tax rates, service charges & fees</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setCurrentView('tax-settings')}
+                  className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Configure Tax & Charges
+                </button>
+              </div>
+            )}
+
+            {/* System Settings */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">🖨️</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Printer Settings</h3>
+                  <p className="text-sm text-gray-600">{connected ? 'Printer Connected' : 'Setup Printer'}</p>
+                </div>
+              </div>
+              <button 
+                onClick={openPrinterManager}
+                className={`w-full px-4 py-2 rounded-lg transition-colors ${
+                  connected 
+                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {connected ? 'Manage Printer' : 'Setup Printer'}
+              </button>
+            </div>
+
+            {/* User Profile */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">👤</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">User Profile</h3>
+                  <p className="text-sm text-gray-600">{user?.full_name} ({user?.role})</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => alert('User profile editing coming soon')}
+                className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Edit Profile
+              </button>
+            </div>
+
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button
+                onClick={() => setCurrentView('new-order')}
+                className="flex flex-col items-center space-y-2 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <span className="text-2xl">🛒</span>
+                <span className="text-sm font-medium">New Order</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('order-history')}
+                className="flex flex-col items-center space-y-2 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                <span className="text-2xl">📋</span>
+                <span className="text-sm font-medium">Order History</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('table-management')}
+                className="flex flex-col items-center space-y-2 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+              >
+                <span className="text-2xl">🪑</span>
+                <span className="text-sm font-medium">Tables</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('customerManagement')}
+                className="flex flex-col items-center space-y-2 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+              >
+                <span className="text-2xl">👥</span>
+                <span className="text-sm font-medium">Customers</span>
+              </button>
+            </div>
+          </div>
+
+          {/* System Information */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">System Information</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-gray-600">Restaurant:</span>
+                <p>El Meson Restaurant</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Address:</span>
+                <p>3517 Broadway</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Phone:</span>
+                <p>929-321-9679</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">System:</span>
+                <p>POS Web v1.0.0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
