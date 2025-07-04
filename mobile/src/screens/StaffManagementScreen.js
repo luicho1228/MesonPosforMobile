@@ -72,10 +72,10 @@ const StaffManagementScreen = ({ navigation }) => {
       };
 
       if (editingEmployee) {
-        await axios.put(`${API}/employees/${editingEmployee.id}`, employeeData);
+        await axios.put(`${API}/auth/users/${editingEmployee.id}`, employeeData);
         Alert.alert('Success', 'Employee updated successfully');
       } else {
-        await axios.post(`${API}/employees`, employeeData);
+        await axios.post(`${API}/auth/register`, employeeData);
         Alert.alert('Success', 'Employee added successfully');
       }
 
