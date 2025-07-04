@@ -321,7 +321,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Settings Button Implementation"
+    - "Menu Management Implementation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
