@@ -85,9 +85,9 @@ const StaffManagementScreen = ({ navigation }) => {
         full_name: '',
         email: '',
         phone: '',
-        role: 'cashier',
+        role: 'employee',
         pin: '',
-        is_active: true,
+        active: true,
         hourly_rate: '15.00'
       });
       fetchEmployees();
