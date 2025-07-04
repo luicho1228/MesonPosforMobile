@@ -188,12 +188,20 @@ const NewOrderScreen = ({ navigation, route }) => {
           <Icon name="arrow-back" size={24} color="#1f2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Order</Text>
-        <TouchableOpacity
-          style={[styles.printerButton, connected ? styles.printerConnected : styles.printerDisconnected]}
-          onPress={openPrinterManager}
-        >
-          <Icon name="print" size={20} color="white" />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Icon name="settings" size={20} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.printerButton, connected ? styles.printerConnected : styles.printerDisconnected]}
+            onPress={openPrinterManager}
+          >
+            <Icon name="print" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
