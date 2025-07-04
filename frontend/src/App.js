@@ -3765,6 +3765,15 @@ const POSInterface = () => {
               <span>🖨️</span>
               <span>{connected ? 'Printer Connected' : 'Setup Printer'}</span>
             </button>
+
+            {/* Settings Button */}
+            <button
+              onClick={() => setCurrentView('settings')}
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
+            >
+              <span>⚙️</span>
+              <span>Settings</span>
+            </button>
             
             <span className="text-sm text-gray-600">
               Welcome, {user?.full_name} ({user?.role})
