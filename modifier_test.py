@@ -8,7 +8,7 @@ import string
 from datetime import datetime
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://8a0df572-7e4c-4714-a7d2-3d0aeb1b665e.preview.emergentagent.com"
+BACKEND_URL = "https://79327832-6e36-44c4-8646-fcb26aaa475f.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 # Helper function to generate random string
