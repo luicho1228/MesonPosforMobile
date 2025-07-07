@@ -4197,7 +4197,7 @@ const TableSettingsComponent = ({ onBack }) => {
                     <div className="space-y-2">
                       {tablesWithStatus.slice(0, 5).map(table => (
                         <div key={table.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                          <span className="font-medium">Table {table.number}</span>
+                          <span className="font-medium">{getTableDisplayName(table)}</span>
                           <span className="text-sm text-gray-600">{table.capacity} seats</span>
                         </div>
                       ))}
