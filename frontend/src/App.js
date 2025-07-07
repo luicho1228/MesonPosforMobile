@@ -3649,12 +3649,14 @@ const TableSettingsComponent = ({ onBack }) => {
 
   const [tableForm, setTableForm] = useState({
     number: '',
+    name: '',
     capacity: '4'
   });
 
   const [bulkAddForm, setBulkAddForm] = useState({
     startNumber: '',
     endNumber: '',
+    namePrefix: '',
     capacity: '4'
   });
 
