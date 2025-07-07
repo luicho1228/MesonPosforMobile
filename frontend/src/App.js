@@ -3998,7 +3998,7 @@ const TableSettingsComponent = ({ onBack }) => {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search tables..."
+                      placeholder="Search tables by name or number..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
