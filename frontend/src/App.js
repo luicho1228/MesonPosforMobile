@@ -3810,17 +3810,17 @@ const TableSettingsComponent = ({ onBack }) => {
     }
 
     try {
-      // For now, we only update capacity since table number changes could break references
       await axios.put(`${API}/tables/${editingTable.id}`, {
+        name: tableForm.name.trim(),
+        capacity: capacity,
         status: editingTable.status,
         current_order_id: editingTable.current_order_id
       });
       
-      // Update capacity separately if the API supports it (may need backend update)
       alert('Table updated successfully');
       setShowEditTableModal(false);
       setEditingTable(null);
-      setTableForm({ number: '', capacity: '4' });
+      setTableForm({ number: '', name: '', capacity: '4' });
       fetchTables();
     } catch (error) {
       console.error('Error updating table:', error);
