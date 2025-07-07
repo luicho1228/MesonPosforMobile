@@ -3863,6 +3863,41 @@ const TableSettingsComponent = ({ onBack }) => {
     return tableStatuses.find(s => s.value === status) || tableStatuses[0];
   };
 
+  const handleUpdateTablePosition = async (tableId, position) => {
+    try {
+      // Update table position in the backend (we'll need to add position fields to the table model)
+      // For now, we'll store positions in localStorage until backend supports it
+      const floorPlans = JSON.parse(localStorage.getItem('floorPlans') || '{}');
+      if (!floorPlans.default) floorPlans.default = {};
+      floorPlans.default[tableId] = position;
+      localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+    } catch (error) {
+      console.error('Error updating table position:', error);
+    }
+  };
+
+  const handleSaveFloorPlan = (floorPlanData, name = 'default') => {
+    try {
+      const floorPlans = JSON.parse(localStorage.getItem('floorPlans') || '{}');
+      floorPlans[name] = floorPlanData;
+      localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+      alert(`Floor plan "${name}" saved successfully`);
+    } catch (error) {
+      console.error('Error saving floor plan:', error);
+      alert('Failed to save floor plan');
+    }
+  };
+
+  const handleLoadFloorPlan = (name = 'default') => {
+    try {
+      const floorPlans = JSON.parse(localStorage.getItem('floorPlans') || '{}');
+      return floorPlans[name] || {};
+    } catch (error) {
+      console.error('Error loading floor plan:', error);
+      return {};
+    }
+  };
+
   const getTableDisplayName = (table) => {
     if (table.name && table.name.trim()) {
       return table.name;
