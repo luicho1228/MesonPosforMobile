@@ -3727,7 +3727,7 @@ const TableSettingsComponent = ({ onBack }) => {
 
   const handleBulkAdd = async () => {
     if (!bulkAddForm.startNumber || !bulkAddForm.endNumber || !bulkAddForm.capacity) {
-      alert('Please fill in all fields');
+      alert('Please fill in start number, end number, and capacity');
       return;
     }
 
@@ -3756,7 +3756,13 @@ const TableSettingsComponent = ({ onBack }) => {
       
       for (let i = startNum; i <= endNum; i++) {
         if (!existingNumbers.includes(i)) {
-          tablesToAdd.push({ number: i, capacity: capacity });
+          const tableName = bulkAddForm.namePrefix ? 
+            `${bulkAddForm.namePrefix} ${i}` : '';
+          tablesToAdd.push({ 
+            number: i, 
+            name: tableName,
+            capacity: capacity 
+          });
         }
       }
 
@@ -3772,7 +3778,7 @@ const TableSettingsComponent = ({ onBack }) => {
 
       alert(`Successfully added ${tablesToAdd.length} tables`);
       setShowBulkAddModal(false);
-      setBulkAddForm({ startNumber: '', endNumber: '', capacity: '4' });
+      setBulkAddForm({ startNumber: '', endNumber: '', namePrefix: '', capacity: '4' });
       fetchTables();
     } catch (error) {
       console.error('Error bulk adding tables:', error);
