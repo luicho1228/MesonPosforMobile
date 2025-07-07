@@ -3791,6 +3791,7 @@ const TableSettingsComponent = ({ onBack }) => {
     setEditingTable(table);
     setTableForm({
       number: table.number.toString(),
+      name: table.name || '',
       capacity: table.capacity.toString()
     });
     setShowEditTableModal(true);
