@@ -278,20 +278,11 @@ frontend:
         agent: "testing"
         comment: "Successfully tested the Authentication UI. Verified that the login form works correctly with PIN input, JWT token handling is functioning properly, and authentication context is maintained across the application. The login process with PIN 1234 (manager account) works as expected."
         
-  - task: "Dashboard UI"
-    implemented: true
-    working: true
-    file: "/app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented dashboard with real-time stats display for orders, revenue, pending orders, and active staff"
-      - working: true
-        agent: "testing"
-        comment: "Successfully tested the Dashboard UI. Verified that the dashboard displays real-time stats for orders, revenue, pending orders, and active staff. The dashboard is properly rendered and accessible after login."
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 3
+  run_ui: false
         
   - task: "Order Management UI"
     implemented: true
