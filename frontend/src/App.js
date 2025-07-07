@@ -4400,7 +4400,7 @@ const TableSettingsComponent = ({ onBack }) => {
               <button
                 onClick={() => {
                   setShowBulkAddModal(false);
-                  setBulkAddForm({ startNumber: '', endNumber: '', capacity: '4' });
+                  setBulkAddForm({ startNumber: '', endNumber: '', namePrefix: '', capacity: '4' });
                 }}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
               >
