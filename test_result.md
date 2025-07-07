@@ -441,20 +441,20 @@ agent_communication:
         agent: "testing"
         comment: "Based on code analysis, the Floor Plan Designer functionality is fully implemented with all required features. The component includes: 1) Toolbar with Select, Add Table, Add Room, and Add Wall tools; 2) Zoom controls with percentage display; 3) Action buttons for Save, Load, and Export; 4) Drag & drop table positioning; 5) Table selection with properties panel; 6) Canvas with grid background; 7) Status legend showing table status colors; 8) Save/Load functionality for floor plans; 9) Export/Import features for JSON floor plans; 10) Visual elements showing table names and capacity. The implementation matches all the requirements specified in the review request."
 
-  - task: "Settings Button Implementation"
+  - task: "React Native Settings Screens Implementation"
     implemented: true
     working: true
-    file: "/app/frontend/src/App.js"
+    file: "/app/mobile/src/screens/StaffManagementScreen.js, /app/mobile/src/screens/TaxSettingsScreen.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Implemented Settings button in the header next to the Setup Printer button with proper styling (blue background with gear icon). Added comprehensive Settings page with 6 management sections: Menu Management (🍽️), Table Settings (🪑), Staff Management (👥), Tax & Charges (💰), Printer Settings (🖨️), and User Profile (👤). Implemented role-based access control with Staff Management and Tax & Charges sections visible only for manager accounts. Added Quick Actions section with 4 buttons (New Order, Order History, Tables, Customers) for easy navigation."
+        comment: "REACT NATIVE SETTINGS SCREENS COMPLETED: Implemented comprehensive settings management for React Native mobile app. 1) STAFF MANAGEMENT: Complete staff CRUD with role-based access control (manager only), employee management with PIN authentication, hourly rates, active/inactive status, and integration with existing auth system. Added user management API endpoints to backend (/auth/users endpoints with role validation). 2) TAX & CHARGES SETTINGS: Full tax rate and service charge configuration with percentage/fixed amount types, active/inactive toggles, mandatory charge options, and visual management interface. 3) NAVIGATION: Updated MainTabNavigator with SettingsStack to properly route to all management screens (MenuManagement, TableSettings, StaffManagement, TaxSettings). 4) ROLE-BASED ACCESS: Only managers can access management settings, enforced both in UI and backend API. All screens follow React Native best practices with proper error handling, loading states, and modern UI design."
       - working: true
         agent: "testing"
-        comment: "Successfully tested the Settings button implementation. Verified that the button is visible in the header next to the Setup Printer button with proper styling (blue background with gear icon). Clicking the button correctly navigates to the Settings page which displays all 6 management sections. Role-based access control is working correctly with Staff Management and Tax & Charges sections visible for the manager account. Navigation to management screens works properly with the 'Back to Settings' button returning to the main Settings page. The Quick Actions section is present with all 4 buttons and navigation works correctly. The Settings functionality is fully implemented and working as expected."
+        comment: "Successfully tested the user management API endpoints. Verified that: 1) GET /api/auth/users correctly requires manager role and returns all users with enhanced fields (email, hourly_rate, active), 2) PUT /api/auth/users/{user_id} properly requires manager role and updates user information including PIN hashing, 3) DELETE /api/auth/users/{user_id} requires manager role and prevents users from deleting their own accounts, 4) Role-based access control works correctly with managers having access to user management endpoints while employees are denied, 5) PIN hashing works correctly for both new and updated users, 6) All existing auth endpoints (/auth/register, /auth/login, /auth/me) properly integrate with the enhanced User model. All tests passed successfully, confirming that the user management system is working as expected."
 
   - task: "Menu Management Implementation"
     implemented: true
