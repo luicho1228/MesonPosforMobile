@@ -3634,6 +3634,558 @@ const OrderDetailModal = ({ order, onClose }) => {
   );
 };
 
+// Floor Plan Designer Component
+const FloorPlanDesigner = ({ tables, onUpdateTablePosition, onSaveFloorPlan, onLoadFloorPlan }) => {
+  const [floorPlanData, setFloorPlanData] = useState({});
+  const [rooms, setRooms] = useState([]);
+  const [selectedTool, setSelectedTool] = useState('select'); // select, table, room, wall
+  const [draggedTable, setDraggedTable] = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [floorPlanName, setFloorPlanName] = useState('');
+  const [savedFloorPlans, setSavedFloorPlans] = useState([]);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  const canvasRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    loadFloorPlan();
+    loadSavedFloorPlans();
+  }, []);
+
+  const loadFloorPlan = () => {
+    const data = onLoadFloorPlan();
+    setFloorPlanData(data.tables || {});
+    setRooms(data.rooms || []);
+    if (data.canvasSize) setCanvasSize(data.canvasSize);
+  };
+
+  const loadSavedFloorPlans = () => {
+    try {
+      const floorPlans = JSON.parse(localStorage.getItem('floorPlans') || '{}');
+      setSavedFloorPlans(Object.keys(floorPlans));
+    } catch (error) {
+      console.error('Error loading saved floor plans:', error);
+    }
+  };
+
+  const saveCurrentFloorPlan = (name) => {
+    const data = {
+      tables: floorPlanData,
+      rooms: rooms,
+      canvasSize: canvasSize,
+      createdAt: new Date().toISOString()
+    };
+    onSaveFloorPlan(data, name);
+    loadSavedFloorPlans();
+  };
+
+  const handleTableDragStart = (e, table) => {
+    if (selectedTool !== 'select') return;
+    setDraggedTable(table);
+    setIsDragging(true);
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    setDragStart({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
+
+  const handleTableDragEnd = (e) => {
+    if (!draggedTable || !isDragging) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - pan.x) / zoom;
+    const y = (e.clientY - rect.top - pan.y) / zoom;
+
+    const newPosition = { x: Math.max(0, x), y: Math.max(0, y) };
+    
+    setFloorPlanData(prev => ({
+      ...prev,
+      [draggedTable.id]: {
+        ...prev[draggedTable.id],
+        ...newPosition
+      }
+    }));
+
+    onUpdateTablePosition(draggedTable.id, newPosition);
+    setDraggedTable(null);
+    setIsDragging(false);
+  };
+
+  const handleCanvasClick = (e) => {
+    if (selectedTool === 'table') {
+      // Add new table at click position
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left - pan.x) / zoom;
+      const y = (e.clientY - rect.top - pan.y) / zoom;
+      // This would trigger adding a new table
+      alert('Table addition from canvas coming soon - use Add Table button for now');
+    }
+  };
+
+  const getTablePosition = (table) => {
+    const position = floorPlanData[table.id];
+    if (position) {
+      return { x: position.x || 0, y: position.y || 0 };
+    }
+    // Default grid positioning for tables without saved positions
+    const index = tables.findIndex(t => t.id === table.id);
+    return {
+      x: (index % 10) * 80 + 20,
+      y: Math.floor(index / 10) * 80 + 20
+    };
+  };
+
+  const getTableStyle = (table) => {
+    const position = getTablePosition(table);
+    const status = table.status;
+    
+    let backgroundColor = '#f3f4f6';
+    let borderColor = '#d1d5db';
+    
+    switch (status) {
+      case 'available':
+        backgroundColor = '#dcfce7';
+        borderColor = '#16a34a';
+        break;
+      case 'occupied':
+        backgroundColor = '#fecaca';
+        borderColor = '#dc2626';
+        break;
+      case 'needs_cleaning':
+        backgroundColor = '#fef3c7';
+        borderColor = '#d97706';
+        break;
+      case 'reserved':
+        backgroundColor = '#dbeafe';
+        borderColor = '#2563eb';
+        break;
+    }
+
+    return {
+      position: 'absolute',
+      left: position.x * zoom + pan.x,
+      top: position.y * zoom + pan.y,
+      width: 60 * zoom,
+      height: 60 * zoom,
+      backgroundColor,
+      border: `2px solid ${borderColor}`,
+      borderRadius: '8px',
+      cursor: selectedTool === 'select' ? 'grab' : 'default',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: `${12 * zoom}px`,
+      fontWeight: 'bold',
+      userSelect: 'none',
+      zIndex: selectedTable?.id === table.id ? 1000 : 1,
+      boxShadow: selectedTable?.id === table.id ? '0 0 0 3px rgba(59, 130, 246, 0.5)' : 'none'
+    };
+  };
+
+  const exportFloorPlan = () => {
+    const data = {
+      tables: floorPlanData,
+      rooms: rooms,
+      canvasSize: canvasSize,
+      exportedAt: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `floor-plan-${floorPlanName || 'default'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importFloorPlan = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        setFloorPlanData(data.tables || {});
+        setRooms(data.rooms || []);
+        if (data.canvasSize) setCanvasSize(data.canvasSize);
+        alert('Floor plan imported successfully');
+      } catch (error) {
+        alert('Error importing floor plan: Invalid file format');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="bg-white border rounded-lg overflow-hidden">
+      {/* Toolbar */}
+      <div className="border-b p-4 bg-gray-50">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
+            <h3 className="font-semibold text-gray-800">Floor Plan Designer</h3>
+            <div className="flex bg-white border rounded-lg overflow-hidden">
+              {[
+                { id: 'select', icon: '👆', label: 'Select' },
+                { id: 'table', icon: '🪑', label: 'Add Table' },
+                { id: 'room', icon: '🏠', label: 'Add Room' },
+                { id: 'wall', icon: '🧱', label: 'Add Wall' }
+              ].map(tool => (
+                <button
+                  key={tool.id}
+                  onClick={() => setSelectedTool(tool.id)}
+                  className={`px-3 py-2 text-sm font-medium ${
+                    selectedTool === tool.id 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title={tool.label}
+                >
+                  {tool.icon}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {/* Zoom Controls */}
+            <div className="flex items-center space-x-2 bg-white border rounded-lg px-2 py-1">
+              <button
+                onClick={() => setZoom(Math.max(0.25, zoom - 0.25))}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                🔍-
+              </button>
+              <span className="text-sm font-medium">{Math.round(zoom * 100)}%</span>
+              <button
+                onClick={() => setZoom(Math.min(3, zoom + 0.25))}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                🔍+
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <button
+              onClick={() => setShowSaveModal(true)}
+              className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm"
+            >
+              💾 Save
+            </button>
+            <button
+              onClick={() => setShowLoadModal(true)}
+              className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm"
+            >
+              📂 Load
+            </button>
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 text-sm"
+            >
+              📤 Export
+            </button>
+          </div>
+        </div>
+
+        {/* Status Bar */}
+        <div className="flex items-center justify-between mt-2 text-sm text-gray-600">
+          <div>
+            Tool: <span className="font-medium">{selectedTool.charAt(0).toUpperCase() + selectedTool.slice(1)}</span>
+            {selectedTable && (
+              <span className="ml-4">
+                Selected: <span className="font-medium">{selectedTable.name || `Table ${selectedTable.number}`}</span>
+              </span>
+            )}
+          </div>
+          <div>
+            Tables: {tables.length} | 
+            Canvas: {canvasSize.width}×{canvasSize.height} | 
+            Zoom: {Math.round(zoom * 100)}%
+          </div>
+        </div>
+      </div>
+
+      {/* Canvas */}
+      <div className="relative overflow-hidden bg-gray-100" style={{ height: '600px' }}>
+        <div
+          ref={canvasRef}
+          className="relative w-full h-full cursor-crosshair"
+          onClick={handleCanvasClick}
+          onMouseUp={handleTableDragEnd}
+          style={{
+            backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
+            backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
+            backgroundPosition: `${pan.x}px ${pan.y}px`
+          }}
+        >
+          {/* Grid */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Grid lines could be added here for better visual guidance */}
+          </div>
+
+          {/* Rooms */}
+          {rooms.map(room => (
+            <div
+              key={room.id}
+              className="absolute border-2 border-dashed border-gray-400 bg-gray-50 bg-opacity-50 pointer-events-none"
+              style={{
+                left: room.x * zoom + pan.x,
+                top: room.y * zoom + pan.y,
+                width: room.width * zoom,
+                height: room.height * zoom
+              }}
+            >
+              <div className="absolute top-1 left-2 text-xs font-medium text-gray-600">
+                {room.name}
+              </div>
+            </div>
+          ))}
+
+          {/* Tables */}
+          {tables.map(table => (
+            <div
+              key={table.id}
+              style={getTableStyle(table)}
+              onMouseDown={(e) => handleTableDragStart(e, table)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedTable(table);
+              }}
+              className="transition-all duration-200 hover:shadow-lg"
+            >
+              <div className="text-center leading-none">
+                <div className="font-bold">
+                  {table.name?.slice(0, 8) || table.number}
+                </div>
+                <div className="text-xs opacity-75">
+                  {table.capacity} seats
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Selection Indicator */}
+          {selectedTable && (
+            <div
+              className="absolute pointer-events-none border-2 border-blue-500 border-dashed"
+              style={{
+                left: getTablePosition(selectedTable).x * zoom + pan.x - 2,
+                top: getTablePosition(selectedTable).y * zoom + pan.y - 2,
+                width: 64 * zoom,
+                height: 64 * zoom,
+                borderRadius: '8px'
+              }}
+            />
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="absolute bottom-4 right-4 bg-white border rounded-lg p-3 shadow-lg">
+          <div className="text-sm font-medium mb-2">Status Legend</div>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-200 border border-green-600 rounded"></div>
+              <span>Available</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-red-200 border border-red-600 rounded"></div>
+              <span>Occupied</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-yellow-200 border border-yellow-600 rounded"></div>
+              <span>Cleaning</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-blue-200 border border-blue-600 rounded"></div>
+              <span>Reserved</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Table Properties Panel */}
+      {selectedTable && (
+        <div className="border-t p-4 bg-gray-50">
+          <h4 className="font-medium mb-2">Table Properties</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600">Name:</span>
+              <div className="font-medium">{selectedTable.name || `Table ${selectedTable.number}`}</div>
+            </div>
+            <div>
+              <span className="text-gray-600">Number:</span>
+              <div className="font-medium">{selectedTable.number}</div>
+            </div>
+            <div>
+              <span className="text-gray-600">Capacity:</span>
+              <div className="font-medium">{selectedTable.capacity} seats</div>
+            </div>
+            <div>
+              <span className="text-gray-600">Status:</span>
+              <div className="font-medium">{selectedTable.status}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Floor Plan Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Save Floor Plan</h2>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Floor Plan Name</label>
+              <input
+                type="text"
+                value={floorPlanName}
+                onChange={(e) => setFloorPlanName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter floor plan name"
+              />
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowSaveModal(false);
+                  setFloorPlanName('');
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  saveCurrentFloorPlan(floorPlanName || `plan-${Date.now()}`);
+                  setShowSaveModal(false);
+                  setFloorPlanName('');
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Save Floor Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load Floor Plan Modal */}
+      {showLoadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Load Floor Plan</h2>
+            </div>
+            <div className="p-6">
+              <div className="space-y-2">
+                {savedFloorPlans.length === 0 ? (
+                  <p className="text-gray-500">No saved floor plans found</p>
+                ) : (
+                  savedFloorPlans.map(planName => (
+                    <button
+                      key={planName}
+                      onClick={() => {
+                        const data = onLoadFloorPlan(planName);
+                        setFloorPlanData(data.tables || {});
+                        setRooms(data.rooms || []);
+                        if (data.canvasSize) setCanvasSize(data.canvasSize);
+                        setShowLoadModal(false);
+                        alert(`Floor plan "${planName}" loaded successfully`);
+                      }}
+                      className="w-full text-left p-3 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="font-medium">{planName}</div>
+                      <div className="text-sm text-gray-500">
+                        {new Date().toLocaleDateString()}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => setShowLoadModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer">
+                Import File
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={importFloorPlan}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Floor Plan Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Export Floor Plan</h2>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Export Name</label>
+              <input
+                type="text"
+                value={floorPlanName}
+                onChange={(e) => setFloorPlanName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter export filename"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                This will download a JSON file that can be imported into another system.
+              </p>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowExportModal(false);
+                  setFloorPlanName('');
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  exportFloorPlan();
+                  setShowExportModal(false);
+                  setFloorPlanName('');
+                }}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Download Export
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Table Settings Component
 const TableSettingsComponent = ({ onBack }) => {
   const [tables, setTables] = useState([]);
