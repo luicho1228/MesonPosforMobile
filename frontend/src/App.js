@@ -3634,6 +3634,1070 @@ const OrderDetailModal = ({ order, onClose }) => {
   );
 };
 
+// Staff Management Component
+const StaffManagementComponent = ({ onBack }) => {
+  const [staff, setStaff] = useState([]);
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('employees');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showTimeEntryModal, setShowTimeEntryModal] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  const [employeeForm, setEmployeeForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    role: 'employee',
+    pin: '',
+    hourly_rate: '15.00',
+    active: true,
+    hire_date: '',
+    department: '',
+    emergency_contact: '',
+    emergency_phone: ''
+  });
+
+  const [scheduleForm, setScheduleForm] = useState({
+    employee_id: '',
+    day_of_week: 'monday',
+    start_time: '09:00',
+    end_time: '17:00',
+    is_working_day: true
+  });
+
+  const [timeEntryForm, setTimeEntryForm] = useState({
+    employee_id: '',
+    date: new Date().toISOString().split('T')[0],
+    clock_in: '',
+    clock_out: '',
+    break_minutes: '30',
+    notes: ''
+  });
+
+  const roles = [
+    { value: 'employee', label: 'Employee', permissions: ['take_orders', 'process_payments'] },
+    { value: 'manager', label: 'Manager', permissions: ['take_orders', 'process_payments', 'manage_staff', 'view_reports', 'manage_inventory'] },
+    { value: 'admin', label: 'Admin', permissions: ['all'] }
+  ];
+
+  const departments = ['Kitchen', 'Service', 'Bar', 'Management', 'Cleaning'];
+  const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+  useEffect(() => {
+    fetchStaffData();
+  }, []);
+
+  const fetchStaffData = async () => {
+    try {
+      setLoading(true);
+      const [staffRes, timeEntriesRes] = await Promise.all([
+        axios.get(`${API}/auth/users`),
+        // Mock time entries for now - would be real API call
+        Promise.resolve({ data: generateMockTimeEntries() })
+      ]);
+
+      setStaff(staffRes.data);
+      setTimeEntries(timeEntriesRes.data);
+      setSchedules(generateMockSchedules(staffRes.data));
+    } catch (error) {
+      console.error('Error fetching staff data:', error);
+      alert('Failed to load staff data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateMockTimeEntries = () => {
+    // Generate sample time entries for the last 7 days
+    const entries = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      
+      entries.push({
+        id: `entry-${i}`,
+        employee_id: 'emp-1',
+        date: date.toISOString().split('T')[0],
+        clock_in: '09:00',
+        clock_out: i === 0 ? null : '17:00', // Today is still clocked in
+        break_minutes: 30,
+        total_hours: i === 0 ? null : 7.5,
+        notes: ''
+      });
+    }
+    return entries;
+  };
+
+  const generateMockSchedules = (staffList) => {
+    const schedules = [];
+    staffList.forEach(employee => {
+      daysOfWeek.forEach((day, index) => {
+        schedules.push({
+          id: `schedule-${employee.id}-${day}`,
+          employee_id: employee.id,
+          day_of_week: day,
+          start_time: index < 5 ? '09:00' : '10:00', // Weekday vs weekend
+          end_time: index < 5 ? '17:00' : '18:00',
+          is_working_day: index < 6 // Sunday off
+        });
+      });
+    });
+    return schedules;
+  };
+
+  const handleAddEmployee = async () => {
+    if (!employeeForm.full_name || !employeeForm.email || !employeeForm.pin) {
+      alert('Please fill in all required fields (Name, Email, PIN)');
+      return;
+    }
+
+    if (employeeForm.pin.length !== 4) {
+      alert('PIN must be exactly 4 digits');
+      return;
+    }
+
+    try {
+      const employeeData = {
+        ...employeeForm,
+        hourly_rate: parseFloat(employeeForm.hourly_rate) || 15.00,
+        pin: parseInt(employeeForm.pin)
+      };
+
+      await axios.post(`${API}/auth/register`, employeeData);
+      alert('Employee added successfully');
+      setShowAddEmployeeModal(false);
+      resetEmployeeForm();
+      fetchStaffData();
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      alert(error.response?.data?.detail || 'Failed to add employee');
+    }
+  };
+
+  const handleEditEmployee = (employee) => {
+    setEmployeeForm({
+      full_name: employee.full_name,
+      email: employee.email,
+      phone: employee.phone || '',
+      role: employee.role,
+      pin: '', // Don't pre-fill PIN for security
+      hourly_rate: employee.hourly_rate?.toString() || '15.00',
+      active: employee.active !== false,
+      hire_date: employee.hire_date || '',
+      department: employee.department || '',
+      emergency_contact: employee.emergency_contact || '',
+      emergency_phone: employee.emergency_phone || ''
+    });
+    setEditingEmployee(employee);
+    setShowEditEmployeeModal(true);
+  };
+
+  const handleUpdateEmployee = async () => {
+    if (!employeeForm.full_name || !employeeForm.email) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const updateData = {
+        full_name: employeeForm.full_name,
+        email: employeeForm.email,
+        phone: employeeForm.phone,
+        role: employeeForm.role,
+        hourly_rate: parseFloat(employeeForm.hourly_rate) || 15.00,
+        active: employeeForm.active
+      };
+
+      if (employeeForm.pin && employeeForm.pin.length === 4) {
+        updateData.pin = employeeForm.pin;
+      }
+
+      await axios.put(`${API}/auth/users/${editingEmployee.id}`, updateData);
+      alert('Employee updated successfully');
+      setShowEditEmployeeModal(false);
+      setEditingEmployee(null);
+      resetEmployeeForm();
+      fetchStaffData();
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      alert('Failed to update employee');
+    }
+  };
+
+  const handleDeleteEmployee = async (employee) => {
+    if (window.confirm(`Are you sure you want to delete ${employee.full_name}?`)) {
+      try {
+        await axios.delete(`${API}/auth/users/${employee.id}`);
+        alert('Employee deleted successfully');
+        fetchStaffData();
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        alert('Failed to delete employee');
+      }
+    }
+  };
+
+  const handleClockInOut = async (employee) => {
+    // Mock clock in/out functionality
+    const today = new Date().toISOString().split('T')[0];
+    const currentTime = new Date().toTimeString().slice(0, 5);
+    
+    const existingEntry = timeEntries.find(entry => 
+      entry.employee_id === employee.id && 
+      entry.date === today && 
+      !entry.clock_out
+    );
+
+    if (existingEntry) {
+      // Clock out
+      const updatedEntries = timeEntries.map(entry => 
+        entry.id === existingEntry.id 
+          ? { ...entry, clock_out: currentTime, total_hours: calculateHours(entry.clock_in, currentTime) }
+          : entry
+      );
+      setTimeEntries(updatedEntries);
+      alert(`${employee.full_name} clocked out at ${currentTime}`);
+    } else {
+      // Clock in
+      const newEntry = {
+        id: `entry-${Date.now()}`,
+        employee_id: employee.id,
+        date: today,
+        clock_in: currentTime,
+        clock_out: null,
+        break_minutes: 0,
+        total_hours: null,
+        notes: ''
+      };
+      setTimeEntries([...timeEntries, newEntry]);
+      alert(`${employee.full_name} clocked in at ${currentTime}`);
+    }
+  };
+
+  const calculateHours = (clockIn, clockOut) => {
+    const [inHour, inMinute] = clockIn.split(':').map(Number);
+    const [outHour, outMinute] = clockOut.split(':').map(Number);
+    
+    const inMinutes = inHour * 60 + inMinute;
+    const outMinutes = outHour * 60 + outMinute;
+    
+    return ((outMinutes - inMinutes) / 60).toFixed(2);
+  };
+
+  const resetEmployeeForm = () => {
+    setEmployeeForm({
+      full_name: '',
+      email: '',
+      phone: '',
+      role: 'employee',
+      pin: '',
+      hourly_rate: '15.00',
+      active: true,
+      hire_date: '',
+      department: '',
+      emergency_contact: '',
+      emergency_phone: ''
+    });
+  };
+
+  const getEmployeeStatus = (employee) => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntry = timeEntries.find(entry => 
+      entry.employee_id === employee.id && entry.date === today
+    );
+
+    if (todayEntry && !todayEntry.clock_out) {
+      return { status: 'clocked_in', color: 'bg-green-100 text-green-800', time: todayEntry.clock_in };
+    }
+    if (todayEntry && todayEntry.clock_out) {
+      return { status: 'clocked_out', color: 'bg-gray-100 text-gray-800', time: todayEntry.clock_out };
+    }
+    return { status: 'not_started', color: 'bg-yellow-100 text-yellow-800', time: null };
+  };
+
+  const getEmployeeSchedule = (employeeId) => {
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    return schedules.find(schedule => 
+      schedule.employee_id === employeeId && schedule.day_of_week === today
+    );
+  };
+
+  const getWeeklyHours = (employeeId) => {
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week
+    
+    const weeklyEntries = timeEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entry.employee_id === employeeId && 
+             entryDate >= weekStart && 
+             entry.total_hours;
+    });
+    
+    return weeklyEntries.reduce((total, entry) => total + parseFloat(entry.total_hours || 0), 0);
+  };
+
+  const filteredStaff = staff.filter(employee => {
+    const matchesSearch = employee.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         employee.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'all' || employee.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  const staffStats = {
+    total: staff.length,
+    active: staff.filter(emp => emp.active !== false).length,
+    managers: staff.filter(emp => emp.role === 'manager').length,
+    employees: staff.filter(emp => emp.role === 'employee').length,
+    clockedIn: staff.filter(emp => getEmployeeStatus(emp).status === 'clocked_in').length
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading staff data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back to Settings</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Staff Management</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowAddEmployeeModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            >
+              <span>+</span>
+              <span>Add Employee</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Dashboard */}
+      <div className="bg-white border-b p-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-800">{staffStats.total}</div>
+            <div className="text-sm text-gray-600">Total Staff</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{staffStats.clockedIn}</div>
+            <div className="text-sm text-gray-600">Clocked In</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{staffStats.active}</div>
+            <div className="text-sm text-gray-600">Active</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-600">{staffStats.managers}</div>
+            <div className="text-sm text-gray-600">Managers</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-orange-600">{staffStats.employees}</div>
+            <div className="text-sm text-gray-600">Employees</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white border-b">
+        <div className="flex space-x-8 px-6">
+          {[
+            { id: 'employees', name: 'Employees', icon: '👥' },
+            { id: 'schedules', name: 'Schedules', icon: '📅' },
+            { id: 'timesheet', name: 'Time & Attendance', icon: '⏰' },
+            { id: 'permissions', name: 'Roles & Permissions', icon: '🔐' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-6">
+        {/* Employees Tab */}
+        {activeTab === 'employees' && (
+          <div className="space-y-6">
+            {/* Search and Filter */}
+            <div className="bg-white p-4 rounded-lg border">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search employees..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="absolute right-3 top-2.5 text-gray-400">🔍</span>
+                  </div>
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Roles</option>
+                    {roles.map(role => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {filteredStaff.length} employees found
+                </div>
+              </div>
+            </div>
+
+            {/* Employee Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredStaff.map(employee => {
+                const status = getEmployeeStatus(employee);
+                const schedule = getEmployeeSchedule(employee.id);
+                const weeklyHours = getWeeklyHours(employee.id);
+                
+                return (
+                  <div key={employee.id} className="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                          {employee.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg text-gray-800">{employee.full_name}</h3>
+                          <p className="text-sm text-gray-600">{employee.email}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                        {status.status.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Role:</span>
+                        <span className="text-sm font-medium">{employee.role}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Hourly Rate:</span>
+                        <span className="text-sm font-medium">${employee.hourly_rate || '15.00'}/hr</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Weekly Hours:</span>
+                        <span className="text-sm font-medium">{weeklyHours.toFixed(1)}h</span>
+                      </div>
+                      {schedule && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Today's Schedule:</span>
+                          <span className="text-sm font-medium">
+                            {schedule.is_working_day ? `${schedule.start_time}-${schedule.end_time}` : 'Off'}
+                          </span>
+                        </div>
+                      )}
+                      {status.time && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">
+                            {status.status === 'clocked_in' ? 'Clocked In:' : 'Clocked Out:'}
+                          </span>
+                          <span className="text-sm font-medium">{status.time}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleClockInOut(employee)}
+                        className={`flex-1 px-3 py-2 rounded text-sm font-medium ${
+                          status.status === 'clocked_in'
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        {status.status === 'clocked_in' ? 'Clock Out' : 'Clock In'}
+                      </button>
+                      <button
+                        onClick={() => handleEditEmployee(employee)}
+                        className="px-3 py-2 bg-blue-100 text-blue-700 rounded text-sm font-medium hover:bg-blue-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEmployee(employee)}
+                        className="px-3 py-2 bg-red-100 text-red-700 rounded text-sm font-medium hover:bg-red-200"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredStaff.length === 0 && (
+              <div className="text-center py-12">
+                <span className="text-6xl mb-4 block">👥</span>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No employees found</h3>
+                <p className="text-gray-500 mb-4">Get started by adding your first employee</p>
+                <button
+                  onClick={() => setShowAddEmployeeModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Add Employee
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Schedules Tab */}
+        {activeTab === 'schedules' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Employee Schedules</h2>
+              <button
+                onClick={() => setShowScheduleModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Manage Schedules
+              </button>
+            </div>
+
+            <div className="bg-white border rounded-lg overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Employee
+                    </th>
+                    {daysOfWeek.map(day => (
+                      <th key={day} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {day.slice(0, 3)}
+                      </th>
+                    ))}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Weekly Hours
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {staff.map(employee => {
+                    const employeeSchedules = schedules.filter(s => s.employee_id === employee.id);
+                    const weeklyScheduledHours = employeeSchedules
+                      .filter(s => s.is_working_day)
+                      .reduce((total, s) => {
+                        const [startHour, startMin] = s.start_time.split(':').map(Number);
+                        const [endHour, endMin] = s.end_time.split(':').map(Number);
+                        const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
+                        return total + hours;
+                      }, 0);
+
+                    return (
+                      <tr key={employee.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                              {employee.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">{employee.full_name}</div>
+                              <div className="text-sm text-gray-500">{employee.role}</div>
+                            </div>
+                          </div>
+                        </td>
+                        {daysOfWeek.map(day => {
+                          const daySchedule = employeeSchedules.find(s => s.day_of_week === day);
+                          return (
+                            <td key={day} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {daySchedule?.is_working_day ? (
+                                <div className="text-center">
+                                  <div className="font-medium">{daySchedule.start_time}</div>
+                                  <div className="text-gray-500">to</div>
+                                  <div className="font-medium">{daySchedule.end_time}</div>
+                                </div>
+                              ) : (
+                                <div className="text-center text-gray-400">Off</div>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {weeklyScheduledHours.toFixed(1)}h
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Time & Attendance Tab */}
+        {activeTab === 'timesheet' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Time & Attendance</h2>
+              <button
+                onClick={() => setShowTimeEntryModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Add Time Entry
+              </button>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-2xl font-bold text-green-600">{staffStats.clockedIn}</div>
+                <div className="text-sm text-gray-600">Currently Clocked In</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-2xl font-bold text-blue-600">
+                  {timeEntries.filter(e => e.date === new Date().toISOString().split('T')[0]).length}
+                </div>
+                <div className="text-sm text-gray-600">Today's Entries</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-2xl font-bold text-purple-600">
+                  {timeEntries.filter(e => e.total_hours).reduce((sum, e) => sum + parseFloat(e.total_hours), 0).toFixed(1)}h
+                </div>
+                <div className="text-sm text-gray-600">Total Hours This Week</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-2xl font-bold text-orange-600">
+                  ${(timeEntries.filter(e => e.total_hours).reduce((sum, e) => sum + parseFloat(e.total_hours), 0) * 15).toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-600">Estimated Payroll</div>
+              </div>
+            </div>
+
+            {/* Time Entries Table */}
+            <div className="bg-white border rounded-lg overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Employee
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Clock In
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Clock Out
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total Hours
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {timeEntries.slice(0, 20).map(entry => {
+                    const employee = staff.find(emp => emp.id === entry.employee_id);
+                    const isActive = !entry.clock_out;
+                    
+                    return (
+                      <tr key={entry.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {employee?.full_name || 'Unknown Employee'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(entry.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {entry.clock_in}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {entry.clock_out || (
+                            <span className="text-green-600 font-medium">Active</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {entry.total_hours ? `${entry.total_hours}h` : (
+                            <span className="text-blue-600">In Progress</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {isActive ? 'Clocked In' : 'Completed'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Roles & Permissions Tab */}
+        {activeTab === 'permissions' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Roles & Permissions</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {roles.map(role => {
+                const roleEmployees = staff.filter(emp => emp.role === role.value);
+                
+                return (
+                  <div key={role.value} className="bg-white border rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800">{role.label}</h3>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                        {roleEmployees.length} people
+                      </span>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Permissions:</h4>
+                      <div className="space-y-1">
+                        {role.permissions.map(permission => (
+                          <div key={permission} className="flex items-center text-sm">
+                            <span className="text-green-500 mr-2">✓</span>
+                            <span className="text-gray-600">
+                              {permission.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Employees:</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {roleEmployees.map(employee => (
+                          <div key={employee.id} className="text-sm text-gray-600">
+                            {employee.full_name}
+                          </div>
+                        ))}
+                        {roleEmployees.length === 0 && (
+                          <div className="text-sm text-gray-400 italic">No employees with this role</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Add Employee Modal */}
+      {showAddEmployeeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Add New Employee</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={employeeForm.full_name}
+                    onChange={(e) => setEmployeeForm({...employeeForm, full_name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter full name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    value={employeeForm.email}
+                    onChange={(e) => setEmployeeForm({...employeeForm, email: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter email"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={employeeForm.phone}
+                    onChange={(e) => setEmployeeForm({...employeeForm, phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <select
+                    value={employeeForm.department}
+                    onChange={(e) => setEmployeeForm({...employeeForm, department: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Department</option>
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                  <select
+                    value={employeeForm.role}
+                    onChange={(e) => setEmployeeForm({...employeeForm, role: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {roles.map(role => (
+                      <option key={role.value} value={role.value}>{role.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PIN (4 digits) *</label>
+                  <input
+                    type="password"
+                    maxLength="4"
+                    value={employeeForm.pin}
+                    onChange={(e) => setEmployeeForm({...employeeForm, pin: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="4-digit PIN"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={employeeForm.hourly_rate}
+                    onChange={(e) => setEmployeeForm({...employeeForm, hourly_rate: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="15.00"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hire Date</label>
+                  <input
+                    type="date"
+                    value={employeeForm.hire_date}
+                    onChange={(e) => setEmployeeForm({...employeeForm, hire_date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex items-center">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={employeeForm.active}
+                      onChange={(e) => setEmployeeForm({...employeeForm, active: e.target.checked})}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Active Employee</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact</label>
+                  <input
+                    type="text"
+                    value={employeeForm.emergency_contact}
+                    onChange={(e) => setEmployeeForm({...employeeForm, emergency_contact: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Emergency contact name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Phone</label>
+                  <input
+                    type="tel"
+                    value={employeeForm.emergency_phone}
+                    onChange={(e) => setEmployeeForm({...employeeForm, emergency_phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Emergency contact phone"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowAddEmployeeModal(false);
+                  resetEmployeeForm();
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddEmployee}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Add Employee
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditEmployeeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Edit Employee</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Same form fields as Add Employee */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={employeeForm.full_name}
+                    onChange={(e) => setEmployeeForm({...employeeForm, full_name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    value={employeeForm.email}
+                    onChange={(e) => setEmployeeForm({...employeeForm, email: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select
+                    value={employeeForm.role}
+                    onChange={(e) => setEmployeeForm({...employeeForm, role: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {roles.map(role => (
+                      <option key={role.value} value={role.value}>{role.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">New PIN (4 digits)</label>
+                  <input
+                    type="password"
+                    maxLength="4"
+                    value={employeeForm.pin}
+                    onChange={(e) => setEmployeeForm({...employeeForm, pin: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Leave empty to keep current"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={employeeForm.hourly_rate}
+                    onChange={(e) => setEmployeeForm({...employeeForm, hourly_rate: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={employeeForm.active}
+                    onChange={(e) => setEmployeeForm({...employeeForm, active: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Active Employee</span>
+                </label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowEditEmployeeModal(false);
+                  setEditingEmployee(null);
+                  resetEmployeeForm();
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateEmployee}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Update Employee
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Floor Plan Designer Component
 const FloorPlanDesigner = ({ tables, onUpdateTablePosition, onSaveFloorPlan, onLoadFloorPlan }) => {
   const [floorPlanData, setFloorPlanData] = useState({});
