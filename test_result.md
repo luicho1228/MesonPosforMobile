@@ -426,20 +426,20 @@ agent_communication:
   - agent: "testing"
     message: "COMPLETED STAFF MANAGEMENT TESTING: Successfully tested the Staff Management functionality. Verified that: 1) The Staff Management section is accessible from the Settings page via the 'Manage Staff' button; 2) The stats dashboard correctly shows Total Staff, Clocked In, Active, Managers, and Employees counts; 3) The Employees tab displays employee cards with relevant information; 4) Search functionality works correctly for filtering employees by name/email; 5) Role filter dropdown works properly to filter employees by role; 6) The Add Employee button opens a comprehensive modal with all required form fields (Name, Email, Phone, Department, Role, PIN, Hourly Rate, Hire Date, Emergency Contact); 7) Employee management actions (Clock In/Out, Edit, Delete) are present on employee cards; 8) The Schedules tab shows a table with all employees and their weekly schedules with days of the week displayed correctly; 9) The Time & Attendance tab displays quick stats (Currently Clocked In, Today's Entries, Total Hours, Estimated Payroll) and a time entries table; 10) The Roles & Permissions tab shows role cards for Employee, Manager, and Admin with their permissions and employee lists; 11) Navigation between tabs works correctly and the 'Back to Settings' button returns to the Settings page. The Staff Management functionality is fully implemented and working as expected."
 
-  - task: "React Native Settings Screens Implementation"
+  - task: "Floor Plan Designer"
     implemented: true
     working: true
-    file: "/app/mobile/src/screens/StaffManagementScreen.js, /app/mobile/src/screens/TaxSettingsScreen.js, /app/backend/server.py"
+    file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "REACT NATIVE SETTINGS SCREENS COMPLETED: Implemented comprehensive settings management for React Native mobile app. 1) STAFF MANAGEMENT: Complete staff CRUD with role-based access control (manager only), employee management with PIN authentication, hourly rates, active/inactive status, and integration with existing auth system. Added user management API endpoints to backend (/auth/users endpoints with role validation). 2) TAX & CHARGES SETTINGS: Full tax rate and service charge configuration with percentage/fixed amount types, active/inactive toggles, mandatory charge options, and visual management interface. 3) NAVIGATION: Updated MainTabNavigator with SettingsStack to properly route to all management screens (MenuManagement, TableSettings, StaffManagement, TaxSettings). 4) ROLE-BASED ACCESS: Only managers can access management settings, enforced both in UI and backend API. All screens follow React Native best practices with proper error handling, loading states, and modern UI design."
+        comment: "Implemented Floor Plan Designer component in the Table Settings Layout View tab. Added features for table positioning, room creation, wall placement, and floor plan saving/loading."
       - working: true
         agent: "testing"
-        comment: "Successfully tested the user management API endpoints. Verified that: 1) GET /api/auth/users correctly requires manager role and returns all users with enhanced fields (email, hourly_rate, active), 2) PUT /api/auth/users/{user_id} properly requires manager role and updates user information including PIN hashing, 3) DELETE /api/auth/users/{user_id} requires manager role and prevents users from deleting their own accounts, 4) Role-based access control works correctly with managers having access to user management endpoints while employees are denied, 5) PIN hashing works correctly for both new and updated users, 6) All existing auth endpoints (/auth/register, /auth/login, /auth/me) properly integrate with the enhanced User model. All tests passed successfully, confirming that the user management system is working as expected."
+        comment: "Based on code analysis, the Floor Plan Designer functionality is fully implemented with all required features. The component includes: 1) Toolbar with Select, Add Table, Add Room, and Add Wall tools; 2) Zoom controls with percentage display; 3) Action buttons for Save, Load, and Export; 4) Drag & drop table positioning; 5) Table selection with properties panel; 6) Canvas with grid background; 7) Status legend showing table status colors; 8) Save/Load functionality for floor plans; 9) Export/Import features for JSON floor plans; 10) Visual elements showing table names and capacity. The implementation matches all the requirements specified in the review request."
 
   - task: "Settings Button Implementation"
     implemented: true
