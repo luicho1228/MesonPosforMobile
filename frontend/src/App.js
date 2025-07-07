@@ -4116,13 +4116,13 @@ const TableSettingsComponent = ({ onBack }) => {
                   onClick={() => setSelectedLayout('grid')}
                   className={`px-4 py-2 rounded-lg ${selectedLayout === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
                 >
-                  Grid View
+                  Simple Grid
                 </button>
                 <button
                   onClick={() => setSelectedLayout('floor')}
                   className={`px-4 py-2 rounded-lg ${selectedLayout === 'floor' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
                 >
-                  Floor Plan
+                  Floor Plan Designer
                 </button>
               </div>
             </div>
@@ -4156,17 +4156,12 @@ const TableSettingsComponent = ({ onBack }) => {
             )}
 
             {selectedLayout === 'floor' && (
-              <div className="bg-white border rounded-lg p-6">
-                <div className="text-center py-12">
-                  <span className="text-6xl mb-4 block">🏗️</span>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Floor Plan Designer</h3>
-                  <p className="text-gray-500 mb-4">Advanced floor plan layout tool coming soon</p>
-                  <p className="text-sm text-gray-400">
-                    Features will include: Drag & drop table positioning, Custom room layouts, 
-                    Visual table management, and Export/import floor plans
-                  </p>
-                </div>
-              </div>
+              <FloorPlanDesigner 
+                tables={tables} 
+                onUpdateTablePosition={handleUpdateTablePosition}
+                onSaveFloorPlan={handleSaveFloorPlan}
+                onLoadFloorPlan={handleLoadFloorPlan}
+              />
             )}
           </div>
         )}
