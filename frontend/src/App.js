@@ -4032,8 +4032,11 @@ const TableSettingsComponent = ({ onBack }) => {
                   <div key={table.id} className="bg-white border rounded-lg p-4 hover:shadow-lg transition-shadow">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800">Table {table.number}</h3>
+                        <h3 className="text-lg font-bold text-gray-800">{getTableDisplayName(table)}</h3>
                         <p className="text-sm text-gray-600">{table.capacity} seats</p>
+                        {table.name && table.name.trim() && (
+                          <p className="text-xs text-gray-500">#{table.number}</p>
+                        )}
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                         {statusInfo.icon} {statusInfo.label}
