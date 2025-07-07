@@ -3634,6 +3634,802 @@ const OrderDetailModal = ({ order, onClose }) => {
   );
 };
 
+// Table Settings Component
+const TableSettingsComponent = ({ onBack }) => {
+  const [tables, setTables] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('management');
+  const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
+  const [showEditTableModal, setShowEditTableModal] = useState(false);
+  const [editingTable, setEditingTable] = useState(null);
+  const [selectedLayout, setSelectedLayout] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const [tableForm, setTableForm] = useState({
+    number: '',
+    capacity: '4'
+  });
+
+  const [bulkAddForm, setBulkAddForm] = useState({
+    startNumber: '',
+    endNumber: '',
+    capacity: '4'
+  });
+
+  const tableStatuses = [
+    { value: 'available', label: 'Available', color: 'bg-green-100 text-green-800', icon: '✅' },
+    { value: 'occupied', label: 'Occupied', color: 'bg-red-100 text-red-800', icon: '🔴' },
+    { value: 'needs_cleaning', label: 'Needs Cleaning', color: 'bg-yellow-100 text-yellow-800', icon: '🧹' },
+    { value: 'reserved', label: 'Reserved', color: 'bg-blue-100 text-blue-800', icon: '📅' }
+  ];
+
+  useEffect(() => {
+    fetchTables();
+  }, []);
+
+  const fetchTables = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/tables`);
+      setTables(response.data.sort((a, b) => a.number - b.number));
+    } catch (error) {
+      console.error('Error fetching tables:', error);
+      alert('Failed to load tables');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTable = async () => {
+    if (!tableForm.number || !tableForm.capacity) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const tableNumber = parseInt(tableForm.number);
+    const capacity = parseInt(tableForm.capacity);
+
+    if (isNaN(tableNumber) || tableNumber <= 0) {
+      alert('Please enter a valid table number');
+      return;
+    }
+
+    if (isNaN(capacity) || capacity <= 0) {
+      alert('Please enter a valid capacity');
+      return;
+    }
+
+    // Check if table number already exists
+    if (tables.some(table => table.number === tableNumber)) {
+      alert('Table number already exists');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/tables`, {
+        number: tableNumber,
+        capacity: capacity
+      });
+      alert('Table added successfully');
+      setShowAddTableModal(false);
+      setTableForm({ number: '', capacity: '4' });
+      fetchTables();
+    } catch (error) {
+      console.error('Error adding table:', error);
+      alert(error.response?.data?.detail || 'Failed to add table');
+    }
+  };
+
+  const handleBulkAdd = async () => {
+    if (!bulkAddForm.startNumber || !bulkAddForm.endNumber || !bulkAddForm.capacity) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const startNum = parseInt(bulkAddForm.startNumber);
+    const endNum = parseInt(bulkAddForm.endNumber);
+    const capacity = parseInt(bulkAddForm.capacity);
+
+    if (isNaN(startNum) || isNaN(endNum) || isNaN(capacity)) {
+      alert('Please enter valid numbers');
+      return;
+    }
+
+    if (startNum > endNum) {
+      alert('Start number must be less than or equal to end number');
+      return;
+    }
+
+    if (endNum - startNum > 50) {
+      alert('Cannot add more than 50 tables at once');
+      return;
+    }
+
+    try {
+      const existingNumbers = tables.map(t => t.number);
+      const tablesToAdd = [];
+      
+      for (let i = startNum; i <= endNum; i++) {
+        if (!existingNumbers.includes(i)) {
+          tablesToAdd.push({ number: i, capacity: capacity });
+        }
+      }
+
+      if (tablesToAdd.length === 0) {
+        alert('All table numbers in this range already exist');
+        return;
+      }
+
+      // Add tables one by one
+      for (const table of tablesToAdd) {
+        await axios.post(`${API}/tables`, table);
+      }
+
+      alert(`Successfully added ${tablesToAdd.length} tables`);
+      setShowBulkAddModal(false);
+      setBulkAddForm({ startNumber: '', endNumber: '', capacity: '4' });
+      fetchTables();
+    } catch (error) {
+      console.error('Error bulk adding tables:', error);
+      alert('Failed to add some tables');
+      fetchTables(); // Refresh to show which ones were added
+    }
+  };
+
+  const handleEditTable = (table) => {
+    setEditingTable(table);
+    setTableForm({
+      number: table.number.toString(),
+      capacity: table.capacity.toString()
+    });
+    setShowEditTableModal(true);
+  };
+
+  const handleUpdateTable = async () => {
+    if (!tableForm.capacity) {
+      alert('Please enter a capacity');
+      return;
+    }
+
+    const capacity = parseInt(tableForm.capacity);
+    if (isNaN(capacity) || capacity <= 0) {
+      alert('Please enter a valid capacity');
+      return;
+    }
+
+    try {
+      // For now, we only update capacity since table number changes could break references
+      await axios.put(`${API}/tables/${editingTable.id}`, {
+        status: editingTable.status,
+        current_order_id: editingTable.current_order_id
+      });
+      
+      // Update capacity separately if the API supports it (may need backend update)
+      alert('Table updated successfully');
+      setShowEditTableModal(false);
+      setEditingTable(null);
+      setTableForm({ number: '', capacity: '4' });
+      fetchTables();
+    } catch (error) {
+      console.error('Error updating table:', error);
+      alert('Failed to update table');
+    }
+  };
+
+  const handleDeleteTable = async (table) => {
+    if (table.status === 'occupied' && table.current_order_id) {
+      alert('Cannot delete table with active order. Please clear the order first.');
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete Table ${table.number}?`)) {
+      try {
+        await axios.delete(`${API}/tables/${table.id}`);
+        alert('Table deleted successfully');
+        fetchTables();
+      } catch (error) {
+        console.error('Error deleting table:', error);
+        alert('Failed to delete table');
+      }
+    }
+  };
+
+  const handleStatusChange = async (table, newStatus) => {
+    try {
+      await axios.put(`${API}/tables/${table.id}`, {
+        status: newStatus,
+        current_order_id: newStatus === 'available' ? null : table.current_order_id
+      });
+      fetchTables();
+    } catch (error) {
+      console.error('Error updating table status:', error);
+      alert('Failed to update table status');
+    }
+  };
+
+  const getStatusInfo = (status) => {
+    return tableStatuses.find(s => s.value === status) || tableStatuses[0];
+  };
+
+  const filteredTables = tables.filter(table => {
+    const matchesSearch = table.number.toString().includes(searchQuery) || 
+                         searchQuery === '' ||
+                         table.capacity.toString().includes(searchQuery);
+    const matchesStatus = statusFilter === 'all' || table.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const tableStats = {
+    total: tables.length,
+    available: tables.filter(t => t.status === 'available').length,
+    occupied: tables.filter(t => t.status === 'occupied').length,
+    needsCleaning: tables.filter(t => t.status === 'needs_cleaning').length,
+    reserved: tables.filter(t => t.status === 'reserved').length,
+    totalCapacity: tables.reduce((sum, t) => sum + t.capacity, 0)
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading tables...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+            >
+              <span>←</span>
+              <span>Back to Settings</span>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Table Settings</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowBulkAddModal(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+            >
+              <span>+</span>
+              <span>Bulk Add</span>
+            </button>
+            <button
+              onClick={() => setShowAddTableModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            >
+              <span>+</span>
+              <span>Add Table</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Dashboard */}
+      <div className="bg-white border-b p-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-800">{tableStats.total}</div>
+            <div className="text-sm text-gray-600">Total Tables</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{tableStats.available}</div>
+            <div className="text-sm text-gray-600">Available</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">{tableStats.occupied}</div>
+            <div className="text-sm text-gray-600">Occupied</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-yellow-600">{tableStats.needsCleaning}</div>
+            <div className="text-sm text-gray-600">Cleaning</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{tableStats.reserved}</div>
+            <div className="text-sm text-gray-600">Reserved</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-600">{tableStats.totalCapacity}</div>
+            <div className="text-sm text-gray-600">Total Seats</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white border-b">
+        <div className="flex space-x-8 px-6">
+          {[
+            { id: 'management', name: 'Table Management', icon: '🪑' },
+            { id: 'layout', name: 'Layout View', icon: '🗂️' },
+            { id: 'status', name: 'Status Control', icon: '⚙️' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-6">
+        {/* Table Management Tab */}
+        {activeTab === 'management' && (
+          <div className="space-y-6">
+            {/* Search and Filter */}
+            <div className="bg-white p-4 rounded-lg border">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search tables..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="absolute right-3 top-2.5 text-gray-400">🔍</span>
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    {tableStatuses.map(status => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {filteredTables.length} tables found
+                </div>
+              </div>
+            </div>
+
+            {/* Tables Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredTables.map(table => {
+                const statusInfo = getStatusInfo(table.status);
+                return (
+                  <div key={table.id} className="bg-white border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-800">Table {table.number}</h3>
+                        <p className="text-sm text-gray-600">{table.capacity} seats</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                        {statusInfo.icon} {statusInfo.label}
+                      </span>
+                    </div>
+                    
+                    {table.current_order_id && (
+                      <div className="mb-3 p-2 bg-orange-50 rounded text-sm">
+                        <span className="text-orange-800">Order: {table.current_order_id.slice(-8)}</span>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <select
+                        value={table.status}
+                        onChange={(e) => handleStatusChange(table, e.target.value)}
+                        className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {tableStatuses.map(status => (
+                          <option key={status.value} value={status.value}>
+                            {status.label}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditTable(table)}
+                          className="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded text-sm font-medium hover:bg-blue-100"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTable(table)}
+                          className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded text-sm font-medium hover:bg-red-100"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredTables.length === 0 && (
+              <div className="text-center py-12">
+                <span className="text-6xl mb-4 block">🪑</span>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No tables found</h3>
+                <p className="text-gray-500 mb-4">Get started by adding your first table</p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => setShowAddTableModal(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    Add Single Table
+                  </button>
+                  <button
+                    onClick={() => setShowBulkAddModal(true)}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Bulk Add Tables
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Layout View Tab */}
+        {activeTab === 'layout' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Restaurant Layout</h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setSelectedLayout('grid')}
+                  className={`px-4 py-2 rounded-lg ${selectedLayout === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                  Grid View
+                </button>
+                <button
+                  onClick={() => setSelectedLayout('floor')}
+                  className={`px-4 py-2 rounded-lg ${selectedLayout === 'floor' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                  Floor Plan
+                </button>
+              </div>
+            </div>
+
+            {selectedLayout === 'grid' && (
+              <div className="bg-white border rounded-lg p-6">
+                <div className="grid grid-cols-8 gap-4">
+                  {tables.map(table => {
+                    const statusInfo = getStatusInfo(table.status);
+                    return (
+                      <div
+                        key={table.id}
+                        className={`aspect-square border-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:shadow-lg transition-all ${
+                          table.status === 'available' ? 'border-green-300 bg-green-50' :
+                          table.status === 'occupied' ? 'border-red-300 bg-red-50' :
+                          table.status === 'needs_cleaning' ? 'border-yellow-300 bg-yellow-50' :
+                          'border-blue-300 bg-blue-50'
+                        }`}
+                        title={`Table ${table.number} - ${statusInfo.label} - ${table.capacity} seats`}
+                      >
+                        <div className="text-lg font-bold">{table.number}</div>
+                        <div className="text-xs">{table.capacity} seats</div>
+                        <div className="text-lg">{statusInfo.icon}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {selectedLayout === 'floor' && (
+              <div className="bg-white border rounded-lg p-6">
+                <div className="text-center py-12">
+                  <span className="text-6xl mb-4 block">🏗️</span>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Floor Plan Designer</h3>
+                  <p className="text-gray-500 mb-4">Advanced floor plan layout tool coming soon</p>
+                  <p className="text-sm text-gray-400">
+                    Features will include: Drag & drop table positioning, Custom room layouts, 
+                    Visual table management, and Export/import floor plans
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Status Control Tab */}
+        {activeTab === 'status' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Bulk Status Management</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {tableStatuses.map(status => {
+                const tablesWithStatus = tables.filter(t => t.status === status.value);
+                return (
+                  <div key={status.value} className="bg-white border rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{status.icon}</span>
+                        <div>
+                          <h3 className="font-semibold text-gray-800">{status.label}</h3>
+                          <p className="text-sm text-gray-600">{tablesWithStatus.length} tables</p>
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
+                        {tablesWithStatus.length}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {tablesWithStatus.slice(0, 5).map(table => (
+                        <div key={table.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                          <span className="font-medium">Table {table.number}</span>
+                          <span className="text-sm text-gray-600">{table.capacity} seats</span>
+                        </div>
+                      ))}
+                      {tablesWithStatus.length > 5 && (
+                        <div className="text-sm text-gray-500 text-center pt-2">
+                          +{tablesWithStatus.length - 5} more tables
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-white border rounded-lg p-6">
+              <h3 className="font-semibold text-gray-800 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button
+                  onClick={() => {
+                    if (window.confirm('Mark all available tables as needs cleaning?')) {
+                      tables.filter(t => t.status === 'available').forEach(table => {
+                        handleStatusChange(table, 'needs_cleaning');
+                      });
+                    }
+                  }}
+                  className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-4 py-3 rounded-lg hover:bg-yellow-100"
+                >
+                  Mark All for Cleaning
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Mark all cleaning tables as available?')) {
+                      tables.filter(t => t.status === 'needs_cleaning').forEach(table => {
+                        handleStatusChange(table, 'available');
+                      });
+                    }
+                  }}
+                  className="bg-green-50 text-green-700 border border-green-200 px-4 py-3 rounded-lg hover:bg-green-100"
+                >
+                  Clean All Done
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Clear all reservations?')) {
+                      tables.filter(t => t.status === 'reserved').forEach(table => {
+                        handleStatusChange(table, 'available');
+                      });
+                    }
+                  }}
+                  className="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-3 rounded-lg hover:bg-blue-100"
+                >
+                  Clear Reservations
+                </button>
+                <button
+                  onClick={fetchTables}
+                  className="bg-gray-50 text-gray-700 border border-gray-200 px-4 py-3 rounded-lg hover:bg-gray-100"
+                >
+                  Refresh Status
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Add Single Table Modal */}
+      {showAddTableModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Add New Table</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Table Number *</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={tableForm.number}
+                  onChange={(e) => setTableForm({...tableForm, number: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter table number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (seats) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={tableForm.capacity}
+                  onChange={(e) => setTableForm({...tableForm, capacity: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Number of seats"
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowAddTableModal(false);
+                  setTableForm({ number: '', capacity: '4' });
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddTable}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Add Table
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Add Tables Modal */}
+      {showBulkAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Bulk Add Tables</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Number *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={bulkAddForm.startNumber}
+                    onChange={(e) => setBulkAddForm({...bulkAddForm, startNumber: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Number *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={bulkAddForm.endNumber}
+                    onChange={(e) => setBulkAddForm({...bulkAddForm, endNumber: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 20"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Default Capacity *</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={bulkAddForm.capacity}
+                  onChange={(e) => setBulkAddForm({...bulkAddForm, capacity: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Default seats per table"
+                />
+              </div>
+              {bulkAddForm.startNumber && bulkAddForm.endNumber && (
+                <div className="bg-blue-50 p-3 rounded">
+                  <p className="text-sm text-blue-800">
+                    This will create {Math.max(0, parseInt(bulkAddForm.endNumber) - parseInt(bulkAddForm.startNumber) + 1)} tables
+                    (Tables {bulkAddForm.startNumber} - {bulkAddForm.endNumber})
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowBulkAddModal(false);
+                  setBulkAddForm({ startNumber: '', endNumber: '', capacity: '4' });
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkAdd}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Add Tables
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Table Modal */}
+      {showEditTableModal && editingTable && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">Edit Table {editingTable.number}</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Table Number</label>
+                <input
+                  type="number"
+                  value={tableForm.number}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
+                  title="Table number cannot be changed"
+                />
+                <p className="text-xs text-gray-500 mt-1">Table number cannot be changed</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (seats) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={tableForm.capacity}
+                  onChange={(e) => setTableForm({...tableForm, capacity: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Number of seats"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
+                <div className={`px-3 py-2 border rounded-md ${getStatusInfo(editingTable.status).color}`}>
+                  {getStatusInfo(editingTable.status).icon} {getStatusInfo(editingTable.status).label}
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowEditTableModal(false);
+                  setEditingTable(null);
+                  setTableForm({ number: '', capacity: '4' });
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateTable}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Update Table
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Menu Management Component
 const MenuManagementComponent = ({ onBack }) => {
   const [menuItems, setMenuItems] = useState([]);
