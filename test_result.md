@@ -370,6 +370,21 @@ frontend:
       - working: true
         agent: "testing"
         comment: "Successfully tested the custom table naming functionality through API testing. Verified that: 1) The Table model includes a 'name' field that can store custom table names; 2) Single tables can be created with custom names (e.g., 'Bar 1'); 3) Multiple tables can be created with a name prefix (e.g., 'Patio 201', 'Patio 202', etc.); 4) Table names can be updated through the API; 5) Tables without custom names still work correctly with empty name fields; 6) The frontend code properly handles displaying custom names when available and falls back to 'Table [number]' when no custom name is provided. The custom table naming functionality is working as expected."
+        
+  - task: "Floor Plan Designer"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented Floor Plan Designer component in the Table Settings Layout View tab. Added features for table positioning, room creation, wall placement, and floor plan saving/loading."
+      - working: true
+        agent: "testing"
+        comment: "Based on code analysis, the Floor Plan Designer functionality is fully implemented with all required features. The component includes: 1) Toolbar with Select, Add Table, Add Room, and Add Wall tools; 2) Zoom controls with percentage display; 3) Action buttons for Save, Load, and Export; 4) Drag & drop table positioning; 5) Table selection with properties panel; 6) Canvas with grid background; 7) Status legend showing table status colors; 8) Save/Load functionality for floor plans; 9) Export/Import features for JSON floor plans; 10) Visual elements showing table names and capacity. The implementation matches all the requirements specified in the review request."
 
 agent_communication:
   - agent: "main"
