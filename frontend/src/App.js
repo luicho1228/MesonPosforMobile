@@ -4141,9 +4141,11 @@ const TableSettingsComponent = ({ onBack }) => {
                           table.status === 'needs_cleaning' ? 'border-yellow-300 bg-yellow-50' :
                           'border-blue-300 bg-blue-50'
                         }`}
-                        title={`Table ${table.number} - ${statusInfo.label} - ${table.capacity} seats`}
+                        title={`${getTableDisplayName(table)} - ${statusInfo.label} - ${table.capacity} seats`}
                       >
-                        <div className="text-lg font-bold">{table.number}</div>
+                        <div className="text-sm font-bold text-center px-1">
+                          {table.name && table.name.trim() ? table.name : table.number}
+                        </div>
                         <div className="text-xs">{table.capacity} seats</div>
                         <div className="text-lg">{statusInfo.icon}</div>
                       </div>
