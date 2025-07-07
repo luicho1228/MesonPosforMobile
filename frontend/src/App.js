@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, createContext } from 'react';
+import React, { useState, useEffect, useContext, createContext, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 import { PrinterProvider, usePrinter } from './PrinterContext';
