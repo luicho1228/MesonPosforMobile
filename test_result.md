@@ -355,6 +355,21 @@ frontend:
       - working: true
         agent: "testing"
         comment: "Based on code analysis, the Table Settings functionality is fully implemented with all required features. The component includes: 1) Stats dashboard showing Total Tables, Available, Occupied, Cleaning, Reserved, and Total Seats; 2) Table Management tab with grid layout, search functionality, status filter, and table cards showing all required info; 3) Add Single Table and Bulk Add Tables functionality with proper validation; 4) Table management actions including status change, edit, and delete; 5) Layout View tab with Grid View and Floor Plan (coming soon); 6) Status Control tab with bulk management and quick actions; 7) Proper navigation between tabs and back to Settings. All functionality appears to be properly implemented in the code."
+        
+  - task: "Custom Table Naming Functionality"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented custom table naming functionality allowing tables to have custom names instead of just numbers. Added name field to Table model and updated UI to support custom names in Add Table, Bulk Add, and Edit Table modals."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the custom table naming functionality through API testing. Verified that: 1) The Table model includes a 'name' field that can store custom table names; 2) Single tables can be created with custom names (e.g., 'Bar 1'); 3) Multiple tables can be created with a name prefix (e.g., 'Patio 201', 'Patio 202', etc.); 4) Table names can be updated through the API; 5) Tables without custom names still work correctly with empty name fields; 6) The frontend code properly handles displaying custom names when available and falls back to 'Table [number]' when no custom name is provided. The custom table naming functionality is working as expected."
 
 agent_communication:
   - agent: "main"
