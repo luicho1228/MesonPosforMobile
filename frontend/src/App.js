@@ -4874,6 +4874,519 @@ const TaxChargesComponent = ({ onBack }) => {
       {/* Additional modals for charges, gratuity, and discounts would go here - similar structure */}
       {/* I'll implement the key ones to keep the response manageable */}
 
+      {/* Add Service Charge Modal */}
+      {showChargeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">
+                {editingItem ? 'Edit Service Charge' : 'Add Service Charge'}
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Charge Name *</label>
+                  <input
+                    type="text"
+                    value={chargeForm.name}
+                    onChange={(e) => setChargeForm({...chargeForm, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Service Charge, Delivery Fee"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={chargeForm.amount}
+                      onChange={(e) => setChargeForm({...chargeForm, amount: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="18.00"
+                    />
+                    <span className="absolute right-3 top-2 text-gray-500">
+                      {chargeForm.type === 'percentage' ? '%' : chargeForm.type === 'per_person' ? '/person' : '$'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Charge Type</label>
+                  <select
+                    value={chargeForm.type}
+                    onChange={(e) => setChargeForm({...chargeForm, type: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {chargeTypes.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Applies To</label>
+                  <select
+                    value={chargeForm.applies_to}
+                    onChange={(e) => setChargeForm({...chargeForm, applies_to: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="subtotal">Subtotal</option>
+                    <option value="total_with_tax">Total with Tax</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={chargeForm.description}
+                  onChange={(e) => setChargeForm({...chargeForm, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  rows="2"
+                  placeholder="Charge description"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Conditions</label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={chargeForm.conditions.includes('party_size')}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setChargeForm({...chargeForm, conditions: [...chargeForm.conditions, 'party_size']});
+                        } else {
+                          setChargeForm({...chargeForm, conditions: chargeForm.conditions.filter(c => c !== 'party_size')});
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Apply based on party size</span>
+                  </label>
+                  {chargeForm.conditions.includes('party_size') && (
+                    <input
+                      type="number"
+                      min="1"
+                      value={chargeForm.party_size_threshold}
+                      onChange={(e) => setChargeForm({...chargeForm, party_size_threshold: e.target.value})}
+                      className="ml-6 w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="6"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Order Types</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {orderTypes.map(type => (
+                    <label key={type} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={chargeForm.order_types.includes(type)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setChargeForm({...chargeForm, order_types: [...chargeForm.order_types, type]});
+                          } else {
+                            setChargeForm({...chargeForm, order_types: chargeForm.order_types.filter(t => t !== type)});
+                          }
+                        }}
+                        className="mr-2"
+                      />
+                      <span className="text-sm">{type.replace('_', ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={chargeForm.active}
+                    onChange={(e) => setChargeForm({...chargeForm, active: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Active</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={chargeForm.mandatory}
+                    onChange={(e) => setChargeForm({...chargeForm, mandatory: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Mandatory (cannot be removed)</span>
+                </label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowChargeModal(false);
+                  setEditingItem(null);
+                  resetChargeForm();
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveCharge}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                {editingItem ? 'Update' : 'Add'} Service Charge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Gratuity Rule Modal */}
+      {showGratuityModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">
+                {editingItem ? 'Edit Gratuity Rule' : 'Add Gratuity Rule'}
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rule Name *</label>
+                  <input
+                    type="text"
+                    value={gratuityForm.name}
+                    onChange={(e) => setGratuityForm({...gratuityForm, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Large Party Gratuity"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={gratuityForm.amount}
+                      onChange={(e) => setGratuityForm({...gratuityForm, amount: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="20.00"
+                    />
+                    <span className="absolute right-3 top-2 text-gray-500">
+                      {gratuityForm.type === 'percentage' ? '%' : '$'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={gratuityForm.description}
+                  onChange={(e) => setGratuityForm({...gratuityForm, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  rows="2"
+                  placeholder="Gratuity rule description"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Trigger Condition</label>
+                  <select
+                    value={gratuityForm.trigger_condition}
+                    onChange={(e) => setGratuityForm({...gratuityForm, trigger_condition: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="party_size">Party Size</option>
+                    <option value="order_amount">Order Amount</option>
+                    <option value="manual">Manual Only</option>
+                  </select>
+                </div>
+                <div>
+                  {gratuityForm.trigger_condition === 'party_size' ? (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Party Size</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={gratuityForm.party_size_min}
+                        onChange={(e) => setGratuityForm({...gratuityForm, party_size_min: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="6"
+                      />
+                    </>
+                  ) : gratuityForm.trigger_condition === 'order_amount' ? (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Order Amount</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={gratuityForm.order_amount_min}
+                        onChange={(e) => setGratuityForm({...gratuityForm, order_amount_min: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="200.00"
+                      />
+                    </>
+                  ) : null}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Applies to Order Types</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {orderTypes.map(type => (
+                    <label key={type} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={gratuityForm.applies_to_order_types.includes(type)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setGratuityForm({...gratuityForm, applies_to_order_types: [...gratuityForm.applies_to_order_types, type]});
+                          } else {
+                            setGratuityForm({...gratuityForm, applies_to_order_types: gratuityForm.applies_to_order_types.filter(t => t !== type)});
+                          }
+                        }}
+                        className="mr-2"
+                      />
+                      <span className="text-sm">{type.replace('_', ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={gratuityForm.auto_apply}
+                    onChange={(e) => setGratuityForm({...gratuityForm, auto_apply: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Auto-apply when conditions are met</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={gratuityForm.customer_can_modify}
+                    onChange={(e) => setGratuityForm({...gratuityForm, customer_can_modify: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Customer can modify amount</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={gratuityForm.active}
+                    onChange={(e) => setGratuityForm({...gratuityForm, active: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Active</span>
+                </label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowGratuityModal(false);
+                  setEditingItem(null);
+                  resetGratuityForm();
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveGratuity}
+                className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+              >
+                {editingItem ? 'Update' : 'Add'} Gratuity Rule
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Discount Policy Modal */}
+      {showDiscountModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold">
+                {editingItem ? 'Edit Discount Policy' : 'Add Discount Policy'}
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Discount Name *</label>
+                  <input
+                    type="text"
+                    value={discountForm.name}
+                    onChange={(e) => setDiscountForm({...discountForm, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Employee Discount"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Discount Amount *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={discountForm.amount}
+                      onChange={(e) => setDiscountForm({...discountForm, amount: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="25.00"
+                    />
+                    <span className="absolute right-3 top-2 text-gray-500">
+                      {discountForm.type === 'percentage' ? '%' : '$'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Discount Type</label>
+                  <select
+                    value={discountForm.type}
+                    onChange={(e) => setDiscountForm({...discountForm, type: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed">Fixed Amount</option>
+                    <option value="buy_one_get_one">Buy One Get One</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={discountForm.category}
+                    onChange={(e) => setDiscountForm({...discountForm, category: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="general">General</option>
+                    <option value="employee">Employee</option>
+                    <option value="senior">Senior Citizen</option>
+                    <option value="student">Student</option>
+                    <option value="military">Military</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={discountForm.description}
+                  onChange={(e) => setDiscountForm({...discountForm, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  rows="2"
+                  placeholder="Discount description"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Order Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={discountForm.minimum_order_amount}
+                    onChange={(e) => setDiscountForm({...discountForm, minimum_order_amount: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="50.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Daily Usage Limit</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={discountForm.max_uses_per_day}
+                    onChange={(e) => setDiscountForm({...discountForm, max_uses_per_day: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="50"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={discountForm.requires_code}
+                    onChange={(e) => setDiscountForm({...discountForm, requires_code: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Requires discount code</span>
+                </label>
+                {discountForm.requires_code && (
+                  <input
+                    type="text"
+                    value={discountForm.discount_code}
+                    onChange={(e) => setDiscountForm({...discountForm, discount_code: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="DISCOUNT CODE"
+                  />
+                )}
+              </div>
+
+              <div className="flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={discountForm.stackable}
+                    onChange={(e) => setDiscountForm({...discountForm, stackable: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Stackable with other discounts</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={discountForm.active}
+                    onChange={(e) => setDiscountForm({...discountForm, active: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Active</span>
+                </label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDiscountModal(false);
+                  setEditingItem(null);
+                  resetDiscountForm();
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDiscount}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                {editingItem ? 'Update' : 'Add'} Discount Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
