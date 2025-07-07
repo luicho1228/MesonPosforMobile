@@ -3767,19 +3767,53 @@ const StaffManagementComponent = ({ onBack }) => {
 
     try {
       const employeeData = {
-        ...employeeForm,
+        full_name: employeeForm.full_name,
+        email: employeeForm.email,
+        phone: employeeForm.phone || '',
+        role: employeeForm.role,
+        pin: employeeForm.pin,
         hourly_rate: parseFloat(employeeForm.hourly_rate) || 15.00,
-        pin: parseInt(employeeForm.pin)
+        active: employeeForm.active
       };
 
-      await axios.post(`${API}/auth/register`, employeeData);
+      console.log('Sending employee data:', employeeData);
+      
+      const response = await axios.post(`${API}/auth/register`, employeeData);
+      console.log('Employee creation response:', response);
+      
       alert('Employee added successfully');
       setShowAddEmployeeModal(false);
       resetEmployeeForm();
       fetchStaffData();
     } catch (error) {
       console.error('Error adding employee:', error);
-      alert(error.response?.data?.detail || 'Failed to add employee');
+      
+      let errorMessage = 'Failed to add employee';
+      
+      if (error.response) {
+        // Server responded with error status
+        if (error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMessage = error.response.data;
+          } else if (error.response.data.detail) {
+            errorMessage = error.response.data.detail;
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else {
+            errorMessage = `Server error: ${error.response.status}`;
+          }
+        } else {
+          errorMessage = `Server error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage = 'Network error: Unable to connect to server';
+      } else {
+        // Other error
+        errorMessage = error.message || 'Unknown error occurred';
+      }
+      
+      alert(errorMessage);
     }
   };
 
