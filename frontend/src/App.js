@@ -4360,6 +4360,19 @@ const TableSettingsComponent = ({ onBack }) => {
                 </div>
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name Prefix (Optional)</label>
+                <input
+                  type="text"
+                  value={bulkAddForm.namePrefix}
+                  onChange={(e) => setBulkAddForm({...bulkAddForm, namePrefix: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Bar, Patio, VIP"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Will create names like "Bar 1", "Bar 2", etc. Leave empty for "Table [number]"
+                </p>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Default Capacity *</label>
                 <input
                   type="number"
@@ -4375,7 +4388,10 @@ const TableSettingsComponent = ({ onBack }) => {
                 <div className="bg-blue-50 p-3 rounded">
                   <p className="text-sm text-blue-800">
                     This will create {Math.max(0, parseInt(bulkAddForm.endNumber) - parseInt(bulkAddForm.startNumber) + 1)} tables
-                    (Tables {bulkAddForm.startNumber} - {bulkAddForm.endNumber})
+                    {bulkAddForm.namePrefix ? 
+                      ` named "${bulkAddForm.namePrefix} ${bulkAddForm.startNumber}" through "${bulkAddForm.namePrefix} ${bulkAddForm.endNumber}"` :
+                      ` (Tables ${bulkAddForm.startNumber} - ${bulkAddForm.endNumber})`
+                    }
                   </p>
                 </div>
               )}
