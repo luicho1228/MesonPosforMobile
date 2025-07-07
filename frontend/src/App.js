@@ -3845,7 +3845,7 @@ const StaffManagementComponent = ({ onBack }) => {
       const updateData = {
         full_name: employeeForm.full_name,
         email: employeeForm.email,
-        phone: employeeForm.phone,
+        phone: employeeForm.phone || '',
         role: employeeForm.role,
         hourly_rate: parseFloat(employeeForm.hourly_rate) || 15.00,
         active: employeeForm.active
@@ -3855,7 +3855,11 @@ const StaffManagementComponent = ({ onBack }) => {
         updateData.pin = employeeForm.pin;
       }
 
-      await axios.put(`${API}/auth/users/${editingEmployee.id}`, updateData);
+      console.log('Updating employee with data:', updateData);
+
+      const response = await axios.put(`${API}/auth/users/${editingEmployee.id}`, updateData);
+      console.log('Employee update response:', response);
+      
       alert('Employee updated successfully');
       setShowEditEmployeeModal(false);
       setEditingEmployee(null);
@@ -3863,7 +3867,30 @@ const StaffManagementComponent = ({ onBack }) => {
       fetchStaffData();
     } catch (error) {
       console.error('Error updating employee:', error);
-      alert('Failed to update employee');
+      
+      let errorMessage = 'Failed to update employee';
+      
+      if (error.response) {
+        if (error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMessage = error.response.data;
+          } else if (error.response.data.detail) {
+            errorMessage = error.response.data.detail;
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else {
+            errorMessage = `Server error: ${error.response.status}`;
+          }
+        } else {
+          errorMessage = `Server error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        errorMessage = 'Network error: Unable to connect to server';
+      } else {
+        errorMessage = error.message || 'Unknown error occurred';
+      }
+      
+      alert(errorMessage);
     }
   };
 
