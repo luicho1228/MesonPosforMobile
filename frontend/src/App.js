@@ -4779,35 +4779,7 @@ const POSInterface = () => {
   }
 
   if (currentView === 'table-settings') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white shadow-sm border-b p-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setCurrentView('settings')}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
-            >
-              <span>←</span>
-              <span>Back to Settings</span>
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Table Settings</h1>
-          </div>
-        </div>
-        <div className="p-6">
-          <div className="bg-white p-8 rounded-lg shadow-sm border text-center">
-            <span className="text-6xl mb-4 block">🪑</span>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Table Settings</h2>
-            <p className="text-gray-600 mb-6">Table configuration and layout management interface will be implemented here.</p>
-            <div className="space-y-2 text-left max-w-md mx-auto">
-              <p className="text-sm text-gray-500">• Add/remove/edit tables</p>
-              <p className="text-sm text-gray-500">• Set table capacity and numbers</p>
-              <p className="text-sm text-gray-500">• Configure table layout</p>
-              <p className="text-sm text-gray-500">• Manage table status and reservations</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <TableSettingsComponent onBack={() => setCurrentView('settings')} />;
   }
 
   if (currentView === 'staff-management') {
