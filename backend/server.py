@@ -602,8 +602,15 @@ async def update_table(table_id: str, table_update: TableUpdate, user_id: str = 
     if not existing_table:
         raise HTTPException(status_code=404, detail="Table not found")
     
-    update_data = table_update.dict()
-    update_data['updated_at'] = get_current_time()
+    # Build update data with only provided fields
+    update_data = {}
+    if table_update.name is not None:
+        update_data['name'] = table_update.name
+    if table_update.capacity is not None:
+        update_data['capacity'] = table_update.capacity
+    update_data['status'] = table_update.status
+    if table_update.current_order_id is not None:
+        update_data['current_order_id'] = table_update.current_order_id
     
     await db.tables.update_one({"id": table_id}, {"$set": update_data})
     
