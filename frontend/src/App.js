@@ -3863,6 +3863,13 @@ const TableSettingsComponent = ({ onBack }) => {
     return tableStatuses.find(s => s.value === status) || tableStatuses[0];
   };
 
+  const getTableDisplayName = (table) => {
+    if (table.name && table.name.trim()) {
+      return table.name;
+    }
+    return `Table ${table.number}`;
+  };
+
   const filteredTables = tables.filter(table => {
     const matchesSearch = table.number.toString().includes(searchQuery) || 
                          (table.name && table.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
