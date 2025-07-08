@@ -82,7 +82,7 @@ def test_table_merge_functionality():
             "image_url": "https://example.com/pasta.jpg"
         }
         
-        response = requests.post(f"{API_URL}/menu/items", json=menu_item1_data, headers=headers)
+        response = requests_session.post(f"{API_URL}/menu/items", json=menu_item1_data, headers=headers)
         response.raise_for_status()
         menu_item1 = response.json()
         menu_item1_id = menu_item1.get("id")
