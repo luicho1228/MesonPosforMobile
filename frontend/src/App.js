@@ -1318,13 +1318,6 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
   };
 
   const handleOrderClick = (order) => {
-    // Cancelled orders are always clickable for viewing details
-    if (order.status === 'cancelled') {
-      onOrderClick(order);
-      return;
-    }
-    
-    // For other orders, check selection mode
     if (selectionMode) {
       handleSelectOrder(order.id);
     } else {
