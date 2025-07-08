@@ -1533,7 +1533,7 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                 )}
               </div>
 
-              <div className="mb-3 text-sm">
+              <div className={`mb-3 text-sm ${order.status === 'cancelled' ? 'line-through text-gray-500' : ''}`}>
                 {order.items.slice(0, 2).map((item, index) => (
                   <div key={index} className="flex justify-between">
                     <span>{item.quantity}x {item.menu_item_name}</span>
@@ -1545,10 +1545,12 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
+                <span className={`font-bold text-lg ${order.status === 'cancelled' ? 'line-through text-gray-500' : ''}`}>
+                  ${order.total.toFixed(2)}
+                </span>
                 <div className="flex space-x-2">
-                  {/* Only show status buttons for delivery orders and not pending */}
-                  {order.order_type === 'delivery' && order.status !== 'pending' && getNextStatus(order.status) && (
+                  {/* Only show status buttons for delivery orders and not pending/cancelled */}
+                  {order.order_type === 'delivery' && order.status !== 'pending' && order.status !== 'cancelled' && getNextStatus(order.status) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
