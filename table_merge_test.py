@@ -48,7 +48,7 @@ def test_table_merge_functionality():
     }
     
     try:
-        response = requests.post(f"{API_URL}/auth/register", json=register_data)
+        response = requests_session.post(f"{API_URL}/auth/register", json=register_data)
         response.raise_for_status()
         result = response.json()
         
