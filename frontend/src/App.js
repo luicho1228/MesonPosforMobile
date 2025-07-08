@@ -3714,6 +3714,184 @@ const OrderDetailModal = ({ order, onClose }) => {
   );
 };
 
+// Table Merge Modal Component
+const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfirmMerge, onCancel }) => {
+  const [existingOrder, setExistingOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchExistingOrder = async () => {
+      if (occupiedTable?.current_order_id) {
+        try {
+          const response = await axios.get(`${API}/orders/${occupiedTable.current_order_id}`);
+          setExistingOrder(response.data);
+        } catch (error) {
+          console.error('Error fetching existing order:', error);
+        }
+      }
+      setLoading(false);
+    };
+    fetchExistingOrder();
+  }, [occupiedTable]);
+
+  const currentCartTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const existingOrderTotal = existingOrder?.subtotal || 0;
+  const mergedTotal = currentCartTotal + existingOrderTotal;
+  const estimatedTax = mergedTotal * 0.08;
+  const finalTotal = mergedTotal + estimatedTax + (currentOrderInfo.tip || 0);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-6 max-w-4xl w-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Loading existing order details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">⚠️ Merge Orders - Table {occupiedTable.number}</h2>
+          <button
+            onClick={onCancel}
+            className="text-gray-500 hover:text-gray-700 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-2">
+            <span className="text-yellow-600 text-lg">⚠️</span>
+            <p className="text-yellow-800 font-medium">
+              Table {occupiedTable.number} already has an active order. Your current cart items will be merged with the existing order.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Current Cart */}
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Your Current Cart</h3>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {currentCart.length > 0 ? (
+                currentCart.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center py-2 border-b border-blue-200">
+                    <div>
+                      <span className="font-medium">{item.name}</span>
+                      <span className="text-sm text-blue-600 ml-2">x{item.quantity}</span>
+                    </div>
+                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-blue-600 italic">No items in cart</p>
+              )}
+            </div>
+            <div className="border-t border-blue-200 pt-2 mt-2">
+              <div className="flex justify-between font-bold text-blue-800">
+                <span>Cart Subtotal:</span>
+                <span>${currentCartTotal.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Existing Order */}
+          <div className="bg-orange-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-orange-800 mb-3">Existing Table Order</h3>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {existingOrder?.items?.length > 0 ? (
+                existingOrder.items.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center py-2 border-b border-orange-200">
+                    <div>
+                      <span className="font-medium">{item.menu_item_name}</span>
+                      <span className="text-sm text-orange-600 ml-2">x{item.quantity}</span>
+                    </div>
+                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-orange-600 italic">No items found</p>
+              )}
+            </div>
+            <div className="border-t border-orange-200 pt-2 mt-2">
+              <div className="flex justify-between font-bold text-orange-800">
+                <span>Existing Subtotal:</span>
+                <span>${existingOrderTotal.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Merged Total Preview */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-semibold text-green-800 mb-3">📊 Merged Order Total</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>Combined Subtotal:</span>
+              <span>${mergedTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Estimated Tax (8%):</span>
+              <span>${estimatedTax.toFixed(2)}</span>
+            </div>
+            {currentOrderInfo.tip > 0 && (
+              <div className="flex justify-between">
+                <span>Tip:</span>
+                <span>${currentOrderInfo.tip.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-lg font-bold text-green-800 border-t border-green-300 pt-2">
+              <span>Final Total:</span>
+              <span>${finalTotal.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Information */}
+        {(currentOrderInfo.customerInfo.name || currentOrderInfo.orderNotes) && (
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Additional Information</h3>
+            {currentOrderInfo.customerInfo.name && (
+              <p><strong>Customer:</strong> {currentOrderInfo.customerInfo.name}</p>
+            )}
+            {currentOrderInfo.orderNotes && (
+              <p><strong>Notes:</strong> {currentOrderInfo.orderNotes}</p>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex space-x-4">
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirmMerge}
+            disabled={currentCart.length === 0}
+            className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
+              currentCart.length === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-red-600 text-white hover:bg-red-700'
+            }`}
+          >
+            {currentCart.length === 0 ? 'No Items to Merge' : `Confirm Merge with Table ${occupiedTable.number}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Tax & Charges Component
 const TaxChargesComponent = ({ onBack }) => {
   const [taxRates, setTaxRates] = useState([]);
