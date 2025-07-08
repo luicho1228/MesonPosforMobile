@@ -143,7 +143,7 @@ def test_table_merge_functionality():
             "order_notes": "Test order 1 for table merge"
         }
         
-        response = requests.post(f"{API_URL}/orders", json=order1_data, headers=headers)
+        response = requests_session.post(f"{API_URL}/orders", json=order1_data, headers=headers)
         response.raise_for_status()
         order1 = response.json()
         order1_id = order1.get("id")
