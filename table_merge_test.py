@@ -149,7 +149,7 @@ def test_table_merge_functionality():
         order1_id = order1.get("id")
         
         # Send Order 1 to kitchen to make Table 1 occupied
-        response = requests.post(f"{API_URL}/orders/{order1_id}/send", headers=headers)
+        response = requests_session.post(f"{API_URL}/orders/{order1_id}/send", headers=headers)
         response.raise_for_status()
         
         # Verify Table 1 is now occupied with Order 1
