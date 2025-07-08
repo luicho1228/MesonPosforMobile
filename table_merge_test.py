@@ -87,7 +87,7 @@ def test_table_merge_functionality():
         menu_item1 = response.json()
         menu_item1_id = menu_item1.get("id")
         
-        response = requests.post(f"{API_URL}/menu/items", json=menu_item2_data, headers=headers)
+        response = requests_session.post(f"{API_URL}/menu/items", json=menu_item2_data, headers=headers)
         response.raise_for_status()
         menu_item2 = response.json()
         menu_item2_id = menu_item2.get("id")
