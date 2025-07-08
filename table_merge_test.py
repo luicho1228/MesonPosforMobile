@@ -279,9 +279,17 @@ def test_table_merge_functionality():
             return print_test_result("Table Merge - Tax Calculation", False, 
                                     f"Expected tax ${expected_tax:.2f}, but got ${merged_tax:.2f}")
         
-        if abs(merged_total - expected_total) > 0.01:
+        # Check if tips were merged correctly
+        expected_tip_total = order1_before_merge.get("tip", 0) + order2_before_merge.get("tip", 0)
+        if abs(merged_tip - expected_tip_total) > 0.01:
+            return print_test_result("Table Merge - Tip Calculation", False, 
+                                    f"Expected tip ${expected_tip_total:.2f}, but got ${merged_tip:.2f}")
+        
+        # The expected total should be subtotal + tax + tip
+        corrected_expected_total = expected_subtotal + expected_tax + merged_tip
+        if abs(merged_total - corrected_expected_total) > 0.01:
             return print_test_result("Table Merge - Total Calculation", False, 
-                                    f"Expected total ${expected_total:.2f}, but got ${merged_total:.2f}")
+                                    f"Expected total ${corrected_expected_total:.2f}, but got ${merged_total:.2f}")
         
         # 7.2: Verify Order 2 is deleted
         try:
