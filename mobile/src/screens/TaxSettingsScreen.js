@@ -20,10 +20,16 @@ const TaxSettingsScreen = ({ navigation }) => {
   const { API } = useAuth();
   const [taxRates, setTaxRates] = useState([]);
   const [serviceCharges, setServiceCharges] = useState([]);
+  const [gratuityRules, setGratuityRules] = useState([]);
+  const [discountPolicies, setDiscountPolicies] = useState([]);
   const [showAddTaxModal, setShowAddTaxModal] = useState(false);
   const [showAddChargeModal, setShowAddChargeModal] = useState(false);
+  const [showAddGratuityModal, setShowAddGratuityModal] = useState(false);
+  const [showAddDiscountModal, setShowAddDiscountModal] = useState(false);
   const [editingTax, setEditingTax] = useState(null);
   const [editingCharge, setEditingCharge] = useState(null);
+  const [editingGratuity, setEditingGratuity] = useState(null);
+  const [editingDiscount, setEditingDiscount] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const [taxForm, setTaxForm] = useState({
@@ -41,6 +47,29 @@ const TaxSettingsScreen = ({ navigation }) => {
     type: 'percentage', // 'percentage' or 'fixed'
     apply_to: 'subtotal', // 'subtotal' or 'total'
     mandatory: false,
+    active: true
+  });
+
+  const [gratuityForm, setGratuityForm] = useState({
+    name: '',
+    percentage: '',
+    description: '',
+    auto_apply: false,
+    min_party_size: '',
+    min_order_amount: '',
+    customer_editable: true,
+    active: true
+  });
+
+  const [discountForm, setDiscountForm] = useState({
+    name: '',
+    code: '',
+    amount: '',
+    description: '',
+    type: 'percentage', // 'percentage' or 'fixed'
+    min_order_amount: '',
+    max_uses: '',
+    expires_at: '',
     active: true
   });
 
