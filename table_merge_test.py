@@ -231,9 +231,9 @@ def test_table_merge_functionality():
         expected_item_count = len(order1_before_merge.get("items", [])) + len(order2_before_merge.get("items", []))
         
         print(f"\nBefore merge:")
-        print(f"Order 1 - Subtotal: ${order1_before_merge.get('subtotal', 0):.2f}, Items: {len(order1_before_merge.get('items', []))}")
-        print(f"Order 2 - Subtotal: ${order2_before_merge.get('subtotal', 0):.2f}, Items: {len(order2_before_merge.get('items', []))}")
-        print(f"Expected after merge - Subtotal: ${expected_subtotal:.2f}, Items: {expected_item_count}")
+        print(f"Order 1 - Subtotal: ${order1_before_merge.get('subtotal', 0):.2f}, Tip: ${order1_before_merge.get('tip', 0):.2f}, Items: {len(order1_before_merge.get('items', []))}")
+        print(f"Order 2 - Subtotal: ${order2_before_merge.get('subtotal', 0):.2f}, Tip: ${order2_before_merge.get('tip', 0):.2f}, Items: {len(order2_before_merge.get('items', []))}")
+        print(f"Expected after merge - Subtotal: ${expected_subtotal:.2f}, Tip: ${expected_tip:.2f}, Items: {expected_item_count}")
         
         # Step 6: Test merging Order 2 into Order 1's table (Table 1)
         print("\nStep 6: Merging Order 2 into Order 1...")
