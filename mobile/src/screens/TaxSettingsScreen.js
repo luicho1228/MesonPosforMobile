@@ -18,6 +18,7 @@ import axios from 'axios';
 
 const TaxSettingsScreen = ({ navigation }) => {
   const { API } = useAuth();
+  const [activeTab, setActiveTab] = useState('taxes');
   const [taxRates, setTaxRates] = useState([]);
   const [serviceCharges, setServiceCharges] = useState([]);
   const [gratuityRules, setGratuityRules] = useState([]);
@@ -36,7 +37,7 @@ const TaxSettingsScreen = ({ navigation }) => {
     name: '',
     rate: '',
     description: '',
-    type: 'percentage', // 'percentage' or 'fixed'
+    type: 'percentage',
     active: true
   });
 
@@ -44,8 +45,8 @@ const TaxSettingsScreen = ({ navigation }) => {
     name: '',
     amount: '',
     description: '',
-    type: 'percentage', // 'percentage' or 'fixed'
-    apply_to: 'subtotal', // 'subtotal' or 'total'
+    type: 'percentage',
+    apply_to: 'subtotal',
     mandatory: false,
     active: true
   });
@@ -66,7 +67,7 @@ const TaxSettingsScreen = ({ navigation }) => {
     code: '',
     amount: '',
     description: '',
-    type: 'percentage', // 'percentage' or 'fixed'
+    type: 'percentage',
     min_order_amount: '',
     max_uses: '',
     expires_at: '',
@@ -80,16 +81,8 @@ const TaxSettingsScreen = ({ navigation }) => {
   const fetchTaxData = async () => {
     try {
       setRefreshing(true);
-      // For now, we'll use local state as the backend may not have these endpoints yet
-      // In a real implementation, these would be API calls:
-      // const [taxRes, chargeRes, gratuityRes, discountRes] = await Promise.all([
-      //   axios.get(`${API}/tax-rates`),
-      //   axios.get(`${API}/service-charges`),
-      //   axios.get(`${API}/gratuity-rules`),
-      //   axios.get(`${API}/discount-policies`)
-      // ]);
       
-      // Mock data for demonstration - matching web app structure
+      // Mock comprehensive data matching web app
       setTaxRates([
         {
           id: '1',
@@ -232,6 +225,7 @@ const TaxSettingsScreen = ({ navigation }) => {
     }
   };
 
+  // Tax Rate Functions
   const handleSaveTax = async () => {
     if (!taxForm.name || !taxForm.rate) {
       Alert.alert('Required Fields', 'Name and rate are required');
@@ -252,11 +246,9 @@ const TaxSettingsScreen = ({ navigation }) => {
       };
 
       if (editingTax) {
-        // await axios.put(`${API}/tax-rates/${editingTax.id}`, taxData);
         setTaxRates(prev => prev.map(tax => tax.id === editingTax.id ? taxData : tax));
         Alert.alert('Success', 'Tax rate updated successfully');
       } else {
-        // await axios.post(`${API}/tax-rates`, taxData);
         setTaxRates(prev => [...prev, taxData]);
         Alert.alert('Success', 'Tax rate added successfully');
       }
@@ -276,6 +268,52 @@ const TaxSettingsScreen = ({ navigation }) => {
     }
   };
 
+  const handleEditTax = (tax) => {
+    setTaxForm({
+      name: tax.name,
+      rate: tax.rate.toString(),
+      description: tax.description || '',
+      type: tax.type,
+      active: tax.active
+    });
+    setEditingTax(tax);
+    setShowAddTaxModal(true);
+  };
+
+  const handleDeleteTax = (tax) => {
+    Alert.alert(
+      'Delete Tax Rate',
+      `Are you sure you want to delete "${tax.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setTaxRates(prev => prev.filter(t => t.id !== tax.id));
+              Alert.alert('Success', 'Tax rate deleted successfully');
+            } catch (error) {
+              console.error('Error deleting tax rate:', error);
+              Alert.alert('Error', 'Failed to delete tax rate');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const toggleTaxStatus = async (tax) => {
+    try {
+      const updatedTax = { ...tax, active: !tax.active };
+      setTaxRates(prev => prev.map(t => t.id === tax.id ? updatedTax : t));
+    } catch (error) {
+      console.error('Error updating tax status:', error);
+      Alert.alert('Error', 'Failed to update tax status');
+    }
+  };
+
+  // Service Charge Functions
   const handleSaveCharge = async () => {
     if (!chargeForm.name || !chargeForm.amount) {
       Alert.alert('Required Fields', 'Name and amount are required');
@@ -296,11 +334,9 @@ const TaxSettingsScreen = ({ navigation }) => {
       };
 
       if (editingCharge) {
-        // await axios.put(`${API}/service-charges/${editingCharge.id}`, chargeData);
         setServiceCharges(prev => prev.map(charge => charge.id === editingCharge.id ? chargeData : charge));
         Alert.alert('Success', 'Service charge updated successfully');
       } else {
-        // await axios.post(`${API}/service-charges`, chargeData);
         setServiceCharges(prev => [...prev, chargeData]);
         Alert.alert('Success', 'Service charge added successfully');
       }
@@ -322,6 +358,54 @@ const TaxSettingsScreen = ({ navigation }) => {
     }
   };
 
+  const handleEditCharge = (charge) => {
+    setChargeForm({
+      name: charge.name,
+      amount: charge.amount.toString(),
+      description: charge.description || '',
+      type: charge.type,
+      apply_to: charge.apply_to,
+      mandatory: charge.mandatory,
+      active: charge.active
+    });
+    setEditingCharge(charge);
+    setShowAddChargeModal(true);
+  };
+
+  const handleDeleteCharge = (charge) => {
+    Alert.alert(
+      'Delete Service Charge',
+      `Are you sure you want to delete "${charge.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setServiceCharges(prev => prev.filter(c => c.id !== charge.id));
+              Alert.alert('Success', 'Service charge deleted successfully');
+            } catch (error) {
+              console.error('Error deleting service charge:', error);
+              Alert.alert('Error', 'Failed to delete service charge');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const toggleChargeStatus = async (charge) => {
+    try {
+      const updatedCharge = { ...charge, active: !charge.active };
+      setServiceCharges(prev => prev.map(c => c.id === charge.id ? updatedCharge : c));
+    } catch (error) {
+      console.error('Error updating charge status:', error);
+      Alert.alert('Error', 'Failed to update charge status');
+    }
+  };
+
+  // Gratuity Functions
   const handleSaveGratuity = async () => {
     if (!gratuityForm.name || !gratuityForm.percentage) {
       Alert.alert('Required Fields', 'Name and percentage are required');
@@ -369,6 +453,55 @@ const TaxSettingsScreen = ({ navigation }) => {
     }
   };
 
+  const handleEditGratuity = (gratuity) => {
+    setGratuityForm({
+      name: gratuity.name,
+      percentage: gratuity.percentage.toString(),
+      description: gratuity.description || '',
+      auto_apply: gratuity.auto_apply,
+      min_party_size: gratuity.min_party_size.toString(),
+      min_order_amount: gratuity.min_order_amount.toString(),
+      customer_editable: gratuity.customer_editable,
+      active: gratuity.active
+    });
+    setEditingGratuity(gratuity);
+    setShowAddGratuityModal(true);
+  };
+
+  const handleDeleteGratuity = (gratuity) => {
+    Alert.alert(
+      'Delete Gratuity Rule',
+      `Are you sure you want to delete "${gratuity.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setGratuityRules(prev => prev.filter(g => g.id !== gratuity.id));
+              Alert.alert('Success', 'Gratuity rule deleted successfully');
+            } catch (error) {
+              console.error('Error deleting gratuity rule:', error);
+              Alert.alert('Error', 'Failed to delete gratuity rule');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const toggleGratuityStatus = async (gratuity) => {
+    try {
+      const updatedGratuity = { ...gratuity, active: !gratuity.active };
+      setGratuityRules(prev => prev.map(g => g.id === gratuity.id ? updatedGratuity : g));
+    } catch (error) {
+      console.error('Error updating gratuity status:', error);
+      Alert.alert('Error', 'Failed to update gratuity status');
+    }
+  };
+
+  // Discount Functions
   const handleSaveDiscount = async () => {
     if (!discountForm.name || !discountForm.amount) {
       Alert.alert('Required Fields', 'Name and amount are required');
@@ -417,21 +550,6 @@ const TaxSettingsScreen = ({ navigation }) => {
     }
   };
 
-  const handleEditGratuity = (gratuity) => {
-    setGratuityForm({
-      name: gratuity.name,
-      percentage: gratuity.percentage.toString(),
-      description: gratuity.description || '',
-      auto_apply: gratuity.auto_apply,
-      min_party_size: gratuity.min_party_size.toString(),
-      min_order_amount: gratuity.min_order_amount.toString(),
-      customer_editable: gratuity.customer_editable,
-      active: gratuity.active
-    });
-    setEditingGratuity(gratuity);
-    setShowAddGratuityModal(true);
-  };
-
   const handleEditDiscount = (discount) => {
     setDiscountForm({
       name: discount.name,
@@ -446,29 +564,6 @@ const TaxSettingsScreen = ({ navigation }) => {
     });
     setEditingDiscount(discount);
     setShowAddDiscountModal(true);
-  };
-
-  const handleDeleteGratuity = (gratuity) => {
-    Alert.alert(
-      'Delete Gratuity Rule',
-      `Are you sure you want to delete "${gratuity.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setGratuityRules(prev => prev.filter(g => g.id !== gratuity.id));
-              Alert.alert('Success', 'Gratuity rule deleted successfully');
-            } catch (error) {
-              console.error('Error deleting gratuity rule:', error);
-              Alert.alert('Error', 'Failed to delete gratuity rule');
-            }
-          }
-        }
-      ]
-    );
   };
 
   const handleDeleteDiscount = (discount) => {
@@ -494,16 +589,6 @@ const TaxSettingsScreen = ({ navigation }) => {
     );
   };
 
-  const toggleGratuityStatus = async (gratuity) => {
-    try {
-      const updatedGratuity = { ...gratuity, active: !gratuity.active };
-      setGratuityRules(prev => prev.map(g => g.id === gratuity.id ? updatedGratuity : g));
-    } catch (error) {
-      console.error('Error updating gratuity status:', error);
-      Alert.alert('Error', 'Failed to update gratuity status');
-    }
-  };
-
   const toggleDiscountStatus = async (discount) => {
     try {
       const updatedDiscount = { ...discount, active: !discount.active };
@@ -513,147 +598,8 @@ const TaxSettingsScreen = ({ navigation }) => {
       Alert.alert('Error', 'Failed to update discount status');
     }
   };
-    if (!chargeForm.name || !chargeForm.amount) {
-      Alert.alert('Required Fields', 'Name and amount are required');
-      return;
-    }
 
-    const amount = parseFloat(chargeForm.amount);
-    if (isNaN(amount) || amount < 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount');
-      return;
-    }
-
-    try {
-      const chargeData = {
-        ...chargeForm,
-        amount: amount,
-        id: editingCharge ? editingCharge.id : Date.now().toString()
-      };
-
-      if (editingCharge) {
-        // await axios.put(`${API}/service-charges/${editingCharge.id}`, chargeData);
-        setServiceCharges(prev => prev.map(charge => charge.id === editingCharge.id ? chargeData : charge));
-        Alert.alert('Success', 'Service charge updated successfully');
-      } else {
-        // await axios.post(`${API}/service-charges`, chargeData);
-        setServiceCharges(prev => [...prev, chargeData]);
-        Alert.alert('Success', 'Service charge added successfully');
-      }
-
-      setShowAddChargeModal(false);
-      setEditingCharge(null);
-      setChargeForm({
-        name: '',
-        amount: '',
-        description: '',
-        type: 'percentage',
-        apply_to: 'subtotal',
-        mandatory: false,
-        active: true
-      });
-    } catch (error) {
-      console.error('Error saving service charge:', error);
-      Alert.alert('Error', 'Failed to save service charge');
-    }
-  };
-
-  const handleEditTax = (tax) => {
-    setTaxForm({
-      name: tax.name,
-      rate: tax.rate.toString(),
-      description: tax.description || '',
-      type: tax.type,
-      active: tax.active
-    });
-    setEditingTax(tax);
-    setShowAddTaxModal(true);
-  };
-
-  const handleEditCharge = (charge) => {
-    setChargeForm({
-      name: charge.name,
-      amount: charge.amount.toString(),
-      description: charge.description || '',
-      type: charge.type,
-      apply_to: charge.apply_to,
-      mandatory: charge.mandatory,
-      active: charge.active
-    });
-    setEditingCharge(charge);
-    setShowAddChargeModal(true);
-  };
-
-  const handleDeleteTax = (tax) => {
-    Alert.alert(
-      'Delete Tax Rate',
-      `Are you sure you want to delete "${tax.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // await axios.delete(`${API}/tax-rates/${tax.id}`);
-              setTaxRates(prev => prev.filter(t => t.id !== tax.id));
-              Alert.alert('Success', 'Tax rate deleted successfully');
-            } catch (error) {
-              console.error('Error deleting tax rate:', error);
-              Alert.alert('Error', 'Failed to delete tax rate');
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const handleDeleteCharge = (charge) => {
-    Alert.alert(
-      'Delete Service Charge',
-      `Are you sure you want to delete "${charge.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // await axios.delete(`${API}/service-charges/${charge.id}`);
-              setServiceCharges(prev => prev.filter(c => c.id !== charge.id));
-              Alert.alert('Success', 'Service charge deleted successfully');
-            } catch (error) {
-              console.error('Error deleting service charge:', error);
-              Alert.alert('Error', 'Failed to delete service charge');
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const toggleTaxStatus = async (tax) => {
-    try {
-      const updatedTax = { ...tax, active: !tax.active };
-      // await axios.put(`${API}/tax-rates/${tax.id}`, updatedTax);
-      setTaxRates(prev => prev.map(t => t.id === tax.id ? updatedTax : t));
-    } catch (error) {
-      console.error('Error updating tax status:', error);
-      Alert.alert('Error', 'Failed to update tax status');
-    }
-  };
-
-  const toggleChargeStatus = async (charge) => {
-    try {
-      const updatedCharge = { ...charge, active: !charge.active };
-      // await axios.put(`${API}/service-charges/${charge.id}`, updatedCharge);
-      setServiceCharges(prev => prev.map(c => c.id === charge.id ? updatedCharge : c));
-    } catch (error) {
-      console.error('Error updating charge status:', error);
-      Alert.alert('Error', 'Failed to update charge status');
-    }
-  };
-
+  // Render Functions
   const renderTaxCard = ({ item: tax }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -753,8 +699,130 @@ const TaxSettingsScreen = ({ navigation }) => {
     </View>
   );
 
+  const renderGratuityCard = ({ item: gratuity }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardInfo}>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle}>{gratuity.name}</Text>
+            {gratuity.auto_apply && (
+              <View style={styles.autoBadge}>
+                <Text style={styles.autoText}>AUTO</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.cardSubtitle}>
+            {gratuity.percentage}% gratuity
+          </Text>
+          {gratuity.description && (
+            <Text style={styles.cardDescription}>{gratuity.description}</Text>
+          )}
+          {(gratuity.min_party_size > 1 || gratuity.min_order_amount > 0) && (
+            <Text style={styles.cardConditions}>
+              {gratuity.min_party_size > 1 && `Min party: ${gratuity.min_party_size}`}
+              {gratuity.min_party_size > 1 && gratuity.min_order_amount > 0 && ', '}
+              {gratuity.min_order_amount > 0 && `Min order: $${gratuity.min_order_amount}`}
+            </Text>
+          )}
+        </View>
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => handleEditGratuity(gratuity)}
+          >
+            <Icon name="edit" size={16} color="#2563eb" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteGratuity(gratuity)}
+          >
+            <Icon name="delete" size={16} color="#dc2626" />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View style={styles.cardFooter}>
+        <TouchableOpacity
+          style={styles.statusToggle}
+          onPress={() => toggleGratuityStatus(gratuity)}
+        >
+          <View style={[
+            styles.statusBadge,
+            { backgroundColor: gratuity.active ? '#10b981' : '#6b7280' }
+          ]}>
+            <Text style={styles.statusText}>
+              {gratuity.active ? 'ACTIVE' : 'INACTIVE'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderDiscountCard = ({ item: discount }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardInfo}>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle}>{discount.name}</Text>
+            <View style={styles.codeBadge}>
+              <Text style={styles.codeText}>{discount.code}</Text>
+            </View>
+          </View>
+          <Text style={styles.cardSubtitle}>
+            {discount.amount}{discount.type === 'percentage' ? '%' : '$'} off
+          </Text>
+          {discount.description && (
+            <Text style={styles.cardDescription}>{discount.description}</Text>
+          )}
+          <View style={styles.discountDetails}>
+            {discount.min_order_amount > 0 && (
+              <Text style={styles.cardConditions}>Min order: ${discount.min_order_amount}</Text>
+            )}
+            {discount.max_uses > 0 && (
+              <Text style={styles.cardConditions}>Max uses: {discount.max_uses}</Text>
+            )}
+            {discount.expires_at && (
+              <Text style={styles.cardConditions}>Expires: {discount.expires_at}</Text>
+            )}
+          </View>
+        </View>
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => handleEditDiscount(discount)}
+          >
+            <Icon name="edit" size={16} color="#2563eb" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteDiscount(discount)}
+          >
+            <Icon name="delete" size={16} color="#dc2626" />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View style={styles.cardFooter}>
+        <TouchableOpacity
+          style={styles.statusToggle}
+          onPress={() => toggleDiscountStatus(discount)}
+        >
+          <View style={[
+            styles.statusBadge,
+            { backgroundColor: discount.active ? '#10b981' : '#6b7280' }
+          ]}>
+            <Text style={styles.statusText}>
+              {discount.active ? 'ACTIVE' : 'INACTIVE'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const activeTaxes = taxRates.filter(tax => tax.active);
   const activeCharges = serviceCharges.filter(charge => charge.active);
+  const activeGratuities = gratuityRules.filter(gratuity => gratuity.active);
+  const activeDiscounts = discountPolicies.filter(discount => discount.active);
   const totalTaxRate = activeTaxes.reduce((sum, tax) => 
     sum + (tax.type === 'percentage' ? tax.rate : 0), 0
   );
@@ -767,20 +835,27 @@ const TaxSettingsScreen = ({ navigation }) => {
           <Icon name="arrow-back" size={24} color="#1f2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tax & Charges</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => setShowAddChargeModal(true)}
-          >
-            <Icon name="add" size={20} color="#2563eb" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => setShowAddTaxModal(true)}
-          >
-            <Icon name="receipt" size={20} color="#2563eb" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => {
+            switch (activeTab) {
+              case 'taxes':
+                setShowAddTaxModal(true);
+                break;
+              case 'charges':
+                setShowAddChargeModal(true);
+                break;
+              case 'gratuity':
+                setShowAddGratuityModal(true);
+                break;
+              case 'discounts':
+                setShowAddDiscountModal(true);
+                break;
+            }
+          }}
+        >
+          <Icon name="add" size={24} color="white" />
+        </TouchableOpacity>
       </View>
 
       {/* Stats */}
@@ -790,29 +865,53 @@ const TaxSettingsScreen = ({ navigation }) => {
           <Text style={styles.statLabel}>Active Taxes</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{totalTaxRate.toFixed(2)}%</Text>
+          <Text style={styles.statNumber}>{totalTaxRate.toFixed(1)}%</Text>
           <Text style={styles.statLabel}>Total Tax Rate</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>{activeCharges.length}</Text>
           <Text style={styles.statLabel}>Active Charges</Text>
         </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{activeDiscounts.length}</Text>
+          <Text style={styles.statLabel}>Active Discounts</Text>
+        </View>
       </View>
 
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        {[
+          { key: 'taxes', label: 'Taxes', icon: 'receipt' },
+          { key: 'charges', label: 'Charges', icon: 'payment' },
+          { key: 'gratuity', label: 'Gratuity', icon: 'star' },
+          { key: 'discounts', label: 'Discounts', icon: 'local-offer' }
+        ].map(tab => (
+          <TouchableOpacity
+            key={tab.key}
+            style={[
+              styles.tab,
+              activeTab === tab.key && styles.activeTab
+            ]}
+            onPress={() => setActiveTab(tab.key)}
+          >
+            <Icon 
+              name={tab.icon} 
+              size={16} 
+              color={activeTab === tab.key ? '#2563eb' : '#6b7280'} 
+            />
+            <Text style={[
+              styles.tabText,
+              activeTab === tab.key && styles.activeTabText
+            ]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Content */}
       <ScrollView style={styles.content}>
-        {/* Tax Rates Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Tax Rates</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setShowAddTaxModal(true)}
-            >
-              <Icon name="add" size={20} color="white" />
-              <Text style={styles.addButtonText}>Add Tax</Text>
-            </TouchableOpacity>
-          </View>
-          
+        {activeTab === 'taxes' && (
           <FlatList
             data={taxRates}
             renderItem={renderTaxCard}
@@ -825,21 +924,9 @@ const TaxSettingsScreen = ({ navigation }) => {
               </View>
             }
           />
-        </View>
+        )}
 
-        {/* Service Charges Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Service Charges</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setShowAddChargeModal(true)}
-            >
-              <Icon name="add" size={20} color="white" />
-              <Text style={styles.addButtonText}>Add Charge</Text>
-            </TouchableOpacity>
-          </View>
-          
+        {activeTab === 'charges' && (
           <FlatList
             data={serviceCharges}
             renderItem={renderChargeCard}
@@ -847,12 +934,42 @@ const TaxSettingsScreen = ({ navigation }) => {
             scrollEnabled={false}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Icon name="receipt-long" size={48} color="#d1d5db" />
+                <Icon name="payment" size={48} color="#d1d5db" />
                 <Text style={styles.emptyStateText}>No service charges configured</Text>
               </View>
             }
           />
-        </View>
+        )}
+
+        {activeTab === 'gratuity' && (
+          <FlatList
+            data={gratuityRules}
+            renderItem={renderGratuityCard}
+            keyExtractor={item => item.id}
+            scrollEnabled={false}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Icon name="star" size={48} color="#d1d5db" />
+                <Text style={styles.emptyStateText}>No gratuity rules configured</Text>
+              </View>
+            }
+          />
+        )}
+
+        {activeTab === 'discounts' && (
+          <FlatList
+            data={discountPolicies}
+            renderItem={renderDiscountCard}
+            keyExtractor={item => item.id}
+            scrollEnabled={false}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Icon name="local-offer" size={48} color="#d1d5db" />
+                <Text style={styles.emptyStateText}>No discount policies configured</Text>
+              </View>
+            }
+          />
+        )}
       </ScrollView>
 
       {/* Add/Edit Tax Modal */}
@@ -961,8 +1078,6 @@ const TaxSettingsScreen = ({ navigation }) => {
                   <Switch
                     value={taxForm.active}
                     onValueChange={(value) => setTaxForm({...taxForm, active: value})}
-                    trackColor={{ false: '#767577', true: '#2563eb' }}
-                    thumbColor={taxForm.active ? '#ffffff' : '#f4f3f4'}
                   />
                 </View>
               </View>
@@ -1121,8 +1236,6 @@ const TaxSettingsScreen = ({ navigation }) => {
                   <Switch
                     value={chargeForm.mandatory}
                     onValueChange={(value) => setChargeForm({...chargeForm, mandatory: value})}
-                    trackColor={{ false: '#767577', true: '#dc2626' }}
-                    thumbColor={chargeForm.mandatory ? '#ffffff' : '#f4f3f4'}
                   />
                 </View>
               </View>
@@ -1133,8 +1246,6 @@ const TaxSettingsScreen = ({ navigation }) => {
                   <Switch
                     value={chargeForm.active}
                     onValueChange={(value) => setChargeForm({...chargeForm, active: value})}
-                    trackColor={{ false: '#767577', true: '#2563eb' }}
-                    thumbColor={chargeForm.active ? '#ffffff' : '#f4f3f4'}
                   />
                 </View>
               </View>
@@ -1145,6 +1256,302 @@ const TaxSettingsScreen = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
             </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Add/Edit Gratuity Modal */}
+      <Modal
+        visible={showAddGratuityModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {editingGratuity ? 'Edit Gratuity Rule' : 'Add Gratuity Rule'}
+            </Text>
+            <TouchableOpacity onPress={() => {
+              setShowAddGratuityModal(false);
+              setEditingGratuity(null);
+              setGratuityForm({
+                name: '',
+                percentage: '',
+                description: '',
+                auto_apply: false,
+                min_party_size: '',
+                min_order_amount: '',
+                customer_editable: true,
+                active: true
+              });
+            }}>
+              <Icon name="close" size={24} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Rule Name *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={gratuityForm.name}
+                  onChangeText={(text) => setGratuityForm({...gratuityForm, name: text})}
+                  placeholder="e.g., Standard Gratuity, Large Party"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Gratuity Percentage *</Text>
+                <View style={styles.inputWithUnit}>
+                  <TextInput
+                    style={[styles.textInput, styles.flexInput]}
+                    value={gratuityForm.percentage}
+                    onChangeText={(text) => setGratuityForm({...gratuityForm, percentage: text})}
+                    placeholder="18"
+                    keyboardType="decimal-pad"
+                  />
+                  <Text style={styles.unitText}>%</Text>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Min Party Size</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={gratuityForm.min_party_size}
+                  onChangeText={(text) => setGratuityForm({...gratuityForm, min_party_size: text})}
+                  placeholder="1"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Min Order Amount ($)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={gratuityForm.min_order_amount}
+                  onChangeText={(text) => setGratuityForm({...gratuityForm, min_order_amount: text})}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Description</Text>
+                <TextInput
+                  style={[styles.textInput, styles.textArea]}
+                  value={gratuityForm.description}
+                  onChangeText={(text) => setGratuityForm({...gratuityForm, description: text})}
+                  placeholder="Optional description"
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <View style={styles.switchContainer}>
+                  <Text style={styles.inputLabel}>Auto Apply</Text>
+                  <Switch
+                    value={gratuityForm.auto_apply}
+                    onValueChange={(value) => setGratuityForm({...gratuityForm, auto_apply: value})}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <View style={styles.switchContainer}>
+                  <Text style={styles.inputLabel}>Customer Editable</Text>
+                  <Switch
+                    value={gratuityForm.customer_editable}
+                    onValueChange={(value) => setGratuityForm({...gratuityForm, customer_editable: value})}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <View style={styles.switchContainer}>
+                  <Text style={styles.inputLabel}>Active</Text>
+                  <Switch
+                    value={gratuityForm.active}
+                    onValueChange={(value) => setGratuityForm({...gratuityForm, active: value})}
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.saveButton} onPress={handleSaveGratuity}>
+                <Text style={styles.saveButtonText}>
+                  {editingGratuity ? 'Update Gratuity Rule' : 'Add Gratuity Rule'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Add/Edit Discount Modal */}
+      <Modal
+        visible={showAddDiscountModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {editingDiscount ? 'Edit Discount Policy' : 'Add Discount Policy'}
+            </Text>
+            <TouchableOpacity onPress={() => {
+              setShowAddDiscountModal(false);
+              setEditingDiscount(null);
+              setDiscountForm({
+                name: '',
+                code: '',
+                amount: '',
+                description: '',
+                type: 'percentage',
+                min_order_amount: '',
+                max_uses: '',
+                expires_at: '',
+                active: true
+              });
+            }}>
+              <Icon name="close" size={24} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Discount Name *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={discountForm.name}
+                  onChangeText={(text) => setDiscountForm({...discountForm, name: text})}
+                  placeholder="e.g., New Customer Discount"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Discount Code</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={discountForm.code}
+                  onChangeText={(text) => setDiscountForm({...discountForm, code: text.toUpperCase()})}
+                  placeholder="e.g., WELCOME10"
+                  autoCapitalize="characters"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Discount Amount *</Text>
+                <View style={styles.inputWithUnit}>
+                  <TextInput
+                    style={[styles.textInput, styles.flexInput]}
+                    value={discountForm.amount}
+                    onChangeText={(text) => setDiscountForm({...discountForm, amount: text})}
+                    placeholder={discountForm.type === 'percentage' ? '10' : '5.00'}
+                    keyboardType="decimal-pad"
+                  />
+                  <Text style={styles.unitText}>
+                    {discountForm.type === 'percentage' ? '%' : '$'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Type</Text>
+                <View style={styles.typeSelector}>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeButton,
+                      discountForm.type === 'percentage' && styles.typeButtonSelected
+                    ]}
+                    onPress={() => setDiscountForm({...discountForm, type: 'percentage'})}
+                  >
+                    <Text style={[
+                      styles.typeText,
+                      discountForm.type === 'percentage' && styles.typeTextSelected
+                    ]}>
+                      Percentage
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeButton,
+                      discountForm.type === 'fixed' && styles.typeButtonSelected
+                    ]}
+                    onPress={() => setDiscountForm({...discountForm, type: 'fixed'})}
+                  >
+                    <Text style={[
+                      styles.typeText,
+                      discountForm.type === 'fixed' && styles.typeTextSelected
+                    ]}>
+                      Fixed Amount
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Min Order Amount ($)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={discountForm.min_order_amount}
+                  onChangeText={(text) => setDiscountForm({...discountForm, min_order_amount: text})}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Max Uses (0 = unlimited)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={discountForm.max_uses}
+                  onChangeText={(text) => setDiscountForm({...discountForm, max_uses: text})}
+                  placeholder="0"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Expires At (YYYY-MM-DD)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={discountForm.expires_at}
+                  onChangeText={(text) => setDiscountForm({...discountForm, expires_at: text})}
+                  placeholder="2024-12-31"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Description</Text>
+                <TextInput
+                  style={[styles.textInput, styles.textArea]}
+                  value={discountForm.description}
+                  onChangeText={(text) => setDiscountForm({...discountForm, description: text})}
+                  placeholder="Optional description"
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <View style={styles.switchContainer}>
+                  <Text style={styles.inputLabel}>Active</Text>
+                  <Switch
+                    value={discountForm.active}
+                    onValueChange={(value) => setDiscountForm({...discountForm, active: value})}
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.saveButton} onPress={handleSaveDiscount}>
+                <Text style={styles.saveButtonText}>
+                  {editingDiscount ? 'Update Discount Policy' : 'Add Discount Policy'}
+                </Text>
+              </TouchableOpacity>
+            </div>
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -1172,17 +1579,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1f2937',
   },
-  headerButtons: {
-    flexDirection: 'row',
-  },
-  headerButton: {
-    backgroundColor: '#eff6ff',
+  addButton: {
+    backgroundColor: '#2563eb',
     borderRadius: 20,
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -1197,7 +1600,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1f2937',
   },
@@ -1206,37 +1609,40 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 4,
   },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginHorizontal: 2,
+  },
+  activeTab: {
+    backgroundColor: '#eff6ff',
+  },
+  tabText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginLeft: 4,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#2563eb',
+  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  section: {
-    marginVertical: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  addButton: {
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
+    paddingTop: 16,
   },
   card: {
     backgroundColor: 'white',
@@ -1277,6 +1683,12 @@ const styles = StyleSheet.create({
   cardDescription: {
     fontSize: 14,
     color: '#6b7280',
+    marginBottom: 4,
+  },
+  cardConditions: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontStyle: 'italic',
   },
   mandatoryBadge: {
     backgroundColor: '#dc2626',
@@ -1288,6 +1700,31 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  autoBadge: {
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  autoText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  codeBadge: {
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  codeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  discountDetails: {
+    marginTop: 4,
   },
   cardActions: {
     flexDirection: 'row',
