@@ -22,7 +22,7 @@ test_results = {
     "Table Management API": {"success": False, "details": ""},
     "Receipt Data Requirements": {"success": False, "details": ""},
     "Order Processing Workflow": {"success": False, "details": ""},
-    "Active Orders with Cancelled": {"success": False, "details": ""}
+    "Active Orders Endpoint After Reversion": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
