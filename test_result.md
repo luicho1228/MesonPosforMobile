@@ -437,6 +437,8 @@ agent_communication:
     message: "PHASE 1 COMPLETED - TAX & CHARGES SETTINGS: Successfully completed comprehensive Tax & Charges Settings for the web application. Implemented full CRUD operations for Tax Rates, Service Charges, Gratuity Rules, and Discount Policies with professional UI, default data, form validation, and localStorage persistence. All four sections are fully functional with modals for add/edit operations. Component is production-ready and integrated with settings navigation. Ready to proceed to Phase 2."
   - agent: "main"
     message: "PHASE 2 STARTED - TABLE MERGE LOGIC IMPLEMENTATION: Beginning implementation of dine-in table assignment merge logic. Current system has basic window.confirm for occupied tables. Need to implement proper modal dialog with order details comparison, merge confirmation, and backend integration with existing /api/tables/{table_id}/merge endpoint."
+  - agent: "testing"
+    message: "COMPLETED TABLE MERGE FUNCTIONALITY TESTING: Successfully tested the table merge functionality. Fixed an issue with tip calculation during merge operations. The merge endpoint now correctly combines items from both orders, properly calculates subtotal, tax, and tip, and correctly updates table statuses. Verified that: 1) Order 1 contains items from both orders after merge, 2) Order 2 is deleted, 3) Table 2 becomes available, 4) Table 1 remains occupied with the merged order, 5) Totals are correctly calculated including combined tips. All tests passed successfully."
 
   - task: "Floor Plan Designer"
     implemented: true
