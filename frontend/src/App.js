@@ -3474,13 +3474,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                   key={table.id}
                   onClick={() => {
                     if (table.status === 'occupied') {
-                      // Show warning for occupied table
-                      if (window.confirm(`Table ${table.number} is occupied. Do you want to merge orders with this table?`)) {
-                        // Handle merge logic here
-                        setAssignedTable(table);
-                        setShowTableModal(false);
-                        alert(`Order will be merged with Table ${table.number}`);
-                      }
+                      // Show table merge modal for occupied table
+                      setOccupiedTableToMerge(table);
+                      setShowTableMergeModal(true);
                     } else {
                       // Assign available table
                       setAssignedTable(table);
