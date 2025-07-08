@@ -276,7 +276,197 @@ const TaxSettingsScreen = ({ navigation }) => {
     }
   };
 
-  const handleSaveCharge = async () => {
+  const handleSaveGratuity = async () => {
+    if (!gratuityForm.name || !gratuityForm.percentage) {
+      Alert.alert('Required Fields', 'Name and percentage are required');
+      return;
+    }
+
+    const percentage = parseFloat(gratuityForm.percentage);
+    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+      Alert.alert('Invalid Percentage', 'Please enter a valid percentage (0-100)');
+      return;
+    }
+
+    try {
+      const gratuityData = {
+        ...gratuityForm,
+        percentage: percentage,
+        min_party_size: parseInt(gratuityForm.min_party_size) || 1,
+        min_order_amount: parseFloat(gratuityForm.min_order_amount) || 0,
+        id: editingGratuity ? editingGratuity.id : Date.now().toString()
+      };
+
+      if (editingGratuity) {
+        setGratuityRules(prev => prev.map(rule => rule.id === editingGratuity.id ? gratuityData : rule));
+        Alert.alert('Success', 'Gratuity rule updated successfully');
+      } else {
+        setGratuityRules(prev => [...prev, gratuityData]);
+        Alert.alert('Success', 'Gratuity rule added successfully');
+      }
+
+      setShowAddGratuityModal(false);
+      setEditingGratuity(null);
+      setGratuityForm({
+        name: '',
+        percentage: '',
+        description: '',
+        auto_apply: false,
+        min_party_size: '',
+        min_order_amount: '',
+        customer_editable: true,
+        active: true
+      });
+    } catch (error) {
+      console.error('Error saving gratuity rule:', error);
+      Alert.alert('Error', 'Failed to save gratuity rule');
+    }
+  };
+
+  const handleSaveDiscount = async () => {
+    if (!discountForm.name || !discountForm.amount) {
+      Alert.alert('Required Fields', 'Name and amount are required');
+      return;
+    }
+
+    const amount = parseFloat(discountForm.amount);
+    if (isNaN(amount) || amount < 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid amount');
+      return;
+    }
+
+    try {
+      const discountData = {
+        ...discountForm,
+        amount: amount,
+        min_order_amount: parseFloat(discountForm.min_order_amount) || 0,
+        max_uses: parseInt(discountForm.max_uses) || 0,
+        id: editingDiscount ? editingDiscount.id : Date.now().toString()
+      };
+
+      if (editingDiscount) {
+        setDiscountPolicies(prev => prev.map(policy => policy.id === editingDiscount.id ? discountData : policy));
+        Alert.alert('Success', 'Discount policy updated successfully');
+      } else {
+        setDiscountPolicies(prev => [...prev, discountData]);
+        Alert.alert('Success', 'Discount policy added successfully');
+      }
+
+      setShowAddDiscountModal(false);
+      setEditingDiscount(null);
+      setDiscountForm({
+        name: '',
+        code: '',
+        amount: '',
+        description: '',
+        type: 'percentage',
+        min_order_amount: '',
+        max_uses: '',
+        expires_at: '',
+        active: true
+      });
+    } catch (error) {
+      console.error('Error saving discount policy:', error);
+      Alert.alert('Error', 'Failed to save discount policy');
+    }
+  };
+
+  const handleEditGratuity = (gratuity) => {
+    setGratuityForm({
+      name: gratuity.name,
+      percentage: gratuity.percentage.toString(),
+      description: gratuity.description || '',
+      auto_apply: gratuity.auto_apply,
+      min_party_size: gratuity.min_party_size.toString(),
+      min_order_amount: gratuity.min_order_amount.toString(),
+      customer_editable: gratuity.customer_editable,
+      active: gratuity.active
+    });
+    setEditingGratuity(gratuity);
+    setShowAddGratuityModal(true);
+  };
+
+  const handleEditDiscount = (discount) => {
+    setDiscountForm({
+      name: discount.name,
+      code: discount.code,
+      amount: discount.amount.toString(),
+      description: discount.description || '',
+      type: discount.type,
+      min_order_amount: discount.min_order_amount.toString(),
+      max_uses: discount.max_uses.toString(),
+      expires_at: discount.expires_at || '',
+      active: discount.active
+    });
+    setEditingDiscount(discount);
+    setShowAddDiscountModal(true);
+  };
+
+  const handleDeleteGratuity = (gratuity) => {
+    Alert.alert(
+      'Delete Gratuity Rule',
+      `Are you sure you want to delete "${gratuity.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setGratuityRules(prev => prev.filter(g => g.id !== gratuity.id));
+              Alert.alert('Success', 'Gratuity rule deleted successfully');
+            } catch (error) {
+              console.error('Error deleting gratuity rule:', error);
+              Alert.alert('Error', 'Failed to delete gratuity rule');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteDiscount = (discount) => {
+    Alert.alert(
+      'Delete Discount Policy',
+      `Are you sure you want to delete "${discount.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDiscountPolicies(prev => prev.filter(d => d.id !== discount.id));
+              Alert.alert('Success', 'Discount policy deleted successfully');
+            } catch (error) {
+              console.error('Error deleting discount policy:', error);
+              Alert.alert('Error', 'Failed to delete discount policy');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const toggleGratuityStatus = async (gratuity) => {
+    try {
+      const updatedGratuity = { ...gratuity, active: !gratuity.active };
+      setGratuityRules(prev => prev.map(g => g.id === gratuity.id ? updatedGratuity : g));
+    } catch (error) {
+      console.error('Error updating gratuity status:', error);
+      Alert.alert('Error', 'Failed to update gratuity status');
+    }
+  };
+
+  const toggleDiscountStatus = async (discount) => {
+    try {
+      const updatedDiscount = { ...discount, active: !discount.active };
+      setDiscountPolicies(prev => prev.map(d => d.id === discount.id ? updatedDiscount : d));
+    } catch (error) {
+      console.error('Error updating discount status:', error);
+      Alert.alert('Error', 'Failed to update discount status');
+    }
+  };
     if (!chargeForm.name || !chargeForm.amount) {
       Alert.alert('Required Fields', 'Name and amount are required');
       return;
