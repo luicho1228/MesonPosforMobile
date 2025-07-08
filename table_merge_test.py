@@ -117,7 +117,7 @@ def test_table_merge_functionality():
         table1 = response.json()
         table1_id = table1.get("id")
         
-        response = requests.post(f"{API_URL}/tables", json=table2_data, headers=headers)
+        response = requests_session.post(f"{API_URL}/tables", json=table2_data, headers=headers)
         response.raise_for_status()
         table2 = response.json()
         table2_id = table2.get("id")
