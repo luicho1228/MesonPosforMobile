@@ -531,13 +531,5 @@ def analyze_merge_endpoint():
     return True
 
 if __name__ == "__main__":
-    # First analyze the endpoint implementation
+    # Run only the analysis part
     analyze_merge_endpoint()
-    
-    # Then run the test if requested
-    print("\nDo you want to run the full test? (y/n)")
-    choice = input().lower()
-    if choice == 'y':
-        run_table_merge_test()
-    else:
-        print("Test skipped. Analysis complete.")
