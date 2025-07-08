@@ -1339,7 +1339,8 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
       confirmed: 'bg-blue-500',
       preparing: 'bg-orange-500',
       ready: 'bg-green-500',
-      out_for_delivery: 'bg-purple-500'
+      out_for_delivery: 'bg-purple-500',
+      cancelled: 'bg-red-500'
     };
     return colors[status] || 'bg-gray-500';
   };
