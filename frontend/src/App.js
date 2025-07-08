@@ -1491,20 +1491,26 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {/* Show status indicator only if not pending */}
-                  {order.status !== 'pending' && (
-                    <>
-                      <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(order.status)}`}></span>
-                      <span className="text-xs font-medium capitalize">
-                        {order.status.replace('_', ' ')}
-                      </span>
-                    </>
+                  {/* Show cancelled indicator for cancelled orders */}
+                  {order.status === 'cancelled' && (
+                    <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                      CANCELLED (Click to view)
+                    </span>
                   )}
                   {/* Show pending indicator for pending orders */}
                   {order.status === 'pending' && (
                     <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
                       PENDING
                     </span>
+                  )}
+                  {/* Show status indicator for other statuses */}
+                  {order.status !== 'pending' && order.status !== 'cancelled' && (
+                    <>
+                      <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(order.status)}`}></span>
+                      <span className="text-xs font-medium capitalize">
+                        {order.status.replace('_', ' ')}
+                      </span>
+                    </>
                   )}
                 </div>
               </div>
