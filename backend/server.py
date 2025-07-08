@@ -648,7 +648,8 @@ async def merge_table_orders(table_id: str, merge_request: TableMoveRequest, use
     # Recalculate totals
     total_subtotal = dest_order["subtotal"] + source_order["subtotal"]
     total_tax = total_subtotal * 0.08
-    total_amount = total_subtotal + total_tax
+    total_tip = dest_order.get("tip", 0) + source_order.get("tip", 0)
+    total_amount = total_subtotal + total_tax + total_tip
     
     # Update destination order with merged items
     await db.orders.update_one(
@@ -658,6 +659,7 @@ async def merge_table_orders(table_id: str, merge_request: TableMoveRequest, use
                 "items": merged_items,
                 "subtotal": total_subtotal,
                 "tax": total_tax,
+                "tip": total_tip,
                 "total": total_amount,
                 "updated_at": get_current_time()
             }
