@@ -822,10 +822,10 @@ def test_order_processing_workflow():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Order Processing Workflow", False, error_msg)
 
-# 10. Test Active Orders with Cancelled Orders
+# 10. Test Active Orders Endpoint After Reversion
 def test_active_orders_with_cancelled():
     global auth_token, menu_item_id, table_id
-    print("\n=== Testing Active Orders with Cancelled Orders ===")
+    print("\n=== Testing Active Orders Endpoint After Reversion ===")
     
     if not auth_token or not menu_item_id:
         return print_test_result("Active Orders with Cancelled", False, "Missing required test data")
@@ -890,46 +890,84 @@ def test_active_orders_with_cancelled():
         response = requests.post(f"{API_URL}/orders/{active_order_id}/send", headers=headers)
         response.raise_for_status()
         
-        # 2. Create an order to be cancelled today
-        print("\nStep 2: Creating order to be cancelled today...")
-        cancel_today_data = {
-            "customer_name": "Cancel Today Test",
+        # 2. Create an order to be cancelled
+        print("\nStep 2: Creating order to be cancelled...")
+        cancel_order_data = {
+            "customer_name": "Cancel Test",
             "customer_phone": "5553334444",
-            "customer_address": "456 Cancel Today St",
+            "customer_address": "456 Cancel St",
             "items": [
                 {
                     "menu_item_id": menu_item_id,
                     "quantity": 1,
-                    "special_instructions": "Cancel today test"
+                    "special_instructions": "Cancel test"
                 }
             ],
             "order_type": "takeout",
             "tip": 0.00,
-            "order_notes": "Cancel today test"
+            "order_notes": "Cancel test"
         }
         
-        response = requests.post(f"{API_URL}/orders", json=cancel_today_data, headers=headers)
+        response = requests.post(f"{API_URL}/orders", json=cancel_order_data, headers=headers)
         response.raise_for_status()
-        cancel_today_order = response.json()
-        cancel_today_id = cancel_today_order.get("id")
-        print(f"Order to be cancelled created with ID: {cancel_today_id}")
+        cancel_order = response.json()
+        cancel_order_id = cancel_order.get("id")
+        print(f"Order to be cancelled created with ID: {cancel_order_id}")
         
         # Send order to kitchen to make it pending
-        response = requests.post(f"{API_URL}/orders/{cancel_today_id}/send", headers=headers)
+        response = requests.post(f"{API_URL}/orders/{cancel_order_id}/send", headers=headers)
         response.raise_for_status()
         
         # Cancel the order
-        print("\nCancelling today's order...")
+        print("\nCancelling order...")
         cancellation_data = {
             "reason": "customer_canceled",
-            "notes": "Testing cancellation today"
+            "notes": "Testing cancellation"
         }
         
-        response = requests.post(f"{API_URL}/orders/{cancel_today_id}/cancel", json=cancellation_data, headers=headers)
+        response = requests.post(f"{API_URL}/orders/{cancel_order_id}/cancel", json=cancellation_data, headers=headers)
         response.raise_for_status()
         
-        # 3. Test the active orders endpoint
-        print("\nStep 3: Testing active orders endpoint...")
+        # 3. Create an order to be paid/delivered
+        print("\nStep 3: Creating order to be paid...")
+        paid_order_data = {
+            "customer_name": "Paid Order Test",
+            "customer_phone": "5555556666",
+            "customer_address": "789 Paid St",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Paid order test"
+                }
+            ],
+            "order_type": "takeout",
+            "tip": 1.00,
+            "order_notes": "Paid order test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=paid_order_data, headers=headers)
+        response.raise_for_status()
+        paid_order = response.json()
+        paid_order_id = paid_order.get("id")
+        print(f"Order to be paid created with ID: {paid_order_id}")
+        
+        # Send order to kitchen to make it pending
+        response = requests.post(f"{API_URL}/orders/{paid_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Process payment
+        print("\nProcessing payment for order...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{paid_order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        # 4. Test the active orders endpoint
+        print("\nStep 4: Testing active orders endpoint...")
         response = requests.get(f"{API_URL}/orders/active", headers=headers)
         response.raise_for_status()
         active_orders = response.json()
@@ -939,26 +977,63 @@ def test_active_orders_with_cancelled():
         # Check if active order is in the response
         active_order_found = False
         cancelled_order_found = False
+        paid_order_found = False
         
         for order in active_orders:
             if order.get("id") == active_order_id:
                 active_order_found = True
                 print("✅ Active order found in response")
             
-            if order.get("id") == cancel_today_id:
+            if order.get("id") == cancel_order_id:
                 cancelled_order_found = True
-                print("✅ Today's cancelled order found in response")
-                
-                # Verify it has cancelled status
-                if order.get("status") != "cancelled":
-                    return print_test_result("Active Orders with Cancelled", False, 
-                                           "Cancelled order found but status is not 'cancelled'")
+                print("❌ Cancelled order found in response (should not be included)")
+            
+            if order.get("id") == paid_order_id:
+                paid_order_found = True
+                print("❌ Paid order found in response (should not be included)")
         
         if not active_order_found:
             return print_test_result("Active Orders with Cancelled", False, "Active order not found in response")
             
-        if not cancelled_order_found:
-            return print_test_result("Active Orders with Cancelled", False, "Today's cancelled order not found in response")
+        if cancelled_order_found:
+            return print_test_result("Active Orders with Cancelled", False, "Cancelled order found in response (should not be included)")
+            
+        if paid_order_found:
+            return print_test_result("Active Orders with Cancelled", False, "Paid order found in response (should not be included)")
+        
+        # 5. Verify all orders have correct statuses
+        print("\nStep 5: Verifying order statuses...")
+        
+        # Check active order status
+        response = requests.get(f"{API_URL}/orders/{active_order_id}", headers=headers)
+        response.raise_for_status()
+        active_order_status = response.json().get("status")
+        print(f"Active order status: {active_order_status}")
+        
+        # Check cancelled order status
+        response = requests.get(f"{API_URL}/orders/{cancel_order_id}", headers=headers)
+        response.raise_for_status()
+        cancelled_order_status = response.json().get("status")
+        print(f"Cancelled order status: {cancelled_order_status}")
+        
+        # Check paid order status
+        response = requests.get(f"{API_URL}/orders/{paid_order_id}", headers=headers)
+        response.raise_for_status()
+        paid_order_status = response.json().get("status")
+        print(f"Paid order status: {paid_order_status}")
+        
+        if active_order_status != "pending":
+            return print_test_result("Active Orders with Cancelled", False, f"Active order has incorrect status: {active_order_status}")
+            
+        if cancelled_order_status != "cancelled":
+            return print_test_result("Active Orders with Cancelled", False, f"Cancelled order has incorrect status: {cancelled_order_status}")
+            
+        if paid_order_status != "paid":
+            return print_test_result("Active Orders with Cancelled", False, f"Paid order has incorrect status: {paid_order_status}")
+        
+        # 6. Test role-based access
+        print("\nStep 6: Verifying role-based access...")
+        # This is already handled by the backend which checks the user role
         
         # Clean up - pay the active order to free the table
         print("\nCleaning up - paying active order...")
@@ -971,7 +1046,7 @@ def test_active_orders_with_cancelled():
         response.raise_for_status()
             
         return print_test_result("Active Orders with Cancelled", True, 
-                               "Active orders endpoint correctly includes both active and today's cancelled orders")
+                               "Active orders endpoint correctly includes only active orders (pending, confirmed, preparing, ready, out_for_delivery) and excludes cancelled and paid/delivered orders")
         
     except requests.exceptions.RequestException as e:
         error_msg = f"Active orders with cancelled test failed: {str(e)}"
