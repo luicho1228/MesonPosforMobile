@@ -276,6 +276,52 @@ const TaxSettingsScreen = ({ navigation }) => {
     }
   };
 
+  const handleSaveCharge = async () => {
+    if (!chargeForm.name || !chargeForm.amount) {
+      Alert.alert('Required Fields', 'Name and amount are required');
+      return;
+    }
+
+    const amount = parseFloat(chargeForm.amount);
+    if (isNaN(amount) || amount < 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid amount');
+      return;
+    }
+
+    try {
+      const chargeData = {
+        ...chargeForm,
+        amount: amount,
+        id: editingCharge ? editingCharge.id : Date.now().toString()
+      };
+
+      if (editingCharge) {
+        // await axios.put(`${API}/service-charges/${editingCharge.id}`, chargeData);
+        setServiceCharges(prev => prev.map(charge => charge.id === editingCharge.id ? chargeData : charge));
+        Alert.alert('Success', 'Service charge updated successfully');
+      } else {
+        // await axios.post(`${API}/service-charges`, chargeData);
+        setServiceCharges(prev => [...prev, chargeData]);
+        Alert.alert('Success', 'Service charge added successfully');
+      }
+
+      setShowAddChargeModal(false);
+      setEditingCharge(null);
+      setChargeForm({
+        name: '',
+        amount: '',
+        description: '',
+        type: 'percentage',
+        apply_to: 'subtotal',
+        mandatory: false,
+        active: true
+      });
+    } catch (error) {
+      console.error('Error saving service charge:', error);
+      Alert.alert('Error', 'Failed to save service charge');
+    }
+  };
+
   const handleSaveGratuity = async () => {
     if (!gratuityForm.name || !gratuityForm.percentage) {
       Alert.alert('Required Fields', 'Name and percentage are required');
