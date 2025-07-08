@@ -1150,15 +1150,41 @@ async def get_active_orders(user_id: str = Depends(verify_token)):
     # Active orders include pending (pay later) and processing statuses
     active_statuses = ["pending", "confirmed", "preparing", "ready", "out_for_delivery"]
     
+    # Get orders from today (including cancelled ones for history viewing)
+    today = datetime.now(EDT).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_utc = today.astimezone(pytz.UTC)
+    
     if user.get("role") == "manager":
-        orders = await db.orders.find({"status": {"$in": active_statuses}}).sort("created_at", -1).to_list(1000)
+        # Get active orders
+        active_orders = await db.orders.find({"status": {"$in": active_statuses}}).sort("created_at", -1).to_list(1000)
+        
+        # Get cancelled orders from today for viewing (not selectable)
+        cancelled_orders = await db.orders.find({
+            "status": "cancelled",
+            "created_at": {"$gte": today_utc}
+        }).sort("created_at", -1).to_list(100)
+        
+        # Combine both lists
+        all_orders = active_orders + cancelled_orders
+        
     else:
-        orders = await db.orders.find({
+        # For employees, get their own orders
+        active_orders = await db.orders.find({
             "created_by": user_id,
             "status": {"$in": active_statuses}
         }).sort("created_at", -1).to_list(1000)
+        
+        # Get their cancelled orders from today
+        cancelled_orders = await db.orders.find({
+            "created_by": user_id,
+            "status": "cancelled",
+            "created_at": {"$gte": today_utc}
+        }).sort("created_at", -1).to_list(100)
+        
+        # Combine both lists
+        all_orders = active_orders + cancelled_orders
     
-    return [Order(**order) for order in orders]
+    return [Order(**order) for order in all_orders]
 
 @api_router.get("/orders/{order_id}", response_model=Order)
 async def get_order(order_id: str, user_id: str = Depends(verify_token)):
