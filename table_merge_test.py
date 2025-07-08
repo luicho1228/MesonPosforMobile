@@ -263,7 +263,7 @@ def test_table_merge_functionality():
         merged_total = order1_after_merge.get("total", 0)
         
         print(f"\nAfter merge:")
-        print(f"Order 1 - Subtotal: ${merged_subtotal:.2f}, Items: {merged_items_count}")
+        print(f"Order 1 - Subtotal: ${merged_subtotal:.2f}, Tax: ${merged_tax:.2f}, Tip: ${merged_tip:.2f}, Total: ${merged_total:.2f}, Items: {merged_items_count}")
         
         # Check if items were merged correctly
         if merged_items_count != expected_item_count:
