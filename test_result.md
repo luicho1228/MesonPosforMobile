@@ -488,3 +488,17 @@ agent_communication:
       - working: true
         agent: "testing"
         comment: "Successfully tested the Settings button implementation. Verified that the button is visible in the header next to the Setup Printer button with proper styling (blue background with gear icon). Clicking the button correctly navigates to the Settings page which displays all 6 management sections. Role-based access control is working correctly with Staff Management and Tax & Charges sections visible for the manager account. Navigation to management screens works properly with the 'Back to Settings' button returning to the main Settings page. The Quick Actions section is present with all 4 buttons and navigation works correctly. The Settings functionality is fully implemented and working as expected."
+  - task: "Post-Cancellation Order Clickability"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Modified /api/orders/active endpoint to include cancelled orders from today, allowing them to be clickable in the frontend. Updated the query to include orders with status 'cancelled' that were created today."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the updated Active Orders endpoint. Created comprehensive tests that verified: 1) Active orders are correctly returned, 2) Cancelled orders from today are included in the response, 3) Orders have the correct status values, 4) The endpoint properly handles role-based access with managers seeing all orders and employees seeing only their own. Created both an active order and a cancelled order from today, then verified both appeared in the response from the /api/orders/active endpoint. The implementation meets all requirements specified in the review request."
