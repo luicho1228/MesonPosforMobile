@@ -262,21 +262,6 @@ backend:
         agent: "testing"
         comment: "Successfully tested the order cancellation API fix. Created a comprehensive test that verified: 1) Order cancel endpoint accepts 'other' as a valid reason with custom notes, 2) Order status correctly changes to 'cancelled' after cancellation, 3) Table status is properly updated to 'available' with current_order_id set to null after cancellation, 4) Table update endpoint correctly handles setting current_order_id to null. All tests passed successfully, confirming that both the order cancellation endpoint and table update functionality are working correctly. The frontend should no longer encounter AxiosError when cancelling tables from Table Management."
         
-  - task: "Post-Cancellation Order Clickability"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py, /app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented functionality to make cancelled orders clickable in Active Orders view. Modified backend /orders/active endpoint to include cancelled orders from today (not all historical). Updated frontend ActiveOrders component to display cancelled orders with special styling (greyed out, strikethrough text) but maintain clickability for viewing details. Added proper status indicators and ensured cancelled orders are always clickable even in selection mode."
-      - working: true
-        agent: "testing"
-        comment: "Successfully tested the Post-Cancellation Order Clickability functionality. Verified that: 1) Backend /orders/active endpoint now includes cancelled orders from today along with active orders, 2) Only cancelled orders from today are included (not historical), 3) Cancelled orders have proper status identification, 4) Role-based access control works correctly for cancelled orders, 5) Orders are properly sorted by creation date. The implementation allows users to click on cancelled orders to view their details in order history while maintaining proper filtering and styling."
-
 frontend:
   - task: "Authentication UI"
     implemented: true
