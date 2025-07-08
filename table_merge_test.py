@@ -153,7 +153,7 @@ def test_table_merge_functionality():
         response.raise_for_status()
         
         # Verify Table 1 is now occupied with Order 1
-        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response = requests_session.get(f"{API_URL}/tables", headers=headers)
         response.raise_for_status()
         tables = response.json()
         
@@ -188,17 +188,17 @@ def test_table_merge_functionality():
             "order_notes": "Test order 2 for table merge"
         }
         
-        response = requests.post(f"{API_URL}/orders", json=order2_data, headers=headers)
+        response = requests_session.post(f"{API_URL}/orders", json=order2_data, headers=headers)
         response.raise_for_status()
         order2 = response.json()
         order2_id = order2.get("id")
         
         # Send Order 2 to kitchen to make Table 2 occupied
-        response = requests.post(f"{API_URL}/orders/{order2_id}/send", headers=headers)
+        response = requests_session.post(f"{API_URL}/orders/{order2_id}/send", headers=headers)
         response.raise_for_status()
         
         # Verify Table 2 is now occupied with Order 2
-        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response = requests_session.get(f"{API_URL}/tables", headers=headers)
         response.raise_for_status()
         tables = response.json()
         
@@ -215,11 +215,11 @@ def test_table_merge_functionality():
         print(f"Created Order 2 (ID: {order2_id}) and assigned to Table {table2_number}")
         
         # Get order details before merge for comparison
-        response = requests.get(f"{API_URL}/orders/{order1_id}", headers=headers)
+        response = requests_session.get(f"{API_URL}/orders/{order1_id}", headers=headers)
         response.raise_for_status()
         order1_before_merge = response.json()
         
-        response = requests.get(f"{API_URL}/orders/{order2_id}", headers=headers)
+        response = requests_session.get(f"{API_URL}/orders/{order2_id}", headers=headers)
         response.raise_for_status()
         order2_before_merge = response.json()
         
@@ -242,7 +242,7 @@ def test_table_merge_functionality():
             "new_table_id": table1_id
         }
         
-        response = requests.post(f"{API_URL}/tables/{table2_id}/merge", json=merge_data, headers=headers)
+        response = requests_session.post(f"{API_URL}/tables/{table2_id}/merge", json=merge_data, headers=headers)
         response.raise_for_status()
         merge_result = response.json()
         
@@ -252,7 +252,7 @@ def test_table_merge_functionality():
         print("\nStep 7: Verifying merge results...")
         
         # 7.1: Verify Order 1 now contains items from both orders
-        response = requests.get(f"{API_URL}/orders/{order1_id}", headers=headers)
+        response = requests_session.get(f"{API_URL}/orders/{order1_id}", headers=headers)
         response.raise_for_status()
         order1_after_merge = response.json()
         
@@ -285,7 +285,7 @@ def test_table_merge_functionality():
         
         # 7.2: Verify Order 2 is deleted
         try:
-            response = requests.get(f"{API_URL}/orders/{order2_id}", headers=headers)
+            response = requests_session.get(f"{API_URL}/orders/{order2_id}", headers=headers)
             if response.status_code != 404:
                 return print_test_result("Table Merge - Order Deletion", False, 
                                         f"Order 2 still exists with status code {response.status_code}")
@@ -294,7 +294,7 @@ def test_table_merge_functionality():
             pass
         
         # 7.3: Verify Table 2 becomes available
-        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response = requests_session.get(f"{API_URL}/tables", headers=headers)
         response.raise_for_status()
         tables_after_merge = response.json()
         
