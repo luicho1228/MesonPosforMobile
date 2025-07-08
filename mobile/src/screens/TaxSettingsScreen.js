@@ -82,37 +82,47 @@ const TaxSettingsScreen = ({ navigation }) => {
       setRefreshing(true);
       // For now, we'll use local state as the backend may not have these endpoints yet
       // In a real implementation, these would be API calls:
-      // const [taxRes, chargeRes] = await Promise.all([
+      // const [taxRes, chargeRes, gratuityRes, discountRes] = await Promise.all([
       //   axios.get(`${API}/tax-rates`),
-      //   axios.get(`${API}/service-charges`)
+      //   axios.get(`${API}/service-charges`),
+      //   axios.get(`${API}/gratuity-rules`),
+      //   axios.get(`${API}/discount-policies`)
       // ]);
       
-      // Mock data for demonstration
+      // Mock data for demonstration - matching web app structure
       setTaxRates([
         {
           id: '1',
-          name: 'Sales Tax',
+          name: 'NYC Sales Tax',
           rate: 8.25,
-          description: 'NYC Sales Tax',
+          description: 'New York City Sales Tax',
           type: 'percentage',
           active: true
         },
         {
           id: '2',
-          name: 'City Tax',
-          rate: 4.5,
-          description: 'City Tax',
+          name: 'State Tax',
+          rate: 4.0,
+          description: 'New York State Tax',
           type: 'percentage',
           active: true
+        },
+        {
+          id: '3',
+          name: 'Federal Tax',
+          rate: 1.50,
+          description: 'Federal Restaurant Tax',
+          type: 'fixed',
+          active: false
         }
       ]);
 
       setServiceCharges([
         {
           id: '1',
-          name: 'Service Charge',
+          name: 'Large Party Service Charge',
           amount: 18,
-          description: 'Automatic service charge for parties of 6+',
+          description: 'Automatic 18% service charge for parties of 6 or more',
           type: 'percentage',
           apply_to: 'subtotal',
           mandatory: false,
@@ -122,11 +132,96 @@ const TaxSettingsScreen = ({ navigation }) => {
           id: '2',
           name: 'Delivery Fee',
           amount: 3.50,
-          description: 'Flat delivery fee',
+          description: 'Standard delivery fee',
           type: 'fixed',
           apply_to: 'subtotal',
           mandatory: true,
           active: true
+        },
+        {
+          id: '3',
+          name: 'Processing Fee',
+          amount: 2.5,
+          description: 'Credit card processing fee',
+          type: 'percentage',
+          apply_to: 'total',
+          mandatory: false,
+          active: false
+        }
+      ]);
+
+      setGratuityRules([
+        {
+          id: '1',
+          name: 'Standard Gratuity',
+          percentage: 18,
+          description: 'Standard 18% gratuity suggestion',
+          auto_apply: false,
+          min_party_size: 1,
+          min_order_amount: 0,
+          customer_editable: true,
+          active: true
+        },
+        {
+          id: '2',
+          name: 'Large Party Gratuity',
+          percentage: 20,
+          description: 'Automatic 20% gratuity for large parties',
+          auto_apply: true,
+          min_party_size: 8,
+          min_order_amount: 100,
+          customer_editable: false,
+          active: true
+        },
+        {
+          id: '3',
+          name: 'Premium Service',
+          percentage: 25,
+          description: 'Premium service gratuity option',
+          auto_apply: false,
+          min_party_size: 1,
+          min_order_amount: 200,
+          customer_editable: true,
+          active: false
+        }
+      ]);
+
+      setDiscountPolicies([
+        {
+          id: '1',
+          name: 'New Customer Discount',
+          code: 'WELCOME10',
+          amount: 10,
+          description: '10% off for new customers',
+          type: 'percentage',
+          min_order_amount: 25,
+          max_uses: 1,
+          expires_at: '2024-12-31',
+          active: true
+        },
+        {
+          id: '2',
+          name: 'Happy Hour',
+          code: 'HAPPY15',
+          amount: 15,
+          description: '15% off during happy hour',
+          type: 'percentage',
+          min_order_amount: 20,
+          max_uses: 0,
+          expires_at: '',
+          active: true
+        },
+        {
+          id: '3',
+          name: 'Free Delivery',
+          code: 'FREEDEL',
+          amount: 5.00,
+          description: 'Free delivery on orders over $30',
+          type: 'fixed',
+          min_order_amount: 30,
+          max_uses: 0,
+          expires_at: '',
+          active: false
         }
       ]);
     } catch (error) {
