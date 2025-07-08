@@ -3506,6 +3506,87 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           </div>
         </div>
       )}
+
+      {/* Table Merge Modal */}
+      {showTableMergeModal && occupiedTableToMerge && (
+        <TableMergeModal
+          occupiedTable={occupiedTableToMerge}
+          currentCart={cart}
+          currentOrderInfo={{
+            orderType,
+            customerInfo,
+            orderNotes,
+            tip
+          }}
+          onConfirmMerge={async () => {
+            try {
+              // Close table selection modal first
+              setShowTableModal(false);
+              
+              // Check if we have items in cart to merge
+              if (cart.length === 0) {
+                alert('No items in cart to merge');
+                setShowTableMergeModal(false);
+                return;
+              }
+
+              // First, create an order with current cart items
+              const orderData = {
+                customer_name: customerInfo.name,
+                customer_phone: customerInfo.phone,
+                customer_address: customerInfo.address,
+                customer_apartment: customerInfo.apartment,
+                order_type: orderType,
+                table_number: occupiedTableToMerge.number,
+                items: cart.map(item => ({
+                  menu_item_id: item.id,
+                  menu_item_name: item.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                  modifiers: item.selectedModifiers || []
+                })),
+                tip: tip,
+                order_notes: orderNotes,
+                status: 'pending'
+              };
+
+              // Calculate totals
+              const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              orderData.subtotal = subtotal;
+
+              // Create temporary order
+              const tempOrderResponse = await axios.post(`${API}/orders`, orderData);
+              const tempOrderId = tempOrderResponse.data.id;
+
+              // Send to kitchen to get order ID that can be merged
+              await axios.put(`${API}/orders/${tempOrderId}/status`, { status: 'confirmed' });
+
+              // Now merge with the occupied table
+              await axios.post(`${API}/tables/${tempOrderId}/merge`, {
+                new_table_id: occupiedTableToMerge.id
+              });
+
+              alert(`Order successfully merged with Table ${occupiedTableToMerge.number}!`);
+              
+              // Clear cart and reset form
+              setCart([]);
+              setCustomerInfo({ name: '', phone: '', address: '', apartment: '' });
+              setOrderNotes('');
+              setTip(0);
+              setAssignedTable(occupiedTableToMerge);
+              setShowTableMergeModal(false);
+              
+            } catch (error) {
+              console.error('Error merging orders:', error);
+              alert(error.response?.data?.detail || 'Failed to merge orders');
+            }
+          }}
+          onCancel={() => {
+            setShowTableMergeModal(false);
+            setOccupiedTableToMerge(null);
+          }}
+        />
+      )}
     </div>
   );
 };
