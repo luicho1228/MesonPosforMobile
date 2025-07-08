@@ -7,6 +7,13 @@ import random
 import string
 from datetime import datetime
 
+# Set a shorter timeout for requests to avoid gateway timeouts
+requests.adapters.DEFAULT_RETRIES = 3
+requests_session = requests.Session()
+requests_session.request = lambda method, url, **kwargs: requests.Session.request(
+    requests_session, method, url, timeout=10, **kwargs
+)
+
 # Get the backend URL from the frontend .env file
 BACKEND_URL = "https://79327832-6e36-44c4-8646-fcb26aaa475f.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
