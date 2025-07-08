@@ -502,6 +502,12 @@ agent_communication:
       - working: true
         agent: "testing"
         comment: "Successfully tested the updated Active Orders endpoint. Created comprehensive tests that verified: 1) Active orders are correctly returned, 2) Cancelled orders from today are included in the response, 3) Orders have the correct status values, 4) The endpoint properly handles role-based access with managers seeing all orders and employees seeing only their own. Created both an active order and a cancelled order from today, then verified both appeared in the response from the /api/orders/active endpoint. The implementation meets all requirements specified in the review request."
+      - working: false
+        agent: "user"
+        comment: "User requested to revert the change to the /api/orders/active endpoint. Cancelled orders should NOT be included in the active orders response, they should only appear in order history."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the reverted Active Orders endpoint. Created comprehensive tests that verified: 1) Active orders (pending, confirmed, preparing, ready, out_for_delivery) are correctly returned in the response, 2) Cancelled orders are NOT included in the response, 3) Paid/delivered orders are NOT included in the response, 4) The endpoint properly handles role-based access with managers seeing all orders and employees seeing only their own. Created an active order, a cancelled order, and a paid order, then verified only the active order appeared in the response from the /api/orders/active endpoint. The implementation has been properly reverted to its original behavior."
 
   - agent: "testing"
     message: "COMPLETED POST-CANCELLATION ORDER CLICKABILITY TESTING: Successfully tested the updated Active Orders endpoint for post-cancellation clickability. Created comprehensive tests that verified: 1) Active orders are correctly returned in the response, 2) Cancelled orders from today are included in the response, 3) Orders have the correct status values, 4) The endpoint properly handles role-based access with managers seeing all orders and employees seeing only their own. Created both an active order and a cancelled order from today, then verified both appeared in the response from the /api/orders/active endpoint. The implementation meets all requirements specified in the review request, allowing cancelled orders from today to be clickable in the frontend."
