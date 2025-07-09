@@ -3551,7 +3551,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
               };
 
               // Calculate totals
-              const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const subtotal = cart.reduce((sum, item) => sum + (item.total_price || item.price * item.quantity || 0), 0);
               orderData.subtotal = subtotal;
 
               // Create temporary order
