@@ -3784,10 +3784,10 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
                 currentCart.map((item, index) => (
                   <div key={index} className="flex justify-between items-center py-2 border-b border-blue-200">
                     <div>
-                      <span className="font-medium">{item.name}</span>
+                      <span className="font-medium">{item.menu_item_name || item.name}</span>
                       <span className="text-sm text-blue-600 ml-2">x{item.quantity}</span>
                     </div>
-                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-medium">${(item.total_price || item.price * item.quantity || 0).toFixed(2)}</span>
                   </div>
                 ))
               ) : (
