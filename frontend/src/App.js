@@ -3477,6 +3477,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                   key={table.id}
                   onClick={() => {
                     if (table.status === 'occupied') {
+                      console.log('🔍 DEBUG: Showing merge modal');
+                      console.log('Current cart items:', cart);
+                      console.log('Cart length:', cart.length);
                       // Show table merge modal for occupied table
                       setOccupiedTableToMerge(table);
                       setShowTableMergeModal(true);
