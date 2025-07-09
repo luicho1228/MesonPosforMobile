@@ -3734,7 +3734,7 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
     fetchExistingOrder();
   }, [occupiedTable]);
 
-  const currentCartTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const currentCartTotal = currentCart.reduce((sum, item) => sum + (item.total_price || item.price || 0), 0);
   const existingOrderTotal = existingOrder?.subtotal || 0;
   const mergedTotal = currentCartTotal + existingOrderTotal;
   const estimatedTax = mergedTotal * 0.08;
