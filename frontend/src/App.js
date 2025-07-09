@@ -3539,11 +3539,11 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                 order_type: orderType,
                 table_number: occupiedTableToMerge.number,
                 items: cart.map(item => ({
-                  menu_item_id: item.id,
-                  menu_item_name: item.name,
+                  menu_item_id: item.menu_item_id || item.id,
+                  menu_item_name: item.menu_item_name || item.name,
                   quantity: item.quantity,
-                  price: item.price,
-                  modifiers: item.selectedModifiers || []
+                  price: item.base_price || item.price,
+                  modifiers: item.modifiers || item.selectedModifiers || []
                 })),
                 tip: tip,
                 order_notes: orderNotes,
