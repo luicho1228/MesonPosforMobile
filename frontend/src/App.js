@@ -3722,6 +3722,12 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
   const [existingOrder, setExistingOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('🔍 TableMergeModal DEBUG:');
+  console.log('occupiedTable:', occupiedTable);
+  console.log('currentCart:', currentCart);
+  console.log('currentCart length:', currentCart?.length);
+  console.log('currentOrderInfo:', currentOrderInfo);
+
   useEffect(() => {
     const fetchExistingOrder = async () => {
       if (occupiedTable?.current_order_id) {
