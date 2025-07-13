@@ -25,7 +25,10 @@ test_results = {
     "Active Orders Endpoint After Reversion": {"success": False, "details": ""},
     "Table Merge Bug Fix": {"success": False, "details": ""},
     "Order Item Removal Bug Fix": {"success": False, "details": ""},
-    "Order Editing and Reloading": {"success": False, "details": ""}
+    "Order Editing and Reloading": {"success": False, "details": ""},
+    "Bug 5 Fix: Table Assignment for Active Orders": {"success": False, "details": ""},
+    "Bug 6 Fix: Choose Table Shows for Orders with Assigned Tables": {"success": False, "details": ""},
+    "Bug 7 Fix: Order Total Becomes 0 When Removing Items": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
