@@ -3369,7 +3369,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                     Table {currentOrder.table_number} (Already Assigned)
                   </span>
                 </div>
-              ) : (
+              ) : !fromTableManagement ? (
                 <div className="text-center">
                   <button
                     onClick={() => setShowTableModal(true)}
@@ -3377,6 +3377,13 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                   >
                     Choose Table
                   </button>
+                </div>
+              ) : (
+                // When from table management, show loading or table info
+                <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <span className="text-blue-700 font-medium">
+                    Table Management Mode - Loading...
+                  </span>
                 </div>
               )}
             </div>
