@@ -4749,7 +4749,6 @@ const TaxChargesComponent = ({ onBack }) => {
   };
 
   const toggleActive = (type, id) => {
-    // For now, just update locally - can be enhanced to use API later
     switch (type) {
       case 'tax':
         setTaxRates(prev => prev.map(item => 
@@ -4772,6 +4771,7 @@ const TaxChargesComponent = ({ onBack }) => {
         ));
         break;
     }
+    saveTaxChargesData();
   };
 
   const resetTaxForm = () => {
