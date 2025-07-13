@@ -4583,10 +4583,14 @@ const TaxChargesComponent = ({ onBack }) => {
         alert('Tax rate added successfully');
       }
 
-    setShowTaxModal(false);
-    setEditingItem(null);
-    resetTaxForm();
-    saveTaxChargesData();
+      setShowTaxModal(false);
+      setEditingItem(null);
+      resetTaxForm();
+    } catch (error) {
+      console.error('Error saving tax rate:', error);
+      alert('Error saving tax rate. Please try again.');
+    }
+  };
   };
 
   const handleSaveCharge = async () => {
