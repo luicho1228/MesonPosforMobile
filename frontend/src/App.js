@@ -1909,11 +1909,25 @@ const TableManagement = ({ onTableSelect }) => {
     setStep('select-destination');
   };
 
-  const handleDestTableSelect = (table) => {
+  const handleDestTableSelect = async (table) => {
     setSelectedDestTable(table);
     
     if (table.status === 'occupied') {
-      setShowMergeConfirm(true);
+      // Fetch orders for both tables to show detailed merge modal
+      try {
+        const sourceOrder = await axios.get(`${API}/orders/${selectedSourceTable.current_order_id}`);
+        const destOrder = await axios.get(`${API}/orders/${table.current_order_id}`);
+        
+        setMergeSourceTable(selectedSourceTable);
+        setMergeDestTable(table);
+        setMergeSourceOrder(sourceOrder.data);
+        setMergeDestOrder(destOrder.data);
+        setShowDetailedMergeModal(true);
+      } catch (error) {
+        console.error('Error fetching orders for merge:', error);
+        // Fallback to simple confirmation
+        setShowMergeConfirm(true);
+      }
     } else {
       // Available table - just move
       moveTableOrder(selectedSourceTable.id, table.id);
