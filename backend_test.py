@@ -2715,6 +2715,175 @@ def test_tax_charges_management_api():
         print(f"   Gratuity rules: {len(final_gratuity_rules)}")
         print(f"   Discount policies: {len(final_discount_policies)}")
         
+        # ===== TAX CALCULATION ENDPOINT TESTING =====
+        print("\n--- Testing Tax Calculation Endpoint ---")
+        
+        # Create some test tax rates and charges for calculation testing
+        print("\nCreating test data for calculation testing...")
+        
+        # Create a test tax rate
+        test_tax_rate_data = {
+            "name": "Test Sales Tax",
+            "description": "Test tax for calculation",
+            "rate": 8.0,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"]
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=test_tax_rate_data, headers=headers)
+        response.raise_for_status()
+        test_tax_rate = response.json()
+        test_tax_rate_id = test_tax_rate.get("id")
+        
+        # Create a test service charge
+        test_service_charge_data = {
+            "name": "Test Service Fee",
+            "description": "Test service charge",
+            "amount": 2.50,
+            "type": "fixed",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],
+            "minimum_order_amount": 10.0
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/service-charges", json=test_service_charge_data, headers=headers)
+        response.raise_for_status()
+        test_service_charge = response.json()
+        test_service_charge_id = test_service_charge.get("id")
+        
+        # Create a test gratuity rule
+        test_gratuity_rule_data = {
+            "name": "Test Auto Gratuity",
+            "description": "Test automatic gratuity",
+            "amount": 15.0,
+            "type": "percentage",
+            "active": True,
+            "minimum_order_amount": 25.0,
+            "maximum_order_amount": 0.0,
+            "applies_to_order_types": ["dine_in"],
+            "party_size_minimum": 4
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/gratuity-rules", json=test_gratuity_rule_data, headers=headers)
+        response.raise_for_status()
+        test_gratuity_rule = response.json()
+        test_gratuity_rule_id = test_gratuity_rule.get("id")
+        
+        print("✅ Created test tax rates and charges for calculation testing")
+        
+        # Test calculation with different order scenarios
+        print("\nTesting tax calculation for dine-in order...")
+        
+        # Scenario 1: Dine-in order with party size 6 (should trigger gratuity)
+        calc_data_1 = {
+            "subtotal": 100.00,
+            "order_type": "dine_in",
+            "party_size": 6
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/calculate", json=calc_data_1, headers=headers)
+        response.raise_for_status()
+        calc_result_1 = response.json()
+        
+        print(f"Dine-in calculation result:")
+        print(f"   Subtotal: ${calc_result_1.get('subtotal')}")
+        print(f"   Total tax: ${calc_result_1.get('total_tax')}")
+        print(f"   Total service charges: ${calc_result_1.get('total_service_charges')}")
+        print(f"   Total before tip: ${calc_result_1.get('total_before_tip')}")
+        print(f"   Tax breakdown: {calc_result_1.get('tax_breakdown')}")
+        print(f"   Service charge breakdown: {calc_result_1.get('service_charge_breakdown')}")
+        print(f"   Suggested gratuity: {calc_result_1.get('suggested_gratuity')}")
+        
+        # Verify calculations
+        expected_tax = 100.00 * 0.08  # 8% of $100
+        if abs(calc_result_1.get('total_tax', 0) - expected_tax) > 0.01:
+            return print_test_result("Tax & Charges Management API", False, f"Tax calculation incorrect. Expected: ${expected_tax}, Got: ${calc_result_1.get('total_tax')}")
+        
+        expected_service_charge = 2.50  # Fixed $2.50 fee
+        if abs(calc_result_1.get('total_service_charges', 0) - expected_service_charge) > 0.01:
+            return print_test_result("Tax & Charges Management API", False, f"Service charge calculation incorrect. Expected: ${expected_service_charge}, Got: ${calc_result_1.get('total_service_charges')}")
+        
+        # Check that gratuity is suggested for party size 6
+        suggested_gratuity = calc_result_1.get('suggested_gratuity', [])
+        if not suggested_gratuity:
+            return print_test_result("Tax & Charges Management API", False, "No gratuity suggested for party size 6")
+        
+        print("✅ Dine-in calculation with large party successful")
+        
+        # Scenario 2: Takeout order (no gratuity, but tax and service charge)
+        print("\nTesting tax calculation for takeout order...")
+        
+        calc_data_2 = {
+            "subtotal": 50.00,
+            "order_type": "takeout",
+            "party_size": 2
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/calculate", json=calc_data_2, headers=headers)
+        response.raise_for_status()
+        calc_result_2 = response.json()
+        
+        print(f"Takeout calculation result:")
+        print(f"   Subtotal: ${calc_result_2.get('subtotal')}")
+        print(f"   Total tax: ${calc_result_2.get('total_tax')}")
+        print(f"   Total service charges: ${calc_result_2.get('total_service_charges')}")
+        print(f"   Total before tip: ${calc_result_2.get('total_before_tip')}")
+        
+        # Verify takeout calculations
+        expected_tax_2 = 50.00 * 0.08  # 8% of $50
+        if abs(calc_result_2.get('total_tax', 0) - expected_tax_2) > 0.01:
+            return print_test_result("Tax & Charges Management API", False, f"Takeout tax calculation incorrect. Expected: ${expected_tax_2}, Got: ${calc_result_2.get('total_tax')}")
+        
+        # Check that no gratuity is suggested for takeout
+        suggested_gratuity_2 = calc_result_2.get('suggested_gratuity', [])
+        if suggested_gratuity_2:
+            return print_test_result("Tax & Charges Management API", False, "Gratuity suggested for takeout order (should not apply)")
+        
+        print("✅ Takeout calculation successful")
+        
+        # Scenario 3: Small order below service charge minimum
+        print("\nTesting tax calculation for small order (below service charge minimum)...")
+        
+        calc_data_3 = {
+            "subtotal": 5.00,  # Below $10 minimum for service charge
+            "order_type": "dine_in",
+            "party_size": 2
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/calculate", json=calc_data_3, headers=headers)
+        response.raise_for_status()
+        calc_result_3 = response.json()
+        
+        print(f"Small order calculation result:")
+        print(f"   Subtotal: ${calc_result_3.get('subtotal')}")
+        print(f"   Total tax: ${calc_result_3.get('total_tax')}")
+        print(f"   Total service charges: ${calc_result_3.get('total_service_charges')}")
+        
+        # Should have tax but no service charge (below minimum)
+        expected_tax_3 = 5.00 * 0.08  # 8% of $5
+        if abs(calc_result_3.get('total_tax', 0) - expected_tax_3) > 0.01:
+            return print_test_result("Tax & Charges Management API", False, f"Small order tax calculation incorrect. Expected: ${expected_tax_3}, Got: ${calc_result_3.get('total_tax')}")
+        
+        # Should have no service charges (below minimum)
+        if calc_result_3.get('total_service_charges', 0) != 0:
+            return print_test_result("Tax & Charges Management API", False, f"Service charge applied to order below minimum. Got: ${calc_result_3.get('total_service_charges')}")
+        
+        print("✅ Small order calculation successful (service charge correctly excluded)")
+        
+        # Clean up test data
+        print("\nCleaning up test calculation data...")
+        if test_tax_rate_id:
+            requests.delete(f"{API_URL}/tax-charges/tax-rates/{test_tax_rate_id}", headers=headers)
+        if test_service_charge_id:
+            requests.delete(f"{API_URL}/tax-charges/service-charges/{test_service_charge_id}", headers=headers)
+        if test_gratuity_rule_id:
+            requests.delete(f"{API_URL}/tax-charges/gratuity-rules/{test_gratuity_rule_id}", headers=headers)
+        
+        print("✅ Test calculation data cleaned up")
+        
         return print_test_result("Tax & Charges Management API", True, 
                                "✅ ALL TAX & CHARGES ENDPOINTS WORKING: "
                                "✅ Tax Rates CRUD operations successful "
@@ -2724,7 +2893,11 @@ def test_tax_charges_management_api():
                                "✅ Manager role access control working correctly "
                                "✅ Employee access properly denied "
                                "✅ Data validation functioning "
-                               "✅ All delete operations successful")
+                               "✅ All delete operations successful "
+                               "✅ Tax calculation endpoint working correctly "
+                               "✅ Different order scenarios calculated properly "
+                               "✅ Service charge minimums respected "
+                               "✅ Gratuity rules applied correctly based on party size and order type")
         
     except requests.exceptions.RequestException as e:
         error_msg = f"Tax & Charges Management API test failed: {str(e)}"
