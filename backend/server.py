@@ -1268,6 +1268,38 @@ async def update_order(order_id: str, order_data: OrderCreate, user_id: str = De
     updated_order = await db.orders.find_one({"id": order_id})
     return Order(**updated_order)
 
+@api_router.put("/orders/{order_id}/table")
+async def assign_table_to_order(order_id: str, table_data: dict, user_id: str = Depends(verify_token)):
+    # Check if order exists
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check if table exists
+    table_id = table_data.get("table_id")
+    table = await db.tables.find_one({"id": table_id})
+    if not table:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    # Update order with table assignment
+    table_number = table.get("number")
+    update_data = {
+        "table_id": table_id,
+        "table_number": table_number,
+        "updated_at": get_current_time()
+    }
+    
+    await db.orders.update_one({"id": order_id}, {"$set": update_data})
+    
+    # Update table status to occupied and assign order
+    await db.tables.update_one(
+        {"id": table_id}, 
+        {"$set": {"status": "occupied", "current_order_id": order_id}}
+    )
+    
+    updated_order = await db.orders.find_one({"id": order_id})
+    return Order(**updated_order)
+
 @api_router.delete("/orders/{order_id}")
 async def delete_order(order_id: str, user_id: str = Depends(verify_token)):
     order = await db.orders.find_one({"id": order_id})
