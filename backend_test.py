@@ -2095,6 +2095,234 @@ def test_bug_7_order_total_recalculation():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Bug 7 Fix: Order Total Becomes 0 When Removing Items", False, error_msg)
 
+# 17. Test Active Order Table Assignment State Loading (Review Request)
+def test_active_order_table_assignment_state_loading():
+    global auth_token, menu_item_id
+    print("\n=== Testing Active Order Table Assignment State Loading ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Active Order Table Assignment State Loading", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # Step 1: Create a table for testing
+        print("\nStep 1: Creating table for dine-in order...")
+        table_number = random.randint(33000, 33999)
+        table_data = {
+            "number": table_number,
+            "capacity": 4,
+            "name": f"Test Table {random_string(4)}"
+        }
+        
+        response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+        response.raise_for_status()
+        table = response.json()
+        test_table_id = table.get("id")
+        
+        print(f"Created table with ID: {test_table_id}, Number: {table_number}")
+        
+        # Step 2: Create a dine-in order with table assignment
+        print("\nStep 2: Creating dine-in order with table assignment...")
+        order_data = {
+            "customer_name": "Table Assignment Test Customer",
+            "customer_phone": "5557777777",
+            "customer_address": "123 Table Test St",
+            "table_id": test_table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Table assignment test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 3.00,
+            "order_notes": "Testing table assignment state loading"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        test_order_id = order.get("id")
+        
+        print(f"Created dine-in order with ID: {test_order_id}")
+        print(f"Order table_id: {order.get('table_id')}")
+        print(f"Order table_number: {order.get('table_number')}")
+        
+        # Verify order has table assignment data
+        if not order.get("table_id") or not order.get("table_number"):
+            return print_test_result("Active Order Table Assignment State Loading", False, "Order missing table assignment data after creation")
+        
+        # Step 3: Send order to kitchen (make it active)
+        print("\nStep 3: Sending order to kitchen to make it active...")
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Step 4: Verify order data structure from active orders endpoint
+        print("\nStep 4: Fetching order from active orders endpoint...")
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        active_orders = response.json()
+        
+        # Find our test order in active orders
+        test_order_in_active = None
+        for active_order in active_orders:
+            if active_order.get("id") == test_order_id:
+                test_order_in_active = active_order
+                break
+        
+        if not test_order_in_active:
+            return print_test_result("Active Order Table Assignment State Loading", False, "Test order not found in active orders endpoint")
+        
+        print(f"Found test order in active orders")
+        print(f"Active order table_id: {test_order_in_active.get('table_id')}")
+        print(f"Active order table_number: {test_order_in_active.get('table_number')}")
+        
+        # Verify active order contains table_id and table_number fields
+        if not test_order_in_active.get("table_id"):
+            return print_test_result("Active Order Table Assignment State Loading", False, "Active order missing table_id field")
+        
+        if not test_order_in_active.get("table_number"):
+            return print_test_result("Active Order Table Assignment State Loading", False, "Active order missing table_number field")
+        
+        # Verify table assignment data matches
+        if test_order_in_active.get("table_id") != test_table_id:
+            return print_test_result("Active Order Table Assignment State Loading", False, "Active order table_id doesn't match assigned table")
+        
+        if test_order_in_active.get("table_number") != table_number:
+            return print_test_result("Active Order Table Assignment State Loading", False, "Active order table_number doesn't match assigned table")
+        
+        # Step 5: Test table information availability
+        print("\nStep 5: Fetching tables list to verify table data...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        tables = response.json()
+        
+        # Find our test table
+        test_table_in_list = None
+        for table in tables:
+            if table.get("id") == test_table_id:
+                test_table_in_list = table
+                break
+        
+        if not test_table_in_list:
+            return print_test_result("Active Order Table Assignment State Loading", False, "Assigned table not found in tables list")
+        
+        print(f"Found assigned table in tables list")
+        print(f"Table status: {test_table_in_list.get('status')}")
+        print(f"Table current_order_id: {test_table_in_list.get('current_order_id')}")
+        
+        # Verify table exists and has correct current_order_id
+        if test_table_in_list.get("status") != "occupied":
+            return print_test_result("Active Order Table Assignment State Loading", False, "Assigned table status is not 'occupied'")
+        
+        if test_table_in_list.get("current_order_id") != test_order_id:
+            return print_test_result("Active Order Table Assignment State Loading", False, "Table current_order_id doesn't point to the correct order")
+        
+        # Step 6: Test individual order endpoint for table assignment data
+        print("\nStep 6: Fetching individual order to verify table assignment data...")
+        response = requests.get(f"{API_URL}/orders/{test_order_id}", headers=headers)
+        response.raise_for_status()
+        individual_order = response.json()
+        
+        print(f"Individual order table_id: {individual_order.get('table_id')}")
+        print(f"Individual order table_number: {individual_order.get('table_number')}")
+        
+        # Verify individual order endpoint also returns table assignment data
+        if not individual_order.get("table_id") or not individual_order.get("table_number"):
+            return print_test_result("Active Order Table Assignment State Loading", False, "Individual order endpoint missing table assignment data")
+        
+        # Step 7: Test the specific scenario - editing an active order with assigned table
+        print("\nStep 7: Testing order editing to verify table assignment persists...")
+        
+        # Edit the order (simulating frontend editing)
+        edit_data = {
+            "customer_name": "Updated Table Assignment Test Customer",
+            "customer_phone": "5557777777",
+            "customer_address": "123 Table Test St, Updated",
+            "table_id": test_table_id,  # Keep same table
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 3,  # Changed quantity
+                    "special_instructions": "Updated table assignment test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 4.00,  # Changed tip
+            "order_notes": "Updated - Testing table assignment state loading"
+        }
+        
+        response = requests.put(f"{API_URL}/orders/{test_order_id}", json=edit_data, headers=headers)
+        response.raise_for_status()
+        edited_order = response.json()
+        
+        print(f"Order edited successfully")
+        print(f"Edited order table_id: {edited_order.get('table_id')}")
+        print(f"Edited order table_number: {edited_order.get('table_number')}")
+        
+        # Verify table assignment is preserved after editing
+        if not edited_order.get("table_id") or not edited_order.get("table_number"):
+            return print_test_result("Active Order Table Assignment State Loading", False, "Table assignment lost after order editing")
+        
+        # Step 8: Verify edited order still appears correctly in active orders
+        print("\nStep 8: Verifying edited order in active orders endpoint...")
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        updated_active_orders = response.json()
+        
+        # Find our edited order in active orders
+        edited_order_in_active = None
+        for active_order in updated_active_orders:
+            if active_order.get("id") == test_order_id:
+                edited_order_in_active = active_order
+                break
+        
+        if not edited_order_in_active:
+            return print_test_result("Active Order Table Assignment State Loading", False, "Edited order not found in active orders endpoint")
+        
+        # Verify table assignment data is still present
+        if not edited_order_in_active.get("table_id") or not edited_order_in_active.get("table_number"):
+            return print_test_result("Active Order Table Assignment State Loading", False, "Edited order in active orders missing table assignment data")
+        
+        print(f"✅ Edited order in active orders has table assignment data")
+        print(f"   table_id: {edited_order_in_active.get('table_id')}")
+        print(f"   table_number: {edited_order_in_active.get('table_number')}")
+        
+        # Clean up - pay the order to free the table
+        print("\nCleaning up - paying order to free table...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        # Verify table is freed after payment
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        final_tables = response.json()
+        
+        for table in final_tables:
+            if table.get("id") == test_table_id:
+                if table.get("status") == "available" and table.get("current_order_id") is None:
+                    print("✅ Table properly freed after payment")
+                break
+        
+        return print_test_result("Active Order Table Assignment State Loading", True, 
+                               "✅ COMPREHENSIVE TEST PASSED: Active orders include complete table assignment data (table_id, table_number). "
+                               "Tables list includes assigned table with correct current_order_id. "
+                               "Table assignment data persists through order editing. "
+                               "Frontend has all necessary data to show assigned table instead of 'Choose Table' button.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Active order table assignment state loading test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Active Order Table Assignment State Loading", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
