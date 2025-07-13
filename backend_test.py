@@ -2156,6 +2156,19 @@ def run_all_tests():
         editing_success, editing_details = test_order_editing_and_reloading()
         test_results["Order Editing and Reloading"]["success"] = editing_success
         test_results["Order Editing and Reloading"]["details"] = editing_details
+        
+        # Test the specific bug fixes mentioned in the review request
+        bug5_success, bug5_details = test_bug_5_table_assignment_for_active_orders()
+        test_results["Bug 5 Fix: Table Assignment for Active Orders"]["success"] = bug5_success
+        test_results["Bug 5 Fix: Table Assignment for Active Orders"]["details"] = bug5_details
+        
+        bug6_success, bug6_details = test_bug_6_table_assignment_data_returned()
+        test_results["Bug 6 Fix: Choose Table Shows for Orders with Assigned Tables"]["success"] = bug6_success
+        test_results["Bug 6 Fix: Choose Table Shows for Orders with Assigned Tables"]["details"] = bug6_details
+        
+        bug7_success, bug7_details = test_bug_7_order_total_recalculation()
+        test_results["Bug 7 Fix: Order Total Becomes 0 When Removing Items"]["success"] = bug7_success
+        test_results["Bug 7 Fix: Order Total Becomes 0 When Removing Items"]["details"] = bug7_details
     
     # Print summary
     print("\n========================================")
