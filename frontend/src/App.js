@@ -3261,6 +3261,13 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                     </span>
                   )}
                 </div>
+              ) : editingActiveOrder && currentOrder && currentOrder.table_id ? (
+                // Active order already has table assigned
+                <div className="text-center bg-green-50 border border-green-200 rounded-lg p-3">
+                  <span className="text-green-700 font-medium">
+                    Table {currentOrder.table_number} (Already Assigned)
+                  </span>
+                </div>
               ) : (
                 <div className="text-center">
                   <button
