@@ -2696,6 +2696,18 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     address: '',
     apartment: ''
   });
+
+  const updateOrderTableAssignment = async (orderId, tableId) => {
+    try {
+      await axios.put(`${API}/orders/${orderId}/table`, { table_id: tableId });
+      alert('Table assigned successfully!');
+    } catch (error) {
+      console.error('Error assigning table to order:', error);
+      alert('Failed to assign table to order');
+    }
+  };
+
+  const resetCustomerInfo = () => {
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
   const [orderType, setOrderType] = useState(fromTableManagement ? 'dine_in' : (selectedTable ? 'dine_in' : 'takeout'));
   const [tip, setTip] = useState(0);
