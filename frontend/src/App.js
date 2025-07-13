@@ -3032,6 +3032,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           const updatedOrder = response.data;
           setCurrentOrder(updatedOrder);
           setCart(updatedOrder.items);
+          
+          // Check if order is now empty and show warning modal
+          if (updatedOrder.items.length === 0) {
+            setEmptyOrderData(updatedOrder);
+            setShowEmptyOrderModal(true);
+          }
         } else if (editingOrder) {
           // Load existing table order
           loadExistingTableOrder();
