@@ -4815,24 +4815,48 @@ const TaxChargesComponent = ({ onBack }) => {
     setShowDiscountModal(true);
   };
 
-  const handleDelete = (type, id) => {
+  const handleDelete = async (type, id) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      switch (type) {
-        case 'tax':
-          setTaxRates(prev => prev.filter(item => item.id !== id));
-          break;
-        case 'charge':
-          setServiceCharges(prev => prev.filter(item => item.id !== id));
-          break;
-        case 'gratuity':
-          setGratuityRules(prev => prev.filter(item => item.id !== id));
-          break;
-        case 'discount':
-          setDiscountPolicies(prev => prev.filter(item => item.id !== id));
-          break;
+      try {
+        let endpoint = '';
+        switch (type) {
+          case 'tax':
+            endpoint = 'tax-rates';
+            break;
+          case 'charge':
+            endpoint = 'service-charges';
+            break;
+          case 'gratuity':
+            endpoint = 'gratuity-rules';
+            break;
+          case 'discount':
+            endpoint = 'discount-policies';
+            break;
+        }
+
+        await axios.delete(`${API}/tax-charges/${endpoint}/${id}`);
+
+        // Update local state after successful API call
+        switch (type) {
+          case 'tax':
+            setTaxRates(prev => prev.filter(item => item.id !== id));
+            break;
+          case 'charge':
+            setServiceCharges(prev => prev.filter(item => item.id !== id));
+            break;
+          case 'gratuity':
+            setGratuityRules(prev => prev.filter(item => item.id !== id));
+            break;
+          case 'discount':
+            setDiscountPolicies(prev => prev.filter(item => item.id !== id));
+            break;
+        }
+        
+        alert('Item deleted successfully');
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('Error deleting item. Please try again.');
       }
-      saveTaxChargesData();
-      alert('Item deleted successfully');
     }
   };
 
