@@ -2835,6 +2835,16 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         address: order.customer_address
       });
       setOrderType(order.order_type);
+      
+      // If order has a table assigned, set the assigned table state
+      if (order.table_id) {
+        const tableResponse = await axios.get(`${API}/tables`);
+        const tables = tableResponse.data;
+        const assignedTableData = tables.find(table => table.id === order.table_id);
+        if (assignedTableData) {
+          setAssignedTable(assignedTableData);
+        }
+      }
     } catch (error) {
       console.error('Error loading existing order:', error);
     }
