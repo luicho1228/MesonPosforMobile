@@ -2865,29 +2865,38 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     });
     setOrderType(order.order_type);
     
-    // If order has a table assigned, set the assigned table state
-    if (order.table_id) {
+    // If order has a table assigned (check both table_id and table_number)
+    if (order.table_id || order.table_number) {
       try {
-        console.log('🔍 DEBUG loadActiveOrder: Fetching tables for table_id:', order.table_id);
+        console.log('🔍 DEBUG loadActiveOrder: Fetching tables for assignment');
         const tableResponse = await axios.get(`${API}/tables`);
         const tables = tableResponse.data;
         console.log('🔍 DEBUG loadActiveOrder: All tables:', tables);
         
-        const assignedTableData = tables.find(table => table.id === order.table_id);
-        console.log('🔍 DEBUG loadActiveOrder: Found assignedTableData:', assignedTableData);
+        // Try to find table by table_id first, then by table_number
+        let assignedTableData = null;
+        if (order.table_id) {
+          assignedTableData = tables.find(table => table.id === order.table_id);
+          console.log('🔍 DEBUG loadActiveOrder: Found by table_id:', assignedTableData);
+        }
+        
+        if (!assignedTableData && order.table_number) {
+          assignedTableData = tables.find(table => table.number === order.table_number);
+          console.log('🔍 DEBUG loadActiveOrder: Found by table_number:', assignedTableData);
+        }
         
         if (assignedTableData) {
           setAssignedTable(assignedTableData);
           console.log('🔍 DEBUG loadActiveOrder: Set assignedTable to:', assignedTableData);
         } else {
-          console.log('🔍 DEBUG loadActiveOrder: No matching table found for table_id:', order.table_id);
+          console.log('🔍 DEBUG loadActiveOrder: No matching table found for table_id:', order.table_id, 'or table_number:', order.table_number);
         }
       } catch (error) {
         console.error('Error loading assigned table:', error);
       }
     } else {
       // Clear assigned table if order has no table
-      console.log('🔍 DEBUG loadActiveOrder: Order has no table_id, clearing assignedTable');
+      console.log('🔍 DEBUG loadActiveOrder: Order has no table assignment, clearing assignedTable');
       setAssignedTable(null);
     }
   };
