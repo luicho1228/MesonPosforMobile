@@ -2398,6 +2398,11 @@ def run_all_tests():
         bug7_success, bug7_details = test_bug_7_order_total_recalculation()
         test_results["Bug 7 Fix: Order Total Becomes 0 When Removing Items"]["success"] = bug7_success
         test_results["Bug 7 Fix: Order Total Becomes 0 When Removing Items"]["details"] = bug7_details
+        
+        # Test the specific review request scenario
+        table_assignment_success, table_assignment_details = test_active_order_table_assignment_state_loading()
+        test_results["Active Order Table Assignment State Loading"]["success"] = table_assignment_success
+        test_results["Active Order Table Assignment State Loading"]["details"] = table_assignment_details
     
     # Print summary
     print("\n========================================")
