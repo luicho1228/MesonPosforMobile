@@ -9412,7 +9412,7 @@ const POSInterface = () => {
     } else if (table.status === 'occupied') {
       // Edit existing order for occupied table
       setEditingOrder(table);
-      setSelectedTable(null);
+      setSelectedTable(table); // Pass the table so NewOrder can use it for assignedTable
       setEditingActiveOrder(null);
     }
     setCurrentView('new-order');
