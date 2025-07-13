@@ -4652,24 +4652,40 @@ const TaxChargesComponent = ({ onBack }) => {
       return;
     }
 
-    const gratuityData = {
-      ...gratuityForm,
-      amount: amount,
-      id: editingItem ? editingItem.id : Date.now().toString()
-    };
+    try {
+      const gratuityData = {
+        name: gratuityForm.name,
+        description: gratuityForm.description,
+        amount: amount,
+        type: gratuityForm.type,
+        active: gratuityForm.active,
+        minimum_order_amount: parseFloat(gratuityForm.minimum_order_amount) || 0,
+        maximum_order_amount: parseFloat(gratuityForm.maximum_order_amount) || 0,
+        applies_to_order_types: gratuityForm.applies_to_order_types,
+        party_size_minimum: parseInt(gratuityForm.party_size_minimum) || 0
+      };
 
-    if (editingItem) {
-      setGratuityRules(prev => prev.map(rule => rule.id === editingItem.id ? gratuityData : rule));
-      alert('Gratuity rule updated successfully');
-    } else {
-      setGratuityRules(prev => [...prev, gratuityData]);
-      alert('Gratuity rule added successfully');
+      if (editingItem) {
+        // Update existing gratuity rule
+        await axios.put(`${API}/tax-charges/gratuity-rules/${editingItem.id}`, gratuityData);
+        setGratuityRules(prev => prev.map(item => 
+          item.id === editingItem.id ? { ...item, ...gratuityData } : item
+        ));
+        alert('Gratuity rule updated successfully');
+      } else {
+        // Create new gratuity rule
+        const response = await axios.post(`${API}/tax-charges/gratuity-rules`, gratuityData);
+        setGratuityRules(prev => [...prev, response.data]);
+        alert('Gratuity rule added successfully');
+      }
+
+      setShowGratuityModal(false);
+      setEditingItem(null);
+      resetGratuityForm();
+    } catch (error) {
+      console.error('Error saving gratuity rule:', error);
+      alert('Error saving gratuity rule. Please try again.');
     }
-
-    setShowGratuityModal(false);
-    setEditingItem(null);
-    resetGratuityForm();
-    saveTaxChargesData();
   };
 
   const handleSaveDiscount = async () => {
