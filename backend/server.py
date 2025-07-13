@@ -1557,6 +1557,297 @@ async def get_active_employees(user_id: str = Depends(verify_token)):
     
     return {"active_employees": active_employees}
 
+# Tax & Charges Management Routes
+
+# Tax Rates
+@api_router.get("/tax-charges/tax-rates", response_model=List[TaxRate])
+async def get_tax_rates(user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    tax_rates = await db.tax_rates.find().sort("created_at", -1).to_list(1000)
+    return [TaxRate(**rate) for rate in tax_rates]
+
+@api_router.post("/tax-charges/tax-rates", response_model=TaxRate)
+async def create_tax_rate(tax_rate: TaxRateCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    tax_rate_obj = TaxRate(**tax_rate.dict())
+    await db.tax_rates.insert_one(tax_rate_obj.dict())
+    return tax_rate_obj
+
+@api_router.put("/tax-charges/tax-rates/{tax_rate_id}", response_model=TaxRate)
+async def update_tax_rate(tax_rate_id: str, tax_rate_update: TaxRateCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    existing_rate = await db.tax_rates.find_one({"id": tax_rate_id})
+    if not existing_rate:
+        raise HTTPException(status_code=404, detail="Tax rate not found")
+    
+    update_data = tax_rate_update.dict()
+    update_data["updated_at"] = get_current_time()
+    
+    await db.tax_rates.update_one({"id": tax_rate_id}, {"$set": update_data})
+    updated_rate = await db.tax_rates.find_one({"id": tax_rate_id})
+    return TaxRate(**updated_rate)
+
+@api_router.delete("/tax-charges/tax-rates/{tax_rate_id}")
+async def delete_tax_rate(tax_rate_id: str, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    result = await db.tax_rates.delete_one({"id": tax_rate_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tax rate not found")
+    
+    return {"message": "Tax rate deleted successfully"}
+
+# Service Charges
+@api_router.get("/tax-charges/service-charges", response_model=List[ServiceCharge])
+async def get_service_charges(user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    charges = await db.service_charges.find().sort("created_at", -1).to_list(1000)
+    return [ServiceCharge(**charge) for charge in charges]
+
+@api_router.post("/tax-charges/service-charges", response_model=ServiceCharge)
+async def create_service_charge(service_charge: ServiceChargeCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    charge_obj = ServiceCharge(**service_charge.dict())
+    await db.service_charges.insert_one(charge_obj.dict())
+    return charge_obj
+
+@api_router.put("/tax-charges/service-charges/{charge_id}", response_model=ServiceCharge)
+async def update_service_charge(charge_id: str, charge_update: ServiceChargeCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    existing_charge = await db.service_charges.find_one({"id": charge_id})
+    if not existing_charge:
+        raise HTTPException(status_code=404, detail="Service charge not found")
+    
+    update_data = charge_update.dict()
+    update_data["updated_at"] = get_current_time()
+    
+    await db.service_charges.update_one({"id": charge_id}, {"$set": update_data})
+    updated_charge = await db.service_charges.find_one({"id": charge_id})
+    return ServiceCharge(**updated_charge)
+
+@api_router.delete("/tax-charges/service-charges/{charge_id}")
+async def delete_service_charge(charge_id: str, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    result = await db.service_charges.delete_one({"id": charge_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Service charge not found")
+    
+    return {"message": "Service charge deleted successfully"}
+
+# Gratuity Rules
+@api_router.get("/tax-charges/gratuity-rules", response_model=List[GratuityRule])
+async def get_gratuity_rules(user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    rules = await db.gratuity_rules.find().sort("created_at", -1).to_list(1000)
+    return [GratuityRule(**rule) for rule in rules]
+
+@api_router.post("/tax-charges/gratuity-rules", response_model=GratuityRule)
+async def create_gratuity_rule(gratuity_rule: GratuityRuleCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    rule_obj = GratuityRule(**gratuity_rule.dict())
+    await db.gratuity_rules.insert_one(rule_obj.dict())
+    return rule_obj
+
+@api_router.put("/tax-charges/gratuity-rules/{rule_id}", response_model=GratuityRule)
+async def update_gratuity_rule(rule_id: str, rule_update: GratuityRuleCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    existing_rule = await db.gratuity_rules.find_one({"id": rule_id})
+    if not existing_rule:
+        raise HTTPException(status_code=404, detail="Gratuity rule not found")
+    
+    update_data = rule_update.dict()
+    update_data["updated_at"] = get_current_time()
+    
+    await db.gratuity_rules.update_one({"id": rule_id}, {"$set": update_data})
+    updated_rule = await db.gratuity_rules.find_one({"id": rule_id})
+    return GratuityRule(**updated_rule)
+
+@api_router.delete("/tax-charges/gratuity-rules/{rule_id}")
+async def delete_gratuity_rule(rule_id: str, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    result = await db.gratuity_rules.delete_one({"id": rule_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Gratuity rule not found")
+    
+    return {"message": "Gratuity rule deleted successfully"}
+
+# Discount Policies
+@api_router.get("/tax-charges/discount-policies", response_model=List[DiscountPolicy])
+async def get_discount_policies(user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    policies = await db.discount_policies.find().sort("created_at", -1).to_list(1000)
+    return [DiscountPolicy(**policy) for policy in policies]
+
+@api_router.post("/tax-charges/discount-policies", response_model=DiscountPolicy)
+async def create_discount_policy(discount_policy: DiscountPolicyCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    policy_obj = DiscountPolicy(**discount_policy.dict())
+    await db.discount_policies.insert_one(policy_obj.dict())
+    return policy_obj
+
+@api_router.put("/tax-charges/discount-policies/{policy_id}", response_model=DiscountPolicy)
+async def update_discount_policy(policy_id: str, policy_update: DiscountPolicyCreate, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    existing_policy = await db.discount_policies.find_one({"id": policy_id})
+    if not existing_policy:
+        raise HTTPException(status_code=404, detail="Discount policy not found")
+    
+    update_data = policy_update.dict()
+    update_data["updated_at"] = get_current_time()
+    
+    await db.discount_policies.update_one({"id": policy_id}, {"$set": update_data})
+    updated_policy = await db.discount_policies.find_one({"id": policy_id})
+    return DiscountPolicy(**updated_policy)
+
+@api_router.delete("/tax-charges/discount-policies/{policy_id}")
+async def delete_discount_policy(policy_id: str, user_id: str = Depends(verify_token)):
+    user = await db.users.find_one({"id": user_id})
+    if user.get("role") != "manager":
+        raise HTTPException(status_code=403, detail="Access denied - Manager role required")
+    
+    result = await db.discount_policies.delete_one({"id": policy_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Discount policy not found")
+    
+    return {"message": "Discount policy deleted successfully"}
+
+# Calculate taxes and charges for an order
+@api_router.post("/tax-charges/calculate")
+async def calculate_taxes_and_charges(order_data: Dict[str, Any], user_id: str = Depends(verify_token)):
+    """Calculate taxes and charges for an order based on configured rules"""
+    subtotal = order_data.get("subtotal", 0)
+    order_type = order_data.get("order_type", "dine_in")
+    party_size = order_data.get("party_size", 1)
+    
+    # Get active tax rates
+    tax_rates = await db.tax_rates.find({"active": True, "applies_to_order_types": order_type}).to_list(100)
+    
+    # Get active service charges
+    service_charges = await db.service_charges.find({
+        "active": True, 
+        "applies_to_order_types": order_type,
+        "minimum_order_amount": {"$lte": subtotal}
+    }).to_list(100)
+    
+    # Get active gratuity rules
+    gratuity_rules = await db.gratuity_rules.find({
+        "active": True,
+        "applies_to_order_types": order_type,
+        "minimum_order_amount": {"$lte": subtotal},
+        "$or": [
+            {"maximum_order_amount": 0},
+            {"maximum_order_amount": {"$gte": subtotal}}
+        ],
+        "party_size_minimum": {"$lte": party_size}
+    }).to_list(100)
+    
+    # Calculate taxes
+    total_tax = 0
+    tax_breakdown = []
+    for rate in tax_rates:
+        if rate["type"] == "percentage":
+            tax_amount = subtotal * (rate["rate"] / 100)
+        else:
+            tax_amount = rate["rate"]
+        
+        total_tax += tax_amount
+        tax_breakdown.append({
+            "name": rate["name"],
+            "rate": rate["rate"],
+            "type": rate["type"],
+            "amount": round(tax_amount, 2)
+        })
+    
+    # Calculate service charges
+    total_service_charges = 0
+    service_charge_breakdown = []
+    for charge in service_charges:
+        base_amount = subtotal if charge["applies_to_subtotal"] else (subtotal + total_tax)
+        
+        if charge["type"] == "percentage":
+            charge_amount = base_amount * (charge["amount"] / 100)
+        else:
+            charge_amount = charge["amount"]
+        
+        total_service_charges += charge_amount
+        service_charge_breakdown.append({
+            "name": charge["name"],
+            "amount": charge["amount"],
+            "type": charge["type"],
+            "calculated_amount": round(charge_amount, 2),
+            "mandatory": charge["mandatory"]
+        })
+    
+    # Calculate suggested gratuity
+    suggested_gratuity = []
+    for rule in gratuity_rules:
+        if rule["type"] == "percentage":
+            gratuity_amount = subtotal * (rule["amount"] / 100)
+        else:
+            gratuity_amount = rule["amount"]
+        
+        suggested_gratuity.append({
+            "name": rule["name"],
+            "amount": rule["amount"],
+            "type": rule["type"],
+            "calculated_amount": round(gratuity_amount, 2),
+            "party_size_minimum": rule["party_size_minimum"]
+        })
+    
+    return {
+        "subtotal": subtotal,
+        "total_tax": round(total_tax, 2),
+        "total_service_charges": round(total_service_charges, 2),
+        "total_before_tip": round(subtotal + total_tax + total_service_charges, 2),
+        "tax_breakdown": tax_breakdown,
+        "service_charge_breakdown": service_charge_breakdown,
+        "suggested_gratuity": suggested_gratuity
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
