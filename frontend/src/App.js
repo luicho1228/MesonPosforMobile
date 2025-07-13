@@ -3696,13 +3696,26 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
               const tempOrderResponse = await axios.post(`${API}/orders`, orderData);
               const tempOrderId = tempOrderResponse.data.id;
 
-              // Send to kitchen to get order ID that can be merged
+              // Send to kitchen to get order ID that can be merged  
               await axios.put(`${API}/orders/${tempOrderId}/status`, { status: 'confirmed' });
 
-              // Now merge with the occupied table
-              await axios.post(`${API}/tables/${tempOrderId}/merge`, {
+              // Create a temporary table assignment for the new order
+              // We need to assign this order to a temporary table so the merge API can work
+              const tempTableResponse = await axios.post(`${API}/tables`, {
+                number: 9999, // Temporary table number
+                capacity: 1,
+                status: 'occupied',
+                current_order_id: tempOrderId
+              });
+              const tempTableId = tempTableResponse.data.id;
+
+              // Now merge the temporary table with the occupied table
+              await axios.post(`${API}/tables/${tempTableId}/merge`, {
                 new_table_id: occupiedTableToMerge.id
               });
+
+              // Clean up the temporary table
+              await axios.delete(`${API}/tables/${tempTableId}`);
 
               alert(`Order successfully merged with Table ${occupiedTableToMerge.number}!`);
               
