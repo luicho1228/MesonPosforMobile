@@ -438,16 +438,19 @@ test_plan:
         comment: "Successfully tested that table assignment data is properly returned in API responses. Verified that: 1) Orders with table assignments include table_id and table_number in API responses, 2) Active orders endpoint returns complete table assignment data, 3) Individual order endpoint returns table assignment data, 4) Orders without table assignments have null table_id and table_number values, 5) Both dine-in orders with tables and takeout orders without tables are handled correctly. Created test orders with and without table assignments, verified all API endpoints return proper table data, enabling frontend to make correct decisions about showing/hiding Choose Table functionality."
 
   - task: "Bug 10 Fix: Choose Table Button Shows in Table Management"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "PHASE 1 STARTED - BUG 10 FIX: Beginning investigation of 'Choose Table' button incorrectly showing in table management when table is already selected. The issue appears to be in the conditional logic on line 3331 where orderType === 'dine_in' && !fromTableManagement should hide the table selection section. Problem: when clicking occupied table from table management, the 'Choose Table' button may still appear despite fromTableManagement being true. Investigating the state management and conditional rendering logic."
+      - working: true
+        agent: "main"
+        comment: "PHASE 1 COMPLETED - BUG 10 FIXED: Successfully fixed the 'Choose Table' button incorrectly showing when accessing orders from table management. Root cause was: 1) When clicking occupied table from table management, selectedTable was set to null but assignedTable depended on selectedTable initialization, 2) Added additional conditional logic to ensure 'Choose Table' button never shows when fromTableManagement=true. Fix implemented: 1) Modified handleTableSelect to pass table info for both available AND occupied tables, 2) Enhanced conditional logic in NewOrder component to add extra safeguard against showing 'Choose Table' button when fromTableManagement=true, 3) Added 'Table Management Mode - Loading...' fallback display. Testing confirmed: ✅ Choose Table button correctly hidden, ✅ Table Management Mode indicator shows properly, ✅ Proper editing behavior for occupied tables."
 
 agent_communication:
   - agent: "main"
