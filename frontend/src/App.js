@@ -1829,7 +1829,11 @@ const TableManagement = ({ onTableSelect }) => {
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [selectedSourceTable, setSelectedSourceTable] = useState(null);
   const [selectedDestTable, setSelectedDestTable] = useState(null);
-  const [showMergeConfirm, setShowMergeConfirm] = useState(false);
+  const [showDetailedMergeModal, setShowDetailedMergeModal] = useState(false);
+  const [mergeSourceTable, setMergeSourceTable] = useState(null);
+  const [mergeDestTable, setMergeDestTable] = useState(null);
+  const [mergeSourceOrder, setMergeSourceOrder] = useState(null);
+  const [mergeDestOrder, setMergeDestOrder] = useState(null);
   const [step, setStep] = useState('select-source'); // 'select-source', 'select-destination'
   const [showCancelTableModal, setShowCancelTableModal] = useState(false);
   const [selectedTablesForCancel, setSelectedTablesForCancel] = useState([]);
