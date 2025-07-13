@@ -4499,37 +4499,30 @@ const TaxChargesComponent = ({ onBack }) => {
       return;
     }
 
-    try {
-      const taxData = {
-        name: taxForm.name,
-        description: taxForm.description,
-        rate: rate,
-        type: taxForm.type,
-        active: taxForm.active,
-        applies_to_order_types: taxForm.applies_to_order_types
-      };
+    const taxData = {
+      id: editingItem ? editingItem.id : Date.now().toString(),
+      name: taxForm.name,
+      description: taxForm.description,
+      rate: rate,
+      type: taxForm.type,
+      active: taxForm.active,
+      applies_to_order_types: taxForm.applies_to_order_types
+    };
 
-      if (editingItem) {
-        // Update existing tax rate
-        await axios.put(`${API}/tax-charges/tax-rates/${editingItem.id}`, taxData);
-        setTaxRates(prev => prev.map(item => 
-          item.id === editingItem.id ? { ...item, ...taxData } : item
-        ));
-        alert('Tax rate updated successfully');
-      } else {
-        // Create new tax rate
-        const response = await axios.post(`${API}/tax-charges/tax-rates`, taxData);
-        setTaxRates(prev => [...prev, response.data]);
-        alert('Tax rate added successfully');
-      }
-
-      setShowTaxModal(false);
-      setEditingItem(null);
-      resetTaxForm();
-    } catch (error) {
-      console.error('Error saving tax rate:', error);
-      alert('Error saving tax rate. Please try again.');
+    if (editingItem) {
+      setTaxRates(prev => prev.map(item => 
+        item.id === editingItem.id ? taxData : item
+      ));
+      alert('Tax rate updated successfully');
+    } else {
+      setTaxRates(prev => [...prev, taxData]);
+      alert('Tax rate added successfully');
     }
+
+    setShowTaxModal(false);
+    setEditingItem(null);
+    resetTaxForm();
+    saveTaxChargesData();
   };
 
   const handleSaveCharge = async () => {
@@ -4544,40 +4537,33 @@ const TaxChargesComponent = ({ onBack }) => {
       return;
     }
 
-    try {
-      const chargeData = {
-        name: chargeForm.name,
-        description: chargeForm.description,
-        amount: amount,
-        type: chargeForm.type,
-        active: chargeForm.active,
-        mandatory: chargeForm.mandatory,
-        applies_to_subtotal: chargeForm.applies_to_subtotal,
-        applies_to_order_types: chargeForm.applies_to_order_types,
-        minimum_order_amount: parseFloat(chargeForm.minimum_order_amount) || 0
-      };
+    const chargeData = {
+      id: editingItem ? editingItem.id : Date.now().toString(),
+      name: chargeForm.name,
+      description: chargeForm.description,
+      amount: amount,
+      type: chargeForm.type,
+      active: chargeForm.active,
+      mandatory: chargeForm.mandatory,
+      applies_to_subtotal: chargeForm.applies_to_subtotal,
+      applies_to_order_types: chargeForm.applies_to_order_types,
+      minimum_order_amount: parseFloat(chargeForm.minimum_order_amount) || 0
+    };
 
-      if (editingItem) {
-        // Update existing service charge
-        await axios.put(`${API}/tax-charges/service-charges/${editingItem.id}`, chargeData);
-        setServiceCharges(prev => prev.map(item => 
-          item.id === editingItem.id ? { ...item, ...chargeData } : item
-        ));
-        alert('Service charge updated successfully');
-      } else {
-        // Create new service charge
-        const response = await axios.post(`${API}/tax-charges/service-charges`, chargeData);
-        setServiceCharges(prev => [...prev, response.data]);
-        alert('Service charge added successfully');
-      }
-
-      setShowChargeModal(false);
-      setEditingItem(null);
-      resetChargeForm();
-    } catch (error) {
-      console.error('Error saving service charge:', error);
-      alert('Error saving service charge. Please try again.');
+    if (editingItem) {
+      setServiceCharges(prev => prev.map(item => 
+        item.id === editingItem.id ? chargeData : item
+      ));
+      alert('Service charge updated successfully');
+    } else {
+      setServiceCharges(prev => [...prev, chargeData]);
+      alert('Service charge added successfully');
     }
+
+    setShowChargeModal(false);
+    setEditingItem(null);
+    resetChargeForm();
+    saveTaxChargesData();
   };
 
   const handleSaveGratuity = async () => {
@@ -4592,40 +4578,33 @@ const TaxChargesComponent = ({ onBack }) => {
       return;
     }
 
-    try {
-      const gratuityData = {
-        name: gratuityForm.name,
-        description: gratuityForm.description,
-        amount: amount,
-        type: gratuityForm.type,
-        active: gratuityForm.active,
-        minimum_order_amount: parseFloat(gratuityForm.minimum_order_amount) || 0,
-        maximum_order_amount: parseFloat(gratuityForm.maximum_order_amount) || 0,
-        applies_to_order_types: gratuityForm.applies_to_order_types,
-        party_size_minimum: parseInt(gratuityForm.party_size_minimum) || 0
-      };
+    const gratuityData = {
+      id: editingItem ? editingItem.id : Date.now().toString(),
+      name: gratuityForm.name,
+      description: gratuityForm.description,
+      amount: amount,
+      type: gratuityForm.type,
+      active: gratuityForm.active,
+      minimum_order_amount: parseFloat(gratuityForm.minimum_order_amount) || 0,
+      maximum_order_amount: parseFloat(gratuityForm.maximum_order_amount) || 0,
+      applies_to_order_types: gratuityForm.applies_to_order_types,
+      party_size_minimum: parseInt(gratuityForm.party_size_minimum) || 0
+    };
 
-      if (editingItem) {
-        // Update existing gratuity rule
-        await axios.put(`${API}/tax-charges/gratuity-rules/${editingItem.id}`, gratuityData);
-        setGratuityRules(prev => prev.map(item => 
-          item.id === editingItem.id ? { ...item, ...gratuityData } : item
-        ));
-        alert('Gratuity rule updated successfully');
-      } else {
-        // Create new gratuity rule
-        const response = await axios.post(`${API}/tax-charges/gratuity-rules`, gratuityData);
-        setGratuityRules(prev => [...prev, response.data]);
-        alert('Gratuity rule added successfully');
-      }
-
-      setShowGratuityModal(false);
-      setEditingItem(null);
-      resetGratuityForm();
-    } catch (error) {
-      console.error('Error saving gratuity rule:', error);
-      alert('Error saving gratuity rule. Please try again.');
+    if (editingItem) {
+      setGratuityRules(prev => prev.map(item => 
+        item.id === editingItem.id ? gratuityData : item
+      ));
+      alert('Gratuity rule updated successfully');
+    } else {
+      setGratuityRules(prev => [...prev, gratuityData]);
+      alert('Gratuity rule added successfully');
     }
+
+    setShowGratuityModal(false);
+    setEditingItem(null);
+    resetGratuityForm();
+    saveTaxChargesData();
   };
 
   const handleSaveDiscount = async () => {
@@ -4640,42 +4619,35 @@ const TaxChargesComponent = ({ onBack }) => {
       return;
     }
 
-    try {
-      const discountData = {
-        name: discountForm.name,
-        description: discountForm.description,
-        amount: amount,
-        type: discountForm.type,
-        active: discountForm.active,
-        applies_to_order_types: discountForm.applies_to_order_types,
-        minimum_order_amount: parseFloat(discountForm.minimum_order_amount) || 0,
-        requires_manager_approval: discountForm.requires_manager_approval,
-        valid_from: discountForm.valid_from || null,
-        valid_until: discountForm.valid_until || null,
-        usage_limit: parseInt(discountForm.usage_limit) || 0
-      };
+    const discountData = {
+      id: editingItem ? editingItem.id : Date.now().toString(),
+      name: discountForm.name,
+      description: discountForm.description,
+      amount: amount,
+      type: discountForm.type,
+      active: discountForm.active,
+      applies_to_order_types: discountForm.applies_to_order_types,
+      minimum_order_amount: parseFloat(discountForm.minimum_order_amount) || 0,
+      requires_manager_approval: discountForm.requires_manager_approval,
+      valid_from: discountForm.valid_from || null,
+      valid_until: discountForm.valid_until || null,
+      usage_limit: parseInt(discountForm.usage_limit) || 0
+    };
 
-      if (editingItem) {
-        // Update existing discount policy
-        await axios.put(`${API}/tax-charges/discount-policies/${editingItem.id}`, discountData);
-        setDiscountPolicies(prev => prev.map(item => 
-          item.id === editingItem.id ? { ...item, ...discountData } : item
-        ));
-        alert('Discount policy updated successfully');
-      } else {
-        // Create new discount policy
-        const response = await axios.post(`${API}/tax-charges/discount-policies`, discountData);
-        setDiscountPolicies(prev => [...prev, response.data]);
-        alert('Discount policy added successfully');
-      }
-
-      setShowDiscountModal(false);
-      setEditingItem(null);
-      resetDiscountForm();
-    } catch (error) {
-      console.error('Error saving discount policy:', error);
-      alert('Error saving discount policy. Please try again.');
+    if (editingItem) {
+      setDiscountPolicies(prev => prev.map(item => 
+        item.id === editingItem.id ? discountData : item
+      ));
+      alert('Discount policy updated successfully');
+    } else {
+      setDiscountPolicies(prev => [...prev, discountData]);
+      alert('Discount policy added successfully');
     }
+
+    setShowDiscountModal(false);
+    setEditingItem(null);
+    resetDiscountForm();
+    saveTaxChargesData();
   };
   };
 
