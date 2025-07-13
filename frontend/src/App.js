@@ -3281,6 +3281,17 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           {orderType === 'dine_in' && (
             <div className="mb-6 bg-white rounded-xl p-4">
               <h3 className="font-bold text-lg mb-4">Selected Table</h3>
+              
+              {/* DEBUG INFO */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mb-4 p-2 bg-gray-100 text-xs">
+                  <div>DEBUG: assignedTable = {assignedTable ? JSON.stringify(assignedTable) : 'null'}</div>
+                  <div>DEBUG: editingActiveOrder = {editingActiveOrder ? 'true' : 'false'}</div>
+                  <div>DEBUG: currentOrder.table_id = {currentOrder?.table_id || 'undefined'}</div>
+                  <div>DEBUG: currentOrder.table_number = {currentOrder?.table_number || 'undefined'}</div>
+                </div>
+              )}
+              
               {assignedTable ? (
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div>
