@@ -392,6 +392,51 @@ test_plan:
         agent: "testing"
         comment: "Tested the Add Employee functionality in the Staff Management section. When attempting to add a new employee with PIN 5678, the system returns a 400 error with the message 'PIN already registered'. This is because PIN 5678 is already in use by another employee in the system. When testing with a different PIN (9999), the employee was successfully created and added to the staff list. The Add Employee modal contains all required fields and properly validates required fields and PIN format. The issue is not with the implementation but rather with PIN uniqueness validation, which is working as expected to prevent duplicate PINs."
 
+  - task: "Bug 7 Fix: Order Total Becomes 0 When Removing Items"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Enhanced total calculation in item removal endpoint with fallback values to prevent totals from becoming 0 when removing items from orders."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the order total recalculation bug fix. Verified that: 1) Order totals are correctly recalculated after item removal, 2) Totals do not become 0 or NaN after removing items, 3) Tax is properly recalculated (8% of subtotal), 4) Total is correctly calculated (subtotal + tax + tip), 5) Multiple item removals work correctly, 6) Fallback calculation handles different item structures (total_price vs price * quantity), 7) Edge cases with minimal items work properly. Created comprehensive test with 3 items, removed 2 items sequentially, and verified all calculations remained accurate. Original subtotal $77.94 reduced to $51.96 then $12.99, with corresponding tax and total adjustments. All totals remained positive and mathematically correct throughout the process."
+
+  - task: "Bug 5 Fix: Table Assignment for Active Orders"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added updateOrderTableAssignment function and new /api/orders/{order_id}/table endpoint to allow table assignment for active dine-in orders without assigned tables."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the table assignment for active orders bug fix. Verified that: 1) The new /api/orders/{order_id}/table endpoint exists and works correctly, 2) Active dine-in orders without table assignment can be assigned to tables, 3) Order table_id and table_number are properly updated after assignment, 4) Table status is updated to occupied with correct current_order_id, 5) Error handling works for non-existent orders and tables (returns 404), 6) The complete workflow from order creation → send to kitchen → table assignment → payment works seamlessly. Created a dine-in order without table, sent it to kitchen (status: pending), successfully assigned it to table 33320, verified table status became occupied with the correct order ID, and completed payment to clean up."
+
+  - task: "Bug 6 Fix: Choose Table Shows for Orders with Assigned Tables"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Enhanced conditional logic to check currentOrder.table_id for active orders. This is primarily a frontend fix, but ensured table assignment data is properly returned by backend APIs."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested that table assignment data is properly returned in API responses. Verified that: 1) Orders with table assignments include table_id and table_number in API responses, 2) Active orders endpoint returns complete table assignment data, 3) Individual order endpoint returns table assignment data, 4) Orders without table assignments have null table_id and table_number values, 5) Both dine-in orders with tables and takeout orders without tables are handled correctly. Created test orders with and without table assignments, verified all API endpoints return proper table data, enabling frontend to make correct decisions about showing/hiding Choose Table functionality."
+
 agent_communication:
   - agent: "main"
     message: "Completed core POS system implementation with comprehensive backend APIs and full frontend interface. All core features implemented: authentication, menu management, order processing, customer management, time tracking, and dashboard analytics. Ready for backend testing to verify all API endpoints work correctly. Need to create initial admin user for testing authentication flow."
