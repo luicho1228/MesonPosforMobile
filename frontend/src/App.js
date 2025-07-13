@@ -3881,6 +3881,52 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           }}
         />
       )}
+
+      {/* Empty Order Warning Modal */}
+      {showEmptyOrderModal && emptyOrderData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                <span className="text-yellow-600 text-2xl">⚠️</span>
+              </div>
+              
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Order is Now Empty
+              </h3>
+              
+              <p className="text-sm text-gray-500 mb-6">
+                You've removed all items from Order #{emptyOrderData.order_number}. 
+                What would you like to do with this empty order?
+              </p>
+              
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={cancelEmptyOrder}
+                  className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Cancel Order
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowEmptyOrderModal(false);
+                    setEmptyOrderData(null);
+                  }}
+                  className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                >
+                  Keep Order (Add Items Later)
+                </button>
+              </div>
+              
+              <div className="mt-4 text-xs text-gray-400">
+                Order Info: {emptyOrderData.order_type === 'dine_in' ? `Table ${emptyOrderData.table_number}` : emptyOrderData.order_type}
+                {emptyOrderData.customer_name && ` • ${emptyOrderData.customer_name}`}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
