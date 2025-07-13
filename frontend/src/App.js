@@ -4842,6 +4842,74 @@ const TaxChargesComponent = ({ onBack }) => {
     });
   };
 
+  const resetTaxForm = () => {
+    setTaxForm({
+      name: '',
+      type: 'percentage',
+      rate: '',
+      description: '',
+      category: 'sales',
+      applies_to: 'subtotal',
+      jurisdiction: '',
+      tax_id: '',
+      active: true,
+      inclusive: false
+    });
+  };
+
+  const resetChargeForm = () => {
+    setChargeForm({
+      name: '',
+      type: 'percentage',
+      amount: '',
+      description: '',
+      applies_to: 'subtotal',
+      conditions: [],
+      minimum_amount: '',
+      party_size_threshold: '',
+      order_types: [],
+      active: true,
+      mandatory: false
+    });
+  };
+
+  const resetGratuityForm = () => {
+    setGratuityForm({
+      name: '',
+      type: 'percentage',
+      amount: '',
+      description: '',
+      trigger_condition: 'party_size',
+      party_size_min: '6',
+      order_amount_min: '',
+      applies_to_order_types: [],
+      auto_apply: true,
+      customer_can_modify: true,
+      active: true
+    });
+  };
+
+  const resetDiscountForm = () => {
+    setDiscountForm({
+      name: '',
+      type: 'percentage',
+      amount: '',
+      description: '',
+      category: 'general',
+      conditions: [],
+      minimum_order_amount: '',
+      valid_days: [],
+      valid_hours_start: '',
+      valid_hours_end: '',
+      max_uses_per_day: '',
+      requires_code: false,
+      discount_code: '',
+      stackable: false,
+      active: true,
+      expiry_date: ''
+    });
+  };
+
   const calculateTotalTaxRate = () => {
     return taxRates
       .filter(tax => tax.active && tax.type === 'percentage')
