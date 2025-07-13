@@ -2812,6 +2812,11 @@ def run_all_tests():
         table_assignment_success, table_assignment_details = test_active_order_table_assignment_state_loading()
         test_results["Active Order Table Assignment State Loading"]["success"] = table_assignment_success
         test_results["Active Order Table Assignment State Loading"]["details"] = table_assignment_details
+        
+        # Test the new Tax & Charges Management API (Review Request)
+        tax_charges_success, tax_charges_details = test_tax_charges_management_api()
+        test_results["Tax & Charges Management API"]["success"] = tax_charges_success
+        test_results["Tax & Charges Management API"]["details"] = tax_charges_details
     
     # Print summary
     print("\n========================================")
