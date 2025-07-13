@@ -2729,6 +2729,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   const [showTableMergeModal, setShowTableMergeModal] = useState(false);
   const [occupiedTableToMerge, setOccupiedTableToMerge] = useState(null);
   const [existingTableOrder, setExistingTableOrder] = useState(null);
+  const [showEmptyOrderModal, setShowEmptyOrderModal] = useState(false);
+  const [emptyOrderData, setEmptyOrderData] = useState(null);
 
   // Auto-fill customer info when phone number is entered
   const handlePhoneChange = async (phone) => {
