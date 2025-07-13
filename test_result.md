@@ -509,5 +509,53 @@ agent_communication:
         agent: "testing"
         comment: "Successfully tested the reverted Active Orders endpoint. Created comprehensive tests that verified: 1) Active orders (pending, confirmed, preparing, ready, out_for_delivery) are correctly returned in the response, 2) Cancelled orders are NOT included in the response, 3) Paid/delivered orders are NOT included in the response, 4) The endpoint properly handles role-based access with managers seeing all orders and employees seeing only their own. Created an active order, a cancelled order, and a paid order, then verified only the active order appeared in the response from the /api/orders/active endpoint. The implementation has been properly reverted to its original behavior."
 
+  - task: "Table Management Merge Modal Bug Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Enhanced table move functionality to show detailed merge modal when moving to occupied tables. Added proper order fetching for both source and destination tables. Fixed merge API call logic by creating temporary tables for the merge process."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the table merge functionality. Verified that the /api/tables/{table_id}/merge endpoint works correctly with temporary tables. Created comprehensive test that verified: 1) Orders can be merged between occupied tables without 'no items found' errors, 2) Merged order contains items from both source and destination orders, 3) Totals are properly recalculated (subtotal, tax, tip), 4) Source table becomes available and source order is deleted, 5) Destination table remains occupied with the merged order, 6) Table statuses update correctly during merge operations. All merge functionality is working as expected."
+
+  - task: "Order Item Removal Bug Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed order reloading after item removal for active orders. Enhanced refresh logic to properly update the order from database after item removal operations."
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the order item removal functionality. Verified that the /api/orders/{order_id}/items/{item_index} endpoint works correctly for active orders. Created comprehensive test that verified: 1) Items can be removed from active (pending) orders, 2) Order totals are properly recalculated after item removal, 3) Removed items are tracked with removal reasons, notes, and timestamps, 4) Multiple items can be removed from the same order, 5) Order updates are properly persisted in the database, 6) Removal tracking functionality works correctly. All item removal functionality is working as expected."
+
+  - task: "Order Editing and Reloading Bug Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed order editing and reloading functionality to ensure order updates are properly persisted and reloaded from database. Enhanced the order update workflow to handle all order fields correctly."
+      - working: false
+        agent: "testing"
+        comment: "Found issue during testing: order_notes field was not being updated in the order update endpoint. The update_data in the PUT /api/orders/{order_id} endpoint was missing the order_notes field, causing order notes to not be saved when editing orders."
+      - working: true
+        agent: "testing"
+        comment: "Fixed the order_notes update issue by adding the missing field to the update_data in the order update endpoint. Successfully tested order editing and reloading functionality. Verified that: 1) Customer information updates correctly, 2) Order items can be added/modified, 3) Order totals are recalculated properly, 4) Order notes are updated and persisted, 5) Changes appear correctly in active orders endpoint, 6) Order status is maintained during edits, 7) All updates are properly reloaded from database. All order editing functionality is now working correctly."
+
   - agent: "testing"
     message: "COMPLETED COMPREHENSIVE BUG FIX TESTING: Successfully tested all 4 critical bug fixes for the POS system as requested in the review. Results: 1) TABLE MANAGEMENT MERGE MODAL: ✅ Enhanced table move functionality working correctly - when moving orders to occupied tables, the merge API properly combines orders, recalculates totals (subtotal, tax, tip), updates table statuses (source table becomes available, destination remains occupied), and deletes the source order while preserving the merged order on the destination table. 2) MERGE OPERATION 'NO ITEMS' ERROR: ✅ Fixed - the merge API call logic now works correctly with temporary tables. Created comprehensive test that verified orders can be merged without 'no items found' errors. The merge workflow properly handles order creation → table assignment → merge process. 3) ITEM REMOVAL IN ACTIVE ORDERS: ✅ Fixed - order reloading after item removal works correctly for active orders. Tested removing items from pending orders and verified: items are properly removed from the order, totals are recalculated accurately, removed items are tracked with removal reasons and timestamps, and the order updates are persisted in the database. 4) ORDER EDITING AND RELOADING: ✅ Fixed - found and resolved a minor issue where order_notes field was not being updated in the order update endpoint. After fixing this, verified that order editing works correctly: customer information updates, item changes are saved, totals are recalculated, order notes are updated, and changes appear correctly in active orders. All backend APIs are functioning properly with no critical issues found. The table merge API (/api/tables/{table_id}/merge), order item removal API (/api/orders/{order_id}/items/{item_index}), and order update API (/api/orders/{order_id}) are all working as expected."
