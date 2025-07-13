@@ -2850,7 +2850,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
   };
 
-  const loadActiveOrder = () => {
+  const loadActiveOrder = async () => {
     const order = editingActiveOrder;
     setCurrentOrder(order);
     setCart(order.items);
@@ -2860,6 +2860,23 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       address: order.customer_address
     });
     setOrderType(order.order_type);
+    
+    // If order has a table assigned, set the assigned table state
+    if (order.table_id) {
+      try {
+        const tableResponse = await axios.get(`${API}/tables`);
+        const tables = tableResponse.data;
+        const assignedTableData = tables.find(table => table.id === order.table_id);
+        if (assignedTableData) {
+          setAssignedTable(assignedTableData);
+        }
+      } catch (error) {
+        console.error('Error loading assigned table:', error);
+      }
+    } else {
+      // Clear assigned table if order has no table
+      setAssignedTable(null);
+    }
   };
 
   const fetchMenuItems = async () => {
