@@ -437,6 +437,18 @@ test_plan:
         agent: "testing"
         comment: "Successfully tested that table assignment data is properly returned in API responses. Verified that: 1) Orders with table assignments include table_id and table_number in API responses, 2) Active orders endpoint returns complete table assignment data, 3) Individual order endpoint returns table assignment data, 4) Orders without table assignments have null table_id and table_number values, 5) Both dine-in orders with tables and takeout orders without tables are handled correctly. Created test orders with and without table assignments, verified all API endpoints return proper table data, enabling frontend to make correct decisions about showing/hiding Choose Table functionality."
 
+  - task: "Bug 10 Fix: Choose Table Button Shows in Table Management"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "PHASE 1 STARTED - BUG 10 FIX: Beginning investigation of 'Choose Table' button incorrectly showing in table management when table is already selected. The issue appears to be in the conditional logic on line 3331 where orderType === 'dine_in' && !fromTableManagement should hide the table selection section. Problem: when clicking occupied table from table management, the 'Choose Table' button may still appear despite fromTableManagement being true. Investigating the state management and conditional rendering logic."
+
 agent_communication:
   - agent: "main"
     message: "Completed core POS system implementation with comprehensive backend APIs and full frontend interface. All core features implemented: authentication, menu management, order processing, customer management, time tracking, and dashboard analytics. Ready for backend testing to verify all API endpoints work correctly. Need to create initial admin user for testing authentication flow."
