@@ -1829,6 +1829,7 @@ const TableManagement = ({ onTableSelect }) => {
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [selectedSourceTable, setSelectedSourceTable] = useState(null);
   const [selectedDestTable, setSelectedDestTable] = useState(null);
+  const [showMergeConfirm, setShowMergeConfirm] = useState(false);
   const [showDetailedMergeModal, setShowDetailedMergeModal] = useState(false);
   const [mergeSourceTable, setMergeSourceTable] = useState(null);
   const [mergeDestTable, setMergeDestTable] = useState(null);
