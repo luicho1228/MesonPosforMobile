@@ -4860,53 +4860,29 @@ const TaxChargesComponent = ({ onBack }) => {
     }
   };
 
-  const toggleActive = async (type, id) => {
-    try {
-      // Update the local state optimistically
-      let item = null;
-      let endpoint = '';
-      
-      switch (type) {
-        case 'tax':
-          item = taxRates.find(tax => tax.id === id);
-          endpoint = 'tax-rates';
-          setTaxRates(prev => prev.map(item => 
-            item.id === id ? { ...item, active: !item.active } : item
-          ));
-          break;
-        case 'charge':
-          item = serviceCharges.find(charge => charge.id === id);
-          endpoint = 'service-charges';
-          setServiceCharges(prev => prev.map(item => 
-            item.id === id ? { ...item, active: !item.active } : item
-          ));
-          break;
-        case 'gratuity':
-          item = gratuityRules.find(rule => rule.id === id);
-          endpoint = 'gratuity-rules';
-          setGratuityRules(prev => prev.map(item => 
-            item.id === id ? { ...item, active: !item.active } : item
-          ));
-          break;
-        case 'discount':
-          item = discountPolicies.find(policy => policy.id === id);
-          endpoint = 'discount-policies';
-          setDiscountPolicies(prev => prev.map(item => 
-            item.id === id ? { ...item, active: !item.active } : item
-          ));
-          break;
-      }
-
-      // Update via API
-      if (item) {
-        const updatedItem = { ...item, active: !item.active };
-        await axios.put(`${API}/tax-charges/${endpoint}/${id}`, updatedItem);
-      }
-    } catch (error) {
-      console.error('Error toggling active status:', error);
-      // Revert the optimistic update on error
-      await fetchTaxChargesData();
-      alert('Error updating status. Please try again.');
+  const toggleActive = (type, id) => {
+    // For now, just update locally - can be enhanced to use API later
+    switch (type) {
+      case 'tax':
+        setTaxRates(prev => prev.map(item => 
+          item.id === id ? { ...item, active: !item.active } : item
+        ));
+        break;
+      case 'charge':
+        setServiceCharges(prev => prev.map(item => 
+          item.id === id ? { ...item, active: !item.active } : item
+        ));
+        break;
+      case 'gratuity':
+        setGratuityRules(prev => prev.map(item => 
+          item.id === id ? { ...item, active: !item.active } : item
+        ));
+        break;
+      case 'discount':
+        setDiscountPolicies(prev => prev.map(item => 
+          item.id === id ? { ...item, active: !item.active } : item
+        ));
+        break;
     }
   };
 
