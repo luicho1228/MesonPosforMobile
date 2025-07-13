@@ -2957,9 +2957,21 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         await axios.delete(`${API}/orders/${currentOrder.id}/items/${removalItemIndex}`, {
           data: removalData
         });
-        loadExistingTableOrder(); // Reload order
+        
+        // Reload the order properly based on source
+        if (editingActiveOrder) {
+          // Refresh from server for active order
+          const response = await axios.get(`${API}/orders/${currentOrder.id}`);
+          const updatedOrder = response.data;
+          setCurrentOrder(updatedOrder);
+          setCart(updatedOrder.items);
+        } else if (editingOrder) {
+          // Load existing table order
+          loadExistingTableOrder();
+        }
       } catch (error) {
         console.error('Error removing item from order:', error);
+        alert('Failed to remove item from order');
       }
     } else {
       // Remove from cart
