@@ -4591,7 +4591,6 @@ const TaxChargesComponent = ({ onBack }) => {
       alert('Error saving tax rate. Please try again.');
     }
   };
-  };
 
   const handleSaveCharge = async () => {
     if (!chargeForm.name || !chargeForm.amount) {
