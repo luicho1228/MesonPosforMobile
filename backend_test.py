@@ -1057,6 +1057,535 @@ def test_active_orders_with_cancelled():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Active Orders with Cancelled", False, error_msg)
 
+# 11. Test Table Merge Bug Fix
+def test_table_merge_bug_fix():
+    global auth_token, menu_item_id
+    print("\n=== Testing Table Merge Bug Fix ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Table Merge Bug Fix", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # Create two tables for testing
+        print("\nStep 1: Creating two tables for merge testing...")
+        table1_number = random.randint(10000, 99999)
+        table2_number = random.randint(10000, 99999)
+        
+        table1_data = {"number": table1_number, "capacity": 4}
+        table2_data = {"number": table2_number, "capacity": 4}
+        
+        response = requests.post(f"{API_URL}/tables", json=table1_data, headers=headers)
+        response.raise_for_status()
+        table1 = response.json()
+        table1_id = table1.get("id")
+        
+        response = requests.post(f"{API_URL}/tables", json=table2_data, headers=headers)
+        response.raise_for_status()
+        table2 = response.json()
+        table2_id = table2.get("id")
+        
+        print(f"Created table 1 with ID: {table1_id}")
+        print(f"Created table 2 with ID: {table2_id}")
+        
+        # Create first order and assign to table 1
+        print("\nStep 2: Creating first order for table 1...")
+        order1_data = {
+            "customer_name": "Merge Test Customer 1",
+            "customer_phone": "5551111111",
+            "customer_address": "123 Merge St",
+            "table_id": table1_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "First order"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 3.00,
+            "order_notes": "First order for merge test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order1_data, headers=headers)
+        response.raise_for_status()
+        order1 = response.json()
+        order1_id = order1.get("id")
+        
+        # Send order to kitchen to occupy table
+        response = requests.post(f"{API_URL}/orders/{order1_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Create second order and assign to table 2
+        print("\nStep 3: Creating second order for table 2...")
+        order2_data = {
+            "customer_name": "Merge Test Customer 2",
+            "customer_phone": "5552222222",
+            "customer_address": "456 Merge Ave",
+            "table_id": table2_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Second order"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 2.00,
+            "order_notes": "Second order for merge test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order2_data, headers=headers)
+        response.raise_for_status()
+        order2 = response.json()
+        order2_id = order2.get("id")
+        
+        # Send order to kitchen to occupy table
+        response = requests.post(f"{API_URL}/orders/{order2_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify both tables are occupied
+        print("\nStep 4: Verifying both tables are occupied...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        tables = response.json()
+        
+        table1_occupied = False
+        table2_occupied = False
+        
+        for table in tables:
+            if table.get("id") == table1_id and table.get("status") == "occupied":
+                table1_occupied = True
+            if table.get("id") == table2_id and table.get("status") == "occupied":
+                table2_occupied = True
+        
+        if not table1_occupied or not table2_occupied:
+            return print_test_result("Table Merge Bug Fix", False, "Tables not properly occupied before merge")
+        
+        # Test the merge operation
+        print("\nStep 5: Testing table merge operation...")
+        merge_request = {"new_table_id": table2_id}
+        
+        response = requests.post(f"{API_URL}/tables/{table1_id}/merge", json=merge_request, headers=headers)
+        response.raise_for_status()
+        merge_result = response.json()
+        
+        print(f"Merge result: {merge_result.get('message')}")
+        
+        # Verify merge results
+        print("\nStep 6: Verifying merge results...")
+        
+        # Check that table 1 is now available
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        updated_tables = response.json()
+        
+        table1_available = False
+        table2_still_occupied = False
+        
+        for table in updated_tables:
+            if table.get("id") == table1_id and table.get("status") == "available":
+                table1_available = True
+            if table.get("id") == table2_id and table.get("status") == "occupied":
+                table2_still_occupied = True
+        
+        if not table1_available:
+            return print_test_result("Table Merge Bug Fix", False, "Source table not marked as available after merge")
+        
+        if not table2_still_occupied:
+            return print_test_result("Table Merge Bug Fix", False, "Destination table not still occupied after merge")
+        
+        # Check that order 1 is deleted and order 2 contains merged items
+        try:
+            response = requests.get(f"{API_URL}/orders/{order1_id}", headers=headers)
+            if response.status_code == 200:
+                return print_test_result("Table Merge Bug Fix", False, "Source order still exists after merge")
+        except:
+            pass  # Expected - order should be deleted
+        
+        response = requests.get(f"{API_URL}/orders/{order2_id}", headers=headers)
+        response.raise_for_status()
+        merged_order = response.json()
+        
+        # Verify merged order has items from both orders
+        merged_items = merged_order.get("items", [])
+        if len(merged_items) < 2:  # Should have at least items from both orders
+            return print_test_result("Table Merge Bug Fix", False, "Merged order doesn't contain items from both orders")
+        
+        # Verify totals are recalculated
+        expected_subtotal = order1.get("subtotal", 0) + order2.get("subtotal", 0)
+        merged_subtotal = merged_order.get("subtotal", 0)
+        
+        # Allow for small floating point differences
+        if abs(merged_subtotal - expected_subtotal) > 0.01:
+            return print_test_result("Table Merge Bug Fix", False, f"Merged order subtotal incorrect. Expected: {expected_subtotal}, Got: {merged_subtotal}")
+        
+        # Clean up - pay the merged order
+        print("\nCleaning up - paying merged order...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{order2_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        return print_test_result("Table Merge Bug Fix", True, "Table merge functionality working correctly - orders merged, totals recalculated, table statuses updated")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Table merge bug fix test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Table Merge Bug Fix", False, error_msg)
+
+# 12. Test Order Item Removal Bug Fix
+def test_order_item_removal_bug_fix():
+    global auth_token, menu_item_id, table_id
+    print("\n=== Testing Order Item Removal Bug Fix ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Order Item Removal Bug Fix", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create a table if we don't have one
+    if not table_id:
+        try:
+            table_number = random.randint(10000, 99999)
+            table_data = {"number": table_number, "capacity": 4}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            table_id = result.get("id")
+        except:
+            return print_test_result("Order Item Removal Bug Fix", False, "Could not create table for testing")
+    
+    try:
+        # Create an order with multiple items
+        print("\nStep 1: Creating order with multiple items...")
+        order_data = {
+            "customer_name": "Item Removal Test",
+            "customer_phone": "5553333333",
+            "customer_address": "789 Removal St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "First item"
+                },
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Second item"
+                },
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 3,
+                    "special_instructions": "Third item"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 4.00,
+            "order_notes": "Item removal test order"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        order_id = order.get("id")
+        
+        print(f"Order created with ID: {order_id}")
+        print(f"Initial order has {len(order.get('items', []))} items")
+        print(f"Initial subtotal: ${order.get('subtotal', 0):.2f}")
+        
+        # Send order to kitchen to make it active
+        print("\nStep 2: Sending order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify order is now active
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        active_order = response.json()
+        
+        if active_order.get("status") != "pending":
+            return print_test_result("Order Item Removal Bug Fix", False, "Order not marked as pending after sending to kitchen")
+        
+        # Test removing an item from the active order
+        print("\nStep 3: Removing item from active order...")
+        item_index_to_remove = 1  # Remove the second item
+        removal_data = {
+            "reason": "customer_changed_mind",
+            "notes": "Customer changed their mind about this item"
+        }
+        
+        response = requests.delete(f"{API_URL}/orders/{order_id}/items/{item_index_to_remove}", 
+                                 json=removal_data, headers=headers)
+        response.raise_for_status()
+        removal_result = response.json()
+        
+        print(f"Item removal result: {removal_result.get('message')}")
+        
+        # Verify the order is properly updated after item removal
+        print("\nStep 4: Verifying order update after item removal...")
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        updated_order = response.json()
+        
+        # Check that the order now has one less item
+        updated_items = updated_order.get("items", [])
+        if len(updated_items) != 2:  # Should have 2 items left (originally 3, removed 1)
+            return print_test_result("Order Item Removal Bug Fix", False, f"Order should have 2 items after removal, but has {len(updated_items)}")
+        
+        # Check that removed items are tracked
+        removed_items = updated_order.get("removed_items", [])
+        if len(removed_items) != 1:
+            return print_test_result("Order Item Removal Bug Fix", False, f"Should have 1 removed item tracked, but has {len(removed_items)}")
+        
+        # Verify the removed item has removal info
+        removed_item = removed_items[0]
+        if "removal_info" not in removed_item:
+            return print_test_result("Order Item Removal Bug Fix", False, "Removed item missing removal_info")
+        
+        removal_info = removed_item["removal_info"]
+        if removal_info.get("reason") != "customer_changed_mind":
+            return print_test_result("Order Item Removal Bug Fix", False, "Removal reason not properly recorded")
+        
+        # Verify totals are recalculated
+        original_subtotal = order.get("subtotal", 0)
+        updated_subtotal = updated_order.get("subtotal", 0)
+        
+        if updated_subtotal >= original_subtotal:
+            return print_test_result("Order Item Removal Bug Fix", False, "Order subtotal not reduced after item removal")
+        
+        print(f"Original subtotal: ${original_subtotal:.2f}")
+        print(f"Updated subtotal: ${updated_subtotal:.2f}")
+        print(f"Reduction: ${original_subtotal - updated_subtotal:.2f}")
+        
+        # Test removing another item
+        print("\nStep 5: Removing another item...")
+        removal_data2 = {
+            "reason": "wrong_item",
+            "notes": "Wrong item was ordered"
+        }
+        
+        response = requests.delete(f"{API_URL}/orders/{order_id}/items/0", 
+                                 json=removal_data2, headers=headers)
+        response.raise_for_status()
+        
+        # Verify the order is updated again
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        final_order = response.json()
+        
+        final_items = final_order.get("items", [])
+        final_removed_items = final_order.get("removed_items", [])
+        
+        if len(final_items) != 1:  # Should have 1 item left
+            return print_test_result("Order Item Removal Bug Fix", False, f"Order should have 1 item after second removal, but has {len(final_items)}")
+        
+        if len(final_removed_items) != 2:  # Should have 2 removed items tracked
+            return print_test_result("Order Item Removal Bug Fix", False, f"Should have 2 removed items tracked, but has {len(final_removed_items)}")
+        
+        # Clean up - pay the order
+        print("\nCleaning up - paying order...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        return print_test_result("Order Item Removal Bug Fix", True, "Order item removal working correctly - items removed, totals recalculated, removal tracking functional")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Order item removal bug fix test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Order Item Removal Bug Fix", False, error_msg)
+
+# 13. Test Order Editing and Reloading
+def test_order_editing_and_reloading():
+    global auth_token, menu_item_id, table_id
+    print("\n=== Testing Order Editing and Reloading ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Order Editing and Reloading", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create a table if we don't have one
+    if not table_id:
+        try:
+            table_number = random.randint(10000, 99999)
+            table_data = {"number": table_number, "capacity": 4}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            table_id = result.get("id")
+        except:
+            return print_test_result("Order Editing and Reloading", False, "Could not create table for testing")
+    
+    try:
+        # Create an order
+        print("\nStep 1: Creating order for editing test...")
+        order_data = {
+            "customer_name": "Edit Test Customer",
+            "customer_phone": "5554444444",
+            "customer_address": "321 Edit St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Original item"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 2.50,
+            "order_notes": "Original order notes"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        order_id = order.get("id")
+        
+        print(f"Order created with ID: {order_id}")
+        
+        # Send order to kitchen to make it active
+        print("\nStep 2: Sending order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify order is active
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        active_order = response.json()
+        
+        if active_order.get("status") != "pending":
+            return print_test_result("Order Editing and Reloading", False, "Order not marked as pending after sending to kitchen")
+        
+        print(f"Order status: {active_order.get('status')}")
+        print(f"Original items count: {len(active_order.get('items', []))}")
+        print(f"Original subtotal: ${active_order.get('subtotal', 0):.2f}")
+        
+        # Test editing the active order
+        print("\nStep 3: Editing active order...")
+        updated_order_data = {
+            "customer_name": "Updated Edit Test Customer",
+            "customer_phone": "5554444444",
+            "customer_address": "321 Edit St, Updated",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,  # Changed quantity
+                    "special_instructions": "Updated item instructions"
+                },
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,  # Added new item
+                    "special_instructions": "Additional item"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 3.50,  # Changed tip
+            "order_notes": "Updated order notes"
+        }
+        
+        response = requests.put(f"{API_URL}/orders/{order_id}", json=updated_order_data, headers=headers)
+        response.raise_for_status()
+        edited_order = response.json()
+        
+        print(f"Order edited successfully")
+        
+        # Test reloading the order from database
+        print("\nStep 4: Reloading order from database...")
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        reloaded_order = response.json()
+        
+        # Verify the order was properly updated and reloaded
+        print("\nStep 5: Verifying order updates...")
+        
+        # Check customer name update
+        if reloaded_order.get("customer_name") != "Updated Edit Test Customer":
+            return print_test_result("Order Editing and Reloading", False, "Customer name not updated correctly")
+        
+        # Check address update
+        if reloaded_order.get("customer_address") != "321 Edit St, Updated":
+            return print_test_result("Order Editing and Reloading", False, "Customer address not updated correctly")
+        
+        # Check items count
+        reloaded_items = reloaded_order.get("items", [])
+        if len(reloaded_items) != 2:
+            return print_test_result("Order Editing and Reloading", False, f"Expected 2 items after edit, but got {len(reloaded_items)}")
+        
+        # Check tip update
+        if reloaded_order.get("tip") != 3.50:
+            return print_test_result("Order Editing and Reloading", False, f"Tip not updated correctly. Expected 3.50, got {reloaded_order.get('tip')}")
+        
+        # Check order notes update
+        if reloaded_order.get("order_notes") != "Updated order notes":
+            return print_test_result("Order Editing and Reloading", False, "Order notes not updated correctly")
+        
+        # Check that totals were recalculated
+        original_subtotal = active_order.get("subtotal", 0)
+        reloaded_subtotal = reloaded_order.get("subtotal", 0)
+        
+        if reloaded_subtotal <= original_subtotal:
+            return print_test_result("Order Editing and Reloading", False, "Subtotal not recalculated correctly after adding items")
+        
+        print(f"Original subtotal: ${original_subtotal:.2f}")
+        print(f"Reloaded subtotal: ${reloaded_subtotal:.2f}")
+        print(f"Increase: ${reloaded_subtotal - original_subtotal:.2f}")
+        
+        # Verify order status is maintained
+        if reloaded_order.get("status") != "pending":
+            return print_test_result("Order Editing and Reloading", False, "Order status changed unexpectedly during edit")
+        
+        # Test that the order appears correctly in active orders
+        print("\nStep 6: Verifying order appears in active orders...")
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        active_orders = response.json()
+        
+        order_found_in_active = False
+        for active_order in active_orders:
+            if active_order.get("id") == order_id:
+                order_found_in_active = True
+                # Verify the active order has the updated data
+                if active_order.get("customer_name") != "Updated Edit Test Customer":
+                    return print_test_result("Order Editing and Reloading", False, "Active orders endpoint not showing updated customer name")
+                if len(active_order.get("items", [])) != 2:
+                    return print_test_result("Order Editing and Reloading", False, "Active orders endpoint not showing updated items count")
+                break
+        
+        if not order_found_in_active:
+            return print_test_result("Order Editing and Reloading", False, "Edited order not found in active orders")
+        
+        # Clean up - pay the order
+        print("\nCleaning up - paying order...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        return print_test_result("Order Editing and Reloading", True, "Order editing and reloading working correctly - updates persisted, totals recalculated, active orders updated")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Order editing and reloading test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Order Editing and Reloading", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
