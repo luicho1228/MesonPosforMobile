@@ -4700,24 +4700,43 @@ const TaxChargesComponent = ({ onBack }) => {
       return;
     }
 
-    const discountData = {
-      ...discountForm,
-      amount: amount,
-      id: editingItem ? editingItem.id : Date.now().toString()
-    };
+    try {
+      const discountData = {
+        name: discountForm.name,
+        description: discountForm.description,
+        amount: amount,
+        type: discountForm.type,
+        active: discountForm.active,
+        applies_to_order_types: discountForm.applies_to_order_types,
+        minimum_order_amount: parseFloat(discountForm.minimum_order_amount) || 0,
+        requires_manager_approval: discountForm.requires_manager_approval,
+        valid_from: discountForm.valid_from || null,
+        valid_until: discountForm.valid_until || null,
+        usage_limit: parseInt(discountForm.usage_limit) || 0
+      };
 
-    if (editingItem) {
-      setDiscountPolicies(prev => prev.map(policy => policy.id === editingItem.id ? discountData : policy));
-      alert('Discount policy updated successfully');
-    } else {
-      setDiscountPolicies(prev => [...prev, discountData]);
-      alert('Discount policy added successfully');
+      if (editingItem) {
+        // Update existing discount policy
+        await axios.put(`${API}/tax-charges/discount-policies/${editingItem.id}`, discountData);
+        setDiscountPolicies(prev => prev.map(item => 
+          item.id === editingItem.id ? { ...item, ...discountData } : item
+        ));
+        alert('Discount policy updated successfully');
+      } else {
+        // Create new discount policy
+        const response = await axios.post(`${API}/tax-charges/discount-policies`, discountData);
+        setDiscountPolicies(prev => [...prev, response.data]);
+        alert('Discount policy added successfully');
+      }
+
+      setShowDiscountModal(false);
+      setEditingItem(null);
+      resetDiscountForm();
+    } catch (error) {
+      console.error('Error saving discount policy:', error);
+      alert('Error saving discount policy. Please try again.');
     }
-
-    setShowDiscountModal(false);
-    setEditingItem(null);
-    resetDiscountForm();
-    saveTaxChargesData();
+  };
   };
 
   const handleEditTax = (tax) => {
