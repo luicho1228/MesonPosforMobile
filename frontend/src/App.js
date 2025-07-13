@@ -1272,7 +1272,10 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
   const handleCancelOrder = async (orderId) => {
     if (window.confirm('Are you sure you want to cancel this order?')) {
       try {
-        await axios.post(`${API}/orders/${orderId}/cancel`);
+        await axios.post(`${API}/orders/${orderId}/cancel`, {
+          reason: 'other',
+          notes: 'Order cancelled by user'
+        });
         alert('Order cancelled successfully');
         fetchActiveOrders(); // Refresh the list
       } catch (error) {
