@@ -1105,7 +1105,7 @@ async def remove_order_item(order_id: str, item_index: int, removal: ItemRemoval
     items.pop(item_index)
     
     # Recalculate totals
-    subtotal = sum(item["total_price"] for item in items)
+    subtotal = sum(item.get("total_price", 0) or (item.get("price", 0) * item.get("quantity", 1)) for item in items)
     tax = subtotal * 0.08
     total = subtotal + tax + order.get("tip", 0)
     
