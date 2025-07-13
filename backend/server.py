@@ -340,6 +340,115 @@ class TimeEntry(BaseModel):
     overtime_hours: float = 0.0
     created_at: datetime = Field(default_factory=get_current_time)
 
+# Tax & Charges Models
+class TaxRateType(str, Enum):
+    PERCENTAGE = "percentage"
+    FIXED = "fixed"
+
+class ChargeType(str, Enum):
+    PERCENTAGE = "percentage"
+    FIXED = "fixed"
+
+class TaxRate(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str = ""
+    rate: float  # percentage (e.g., 8.5 for 8.5%) or fixed amount
+    type: TaxRateType = TaxRateType.PERCENTAGE
+    active: bool = True
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+    created_at: datetime = Field(default_factory=get_current_time)
+    updated_at: datetime = Field(default_factory=get_current_time)
+
+class ServiceCharge(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str = ""
+    amount: float  # percentage or fixed amount
+    type: ChargeType = ChargeType.PERCENTAGE
+    active: bool = True
+    mandatory: bool = False
+    applies_to_subtotal: bool = True  # If false, applies to total
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+    minimum_order_amount: float = 0.0
+    created_at: datetime = Field(default_factory=get_current_time)
+    updated_at: datetime = Field(default_factory=get_current_time)
+
+class GratuityRule(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str = ""
+    amount: float  # percentage or fixed amount
+    type: ChargeType = ChargeType.PERCENTAGE
+    active: bool = True
+    minimum_order_amount: float = 0.0
+    maximum_order_amount: float = 0.0  # 0 means no maximum
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+    party_size_minimum: int = 0  # minimum party size for auto-gratuity
+    created_at: datetime = Field(default_factory=get_current_time)
+    updated_at: datetime = Field(default_factory=get_current_time)
+
+class DiscountPolicy(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str = ""
+    amount: float  # percentage or fixed amount
+    type: ChargeType = ChargeType.PERCENTAGE
+    active: bool = True
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+    minimum_order_amount: float = 0.0
+    requires_manager_approval: bool = False
+    valid_from: Optional[datetime] = None
+    valid_until: Optional[datetime] = None
+    usage_limit: int = 0  # 0 means unlimited
+    times_used: int = 0
+    created_at: datetime = Field(default_factory=get_current_time)
+    updated_at: datetime = Field(default_factory=get_current_time)
+
+# Create/Update models for Tax & Charges
+class TaxRateCreate(BaseModel):
+    name: str
+    description: str = ""
+    rate: float
+    type: TaxRateType = TaxRateType.PERCENTAGE
+    active: bool = True
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+
+class ServiceChargeCreate(BaseModel):
+    name: str
+    description: str = ""
+    amount: float
+    type: ChargeType = ChargeType.PERCENTAGE
+    active: bool = True
+    mandatory: bool = False
+    applies_to_subtotal: bool = True
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+    minimum_order_amount: float = 0.0
+
+class GratuityRuleCreate(BaseModel):
+    name: str
+    description: str = ""
+    amount: float
+    type: ChargeType = ChargeType.PERCENTAGE
+    active: bool = True
+    minimum_order_amount: float = 0.0
+    maximum_order_amount: float = 0.0
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+    party_size_minimum: int = 0
+
+class DiscountPolicyCreate(BaseModel):
+    name: str
+    description: str = ""
+    amount: float
+    type: ChargeType = ChargeType.PERCENTAGE
+    active: bool = True
+    applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
+    minimum_order_amount: float = 0.0
+    requires_manager_approval: bool = False
+    valid_from: Optional[datetime] = None
+    valid_until: Optional[datetime] = None
+    usage_limit: int = 0
+
 # Authentication helpers
 def create_access_token(data: dict):
     to_encode = data.copy()
