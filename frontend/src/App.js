@@ -3639,6 +3639,11 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                       // Assign available table
                       setAssignedTable(table);
                       setShowTableModal(false);
+                      
+                      // If editing an active order, update the table assignment in database
+                      if (editingActiveOrder && currentOrder) {
+                        updateOrderTableAssignment(currentOrder.id, table.id);
+                      }
                     }
                   }}
                   className={`p-4 rounded-lg border-2 text-center font-medium transition-colors ${
