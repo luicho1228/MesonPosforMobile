@@ -3231,13 +3231,18 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                     <span className="font-medium">Table {assignedTable.number}</span>
                     <span className="text-sm text-gray-600 ml-2">({assignedTable.status})</span>
                   </div>
-                  {!fromTableManagement && (
+                  {!fromTableManagement && !editingActiveOrder && (
                     <button
                       onClick={() => setShowTableModal(true)}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
                     >
                       Change Table
                     </button>
+                  )}
+                  {editingActiveOrder && (
+                    <span className="text-sm text-green-600 font-medium">
+                      (Assigned Table)
+                    </span>
                   )}
                 </div>
               ) : (
