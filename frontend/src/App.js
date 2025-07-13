@@ -3327,8 +3327,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
             </div>
           )}
 
-          {/* Table Selection for Dine In */}
-          {orderType === 'dine_in' && (
+          {/* Table Selection for Dine In - Don't show when from table management */}
+          {orderType === 'dine_in' && !fromTableManagement && (
             <div className="mb-6 bg-white rounded-xl p-4">
               <h3 className="font-bold text-lg mb-4">Selected Table</h3>
               
