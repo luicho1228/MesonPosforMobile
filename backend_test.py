@@ -1635,6 +1635,19 @@ def run_all_tests():
         
         active_orders_success, active_orders_details = test_active_orders_with_cancelled()
         test_results["Active Orders Endpoint After Reversion"] = {"success": active_orders_success, "details": active_orders_details}
+        
+        # Test the specific bug fixes mentioned in the review request
+        merge_success, merge_details = test_table_merge_bug_fix()
+        test_results["Table Merge Bug Fix"]["success"] = merge_success
+        test_results["Table Merge Bug Fix"]["details"] = merge_details
+        
+        removal_success, removal_details = test_order_item_removal_bug_fix()
+        test_results["Order Item Removal Bug Fix"]["success"] = removal_success
+        test_results["Order Item Removal Bug Fix"]["details"] = removal_details
+        
+        editing_success, editing_details = test_order_editing_and_reloading()
+        test_results["Order Editing and Reloading"]["success"] = editing_success
+        test_results["Order Editing and Reloading"]["details"] = editing_details
     
     # Print summary
     print("\n========================================")
