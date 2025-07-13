@@ -2852,6 +2852,10 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
 
   const loadActiveOrder = async () => {
     const order = editingActiveOrder;
+    console.log('🔍 DEBUG loadActiveOrder: order =', order);
+    console.log('🔍 DEBUG loadActiveOrder: order.table_id =', order.table_id);
+    console.log('🔍 DEBUG loadActiveOrder: order.table_number =', order.table_number);
+    
     setCurrentOrder(order);
     setCart(order.items);
     setCustomerInfo({
@@ -2864,17 +2868,26 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     // If order has a table assigned, set the assigned table state
     if (order.table_id) {
       try {
+        console.log('🔍 DEBUG loadActiveOrder: Fetching tables for table_id:', order.table_id);
         const tableResponse = await axios.get(`${API}/tables`);
         const tables = tableResponse.data;
+        console.log('🔍 DEBUG loadActiveOrder: All tables:', tables);
+        
         const assignedTableData = tables.find(table => table.id === order.table_id);
+        console.log('🔍 DEBUG loadActiveOrder: Found assignedTableData:', assignedTableData);
+        
         if (assignedTableData) {
           setAssignedTable(assignedTableData);
+          console.log('🔍 DEBUG loadActiveOrder: Set assignedTable to:', assignedTableData);
+        } else {
+          console.log('🔍 DEBUG loadActiveOrder: No matching table found for table_id:', order.table_id);
         }
       } catch (error) {
         console.error('Error loading assigned table:', error);
       }
     } else {
       // Clear assigned table if order has no table
+      console.log('🔍 DEBUG loadActiveOrder: Order has no table_id, clearing assignedTable');
       setAssignedTable(null);
     }
   };
