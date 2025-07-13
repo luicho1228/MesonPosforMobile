@@ -4559,19 +4559,29 @@ const TaxChargesComponent = ({ onBack }) => {
       return;
     }
 
-    const taxData = {
-      ...taxForm,
-      rate: rate,
-      id: editingItem ? editingItem.id : Date.now().toString()
-    };
+    try {
+      const taxData = {
+        name: taxForm.name,
+        description: taxForm.description,
+        rate: rate,
+        type: taxForm.type,
+        active: taxForm.active,
+        applies_to_order_types: taxForm.applies_to_order_types
+      };
 
-    if (editingItem) {
-      setTaxRates(prev => prev.map(tax => tax.id === editingItem.id ? taxData : tax));
-      alert('Tax rate updated successfully');
-    } else {
-      setTaxRates(prev => [...prev, taxData]);
-      alert('Tax rate added successfully');
-    }
+      if (editingItem) {
+        // Update existing tax rate
+        await axios.put(`${API}/tax-charges/tax-rates/${editingItem.id}`, taxData);
+        setTaxRates(prev => prev.map(item => 
+          item.id === editingItem.id ? { ...item, ...taxData } : item
+        ));
+        alert('Tax rate updated successfully');
+      } else {
+        // Create new tax rate
+        const response = await axios.post(`${API}/tax-charges/tax-rates`, taxData);
+        setTaxRates(prev => [...prev, response.data]);
+        alert('Tax rate added successfully');
+      }
 
     setShowTaxModal(false);
     setEditingItem(null);
