@@ -2708,6 +2708,10 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   };
 
   const resetCustomerInfo = () => {
+    setCustomerInfo({ name: '', phone: '', address: '', apartment: '' });
+    setShowCustomerInfo(false);
+  };
+
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
   const [orderType, setOrderType] = useState(fromTableManagement ? 'dine_in' : (selectedTable ? 'dine_in' : 'takeout'));
   const [tip, setTip] = useState(0);
