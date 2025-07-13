@@ -4429,16 +4429,7 @@ const TaxChargesComponent = ({ onBack }) => {
     }
   };
 
-  const saveTaxChargesData = () => {
-    const data = {
-      taxRates,
-      serviceCharges,
-      gratuityRules,
-      discountPolicies,
-      lastUpdated: new Date().toISOString()
-    };
-    localStorage.setItem('taxChargesData', JSON.stringify(data));
-  };
+  // Remove saveTaxChargesData function as we now save directly to API
 
   const getDefaultTaxRates = () => [
     {
