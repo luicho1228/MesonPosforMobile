@@ -4649,7 +4649,6 @@ const TaxChargesComponent = ({ onBack }) => {
     resetDiscountForm();
     saveTaxChargesData();
   };
-  };
 
   const handleEditTax = (tax) => {
     setTaxForm({
