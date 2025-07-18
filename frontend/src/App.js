@@ -4774,6 +4774,61 @@ const TaxChargesComponent = ({ onBack }) => {
     saveTaxChargesData();
   };
 
+  const resetTaxForm = () => {
+    setTaxForm({
+      name: '',
+      type: 'percentage',
+      rate: '',
+      description: '',
+      active: true
+    });
+  };
+
+  const resetChargeForm = () => {
+    setChargeForm({
+      name: '',
+      type: 'percentage',
+      amount: '',
+      description: '',
+      active: true,
+      mandatory: false
+    });
+  };
+
+  const resetGratuityForm = () => {
+    setGratuityForm({
+      name: '',
+      type: 'percentage',
+      amount: '',
+      description: '',
+      active: true
+    });
+  };
+
+  const resetDiscountForm = () => {
+    setDiscountForm({
+      name: '',
+      type: 'percentage',
+      amount: '',
+      description: '',
+      active: true
+    });
+  };
+
+  const calculateTotalTaxRate = () => {
+    return taxRates
+      .filter(tax => tax.active && tax.type === 'percentage')
+      .reduce((total, tax) => total + tax.rate, 0);
+  };
+
+  const stats = {
+    activeTaxes: taxRates.filter(tax => tax.active).length,
+    totalTaxRate: calculateTotalTaxRate(),
+    activeCharges: serviceCharges.filter(charge => charge.active).length,
+    activeGratuityRules: gratuityRules.filter(rule => rule.active).length,
+    activeDiscounts: discountPolicies.filter(discount => discount.active).length
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
