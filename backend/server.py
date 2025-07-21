@@ -268,6 +268,7 @@ class Order(BaseModel):
     delivery_instructions: str = ""
     order_notes: str = ""  # Notes/comments for the order (appears on receipt)
     estimated_time: Optional[datetime] = None
+    cancellation_info: Optional[Dict] = None  # Cancellation details when order is cancelled
 
     class Config:
         json_encoders = {
