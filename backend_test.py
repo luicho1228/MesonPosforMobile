@@ -3745,6 +3745,11 @@ def run_all_tests():
         final_cleanup_success, final_cleanup_details = test_final_data_cleanup_tables_synchronization()
         test_results["Final Data Cleanup - Tables 1-4 Synchronization"]["success"] = final_cleanup_success
         test_results["Final Data Cleanup - Tables 1-4 Synchronization"]["details"] = final_cleanup_details
+        
+        # Test Empty Order Cancel Fix (Review Request)
+        empty_order_cancel_success, empty_order_cancel_details = test_empty_order_cancel_fix()
+        test_results["Empty Order Cancel Fix"]["success"] = empty_order_cancel_success
+        test_results["Empty Order Cancel Fix"]["details"] = empty_order_cancel_details
     
     # Print summary
     print("\n========================================")
