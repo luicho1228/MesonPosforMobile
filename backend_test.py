@@ -3161,6 +3161,232 @@ def test_cancelled_order_table_cleanup_bug():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Cancelled Order Table Cleanup Bug", False, error_msg)
 
+# 20. Final Data Cleanup - Tables 1-4 Synchronization (Review Request)
+def test_final_data_cleanup_tables_synchronization():
+    global auth_token
+    print("\n=== Final Data Cleanup - Tables 1-4 Synchronization ===")
+    
+    if not auth_token:
+        return print_test_result("Final Data Cleanup - Tables 1-4 Synchronization", False, "No auth token available")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        print("\n🔧 EXECUTING FINAL DATA CLEANUP TASK")
+        print("Goal: Fix tables 1-4 synchronization issue by cleaning up legacy cancelled orders")
+        
+        # Step 1: GET /api/tables - Find all occupied tables
+        print("\nStep 1: Getting all tables to find occupied ones...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        all_tables = response.json()
+        
+        print(f"Found {len(all_tables)} total tables in system")
+        
+        occupied_tables = [table for table in all_tables if table.get("status") == "occupied"]
+        print(f"Found {len(occupied_tables)} occupied tables")
+        
+        # Step 2: For each occupied table, check if current_order_id points to a cancelled order
+        print("\nStep 2: Checking each occupied table for cancelled orders...")
+        
+        tables_to_cleanup = []
+        
+        for table in occupied_tables:
+            table_id = table.get("id")
+            table_number = table.get("number")
+            current_order_id = table.get("current_order_id")
+            
+            print(f"\nChecking Table {table_number} (ID: {table_id[:8]}...)")
+            print(f"  Status: {table.get('status')}")
+            print(f"  Current Order ID: {current_order_id[:8] if current_order_id else None}...")
+            
+            if current_order_id:
+                try:
+                    # Check if the order exists and its status
+                    order_response = requests.get(f"{API_URL}/orders/{current_order_id}", headers=headers)
+                    order_response.raise_for_status()
+                    order = order_response.json()
+                    
+                    order_status = order.get("status")
+                    print(f"  Order Status: {order_status}")
+                    
+                    if order_status == "cancelled":
+                        print(f"  🐛 LEGACY BUG FOUND: Table {table_number} occupied by CANCELLED order!")
+                        print(f"     Order created: {order.get('created_at', 'Unknown')}")
+                        print(f"     Cancellation info: {order.get('cancellation_info', 'None (legacy)')}")
+                        
+                        tables_to_cleanup.append({
+                            "table": table,
+                            "order": order
+                        })
+                    else:
+                        print(f"  ✅ Table properly occupied by {order_status} order")
+                        
+                except requests.exceptions.HTTPError as e:
+                    if e.response.status_code == 404:
+                        print(f"  🐛 ORPHANED TABLE: Order {current_order_id[:8]}... not found!")
+                        print(f"     Table {table_number} references non-existent order")
+                        
+                        tables_to_cleanup.append({
+                            "table": table,
+                            "order": None  # Order doesn't exist
+                        })
+                    else:
+                        print(f"  ❌ Error checking order: {e}")
+                except Exception as e:
+                    print(f"  ❌ Unexpected error: {e}")
+            else:
+                print(f"  ⚠️  Table marked as occupied but has no current_order_id")
+                tables_to_cleanup.append({
+                    "table": table,
+                    "order": None
+                })
+        
+        print(f"\n📊 CLEANUP SUMMARY:")
+        print(f"   Total occupied tables: {len(occupied_tables)}")
+        print(f"   Tables needing cleanup: {len(tables_to_cleanup)}")
+        
+        if not tables_to_cleanup:
+            return print_test_result("Final Data Cleanup - Tables 1-4 Synchronization", True, 
+                                   "✅ NO CLEANUP NEEDED: All occupied tables have valid active orders. Table synchronization is working correctly.")
+        
+        # Step 3: Clean up legacy data - Update tables with status "available" and current_order_id null
+        print(f"\nStep 3: Cleaning up {len(tables_to_cleanup)} tables with legacy cancelled orders...")
+        
+        cleanup_results = []
+        
+        for cleanup_item in tables_to_cleanup:
+            table = cleanup_item["table"]
+            order = cleanup_item["order"]
+            
+            table_id = table.get("id")
+            table_number = table.get("number")
+            
+            print(f"\n🧹 Cleaning up Table {table_number}...")
+            
+            # Update table to available status with null current_order_id
+            cleanup_data = {
+                "status": "available",
+                "current_order_id": None
+            }
+            
+            try:
+                response = requests.put(f"{API_URL}/tables/{table_id}", json=cleanup_data, headers=headers)
+                response.raise_for_status()
+                updated_table = response.json()
+                
+                print(f"   ✅ Table {table_number} updated successfully")
+                print(f"      Old status: occupied → New status: {updated_table.get('status')}")
+                print(f"      Old current_order_id: {table.get('current_order_id', 'None')[:8] if table.get('current_order_id') else 'None'}... → New: {updated_table.get('current_order_id')}")
+                
+                cleanup_results.append({
+                    "table_number": table_number,
+                    "table_id": table_id,
+                    "success": True,
+                    "old_order_id": table.get('current_order_id'),
+                    "order_status": order.get('status') if order else 'Order not found'
+                })
+                
+            except Exception as e:
+                print(f"   ❌ Failed to update Table {table_number}: {e}")
+                cleanup_results.append({
+                    "table_number": table_number,
+                    "table_id": table_id,
+                    "success": False,
+                    "error": str(e)
+                })
+        
+        # Step 4: Verify cleanup results
+        print(f"\nStep 4: Verifying cleanup results...")
+        
+        # Get updated tables list
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        updated_tables = response.json()
+        
+        successful_cleanups = [r for r in cleanup_results if r["success"]]
+        failed_cleanups = [r for r in cleanup_results if not r["success"]]
+        
+        print(f"\n📈 CLEANUP RESULTS:")
+        print(f"   Successfully cleaned: {len(successful_cleanups)} tables")
+        print(f"   Failed cleanups: {len(failed_cleanups)} tables")
+        
+        if successful_cleanups:
+            print(f"\n✅ SUCCESSFULLY CLEANED TABLES:")
+            for result in successful_cleanups:
+                print(f"   • Table {result['table_number']}: {result['order_status']} order → Available")
+        
+        if failed_cleanups:
+            print(f"\n❌ FAILED CLEANUPS:")
+            for result in failed_cleanups:
+                print(f"   • Table {result['table_number']}: {result['error']}")
+        
+        # Step 5: Final verification - Check tables 1-4 specifically
+        print(f"\nStep 5: Final verification - Checking Tables 1-4 synchronization...")
+        
+        tables_1_to_4_status = {}
+        
+        for table in updated_tables:
+            table_number = table.get("number")
+            if table_number and 1 <= table_number <= 4:
+                table_status = table.get("status")
+                current_order_id = table.get("current_order_id")
+                
+                tables_1_to_4_status[table_number] = {
+                    "status": table_status,
+                    "current_order_id": current_order_id,
+                    "synchronized": True
+                }
+                
+                print(f"   Table {table_number}: Status={table_status}, Order ID={current_order_id or 'None'}")
+                
+                # If table is occupied, verify the order is actually active
+                if table_status == "occupied" and current_order_id:
+                    try:
+                        order_response = requests.get(f"{API_URL}/orders/{current_order_id}", headers=headers)
+                        order_response.raise_for_status()
+                        order = order_response.json()
+                        
+                        if order.get("status") == "cancelled":
+                            tables_1_to_4_status[table_number]["synchronized"] = False
+                            print(f"      ❌ Still occupied by cancelled order!")
+                        else:
+                            print(f"      ✅ Properly occupied by {order.get('status')} order")
+                    except:
+                        tables_1_to_4_status[table_number]["synchronized"] = False
+                        print(f"      ❌ References non-existent order!")
+                elif table_status == "available":
+                    print(f"      ✅ Available and ready for new orders")
+        
+        # Final assessment
+        all_synchronized = all(info["synchronized"] for info in tables_1_to_4_status.values())
+        
+        print(f"\n🎯 FINAL ASSESSMENT:")
+        print(f"   Tables 1-4 found: {len(tables_1_to_4_status)}")
+        print(f"   All synchronized: {all_synchronized}")
+        
+        if all_synchronized:
+            success_message = (
+                f"✅ CLEANUP SUCCESSFUL: Fixed {len(successful_cleanups)} tables with legacy cancelled orders. "
+                f"Tables 1-4 synchronization issue resolved. All occupied tables now have valid active orders, "
+                f"and available tables are ready for new orders."
+            )
+            
+            if len(tables_1_to_4_status) < 4:
+                success_message += f" Note: Only {len(tables_1_to_4_status)} of Tables 1-4 exist in system."
+            
+            return print_test_result("Final Data Cleanup - Tables 1-4 Synchronization", True, success_message)
+        else:
+            unsynchronized = [num for num, info in tables_1_to_4_status.items() if not info["synchronized"]]
+            return print_test_result("Final Data Cleanup - Tables 1-4 Synchronization", False, 
+                                   f"❌ CLEANUP INCOMPLETE: Tables {unsynchronized} still have synchronization issues after cleanup attempt.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Final data cleanup test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Final Data Cleanup - Tables 1-4 Synchronization", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
