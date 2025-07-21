@@ -3388,6 +3388,268 @@ def test_final_data_cleanup_tables_synchronization():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Final Data Cleanup - Tables 1-4 Synchronization", False, error_msg)
 
+# Test Empty Order Cancel Fix
+def test_empty_order_cancel_fix():
+    global auth_token, menu_item_id, table_id
+    print("\n=== Testing Empty Order Cancel Fix ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Empty Order Cancel Fix", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create a table if we don't have one
+    if not table_id:
+        try:
+            table_number = random.randint(10000, 99999)
+            table_data = {"number": table_number, "capacity": 4}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            table_id = result.get("id")
+            print(f"Created table with ID: {table_id}")
+        except:
+            return print_test_result("Empty Order Cancel Fix", False, "Could not create table for testing")
+    
+    try:
+        # Step 1: Create Test Order - Create a dine-in order with a menu item and send it to kitchen
+        print("\nStep 1: Creating dine-in order with menu item...")
+        order_data = {
+            "customer_name": "Empty Order Test Customer",
+            "customer_phone": "5557777777",
+            "customer_address": "123 Empty Order St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Test item for empty order scenario"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 3.00,
+            "order_notes": "Test order for empty order cancel fix"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        order_id = order.get("id")
+        
+        print(f"Order created with ID: {order_id}")
+        print(f"Initial order has {len(order.get('items', []))} items")
+        print(f"Initial subtotal: ${order.get('subtotal', 0):.2f}")
+        
+        # Send order to kitchen to make it active
+        print("\nSending order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify order is now active and table is occupied
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        active_order = response.json()
+        
+        if active_order.get("status") != "pending":
+            return print_test_result("Empty Order Cancel Fix", False, "Order not marked as pending after sending to kitchen")
+        
+        print(f"✅ Order sent to kitchen successfully, status: {active_order.get('status')}")
+        
+        # Verify table is occupied
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        tables = response.json()
+        
+        table_occupied = False
+        for table in tables:
+            if table.get("id") == table_id and table.get("status") == "occupied":
+                table_occupied = True
+                print(f"✅ Table {table.get('number')} is properly occupied")
+                break
+        
+        if not table_occupied:
+            return print_test_result("Empty Order Cancel Fix", False, "Table not marked as occupied after sending order to kitchen")
+        
+        # Step 2: Remove All Items - Remove all items from the order to make it empty
+        print("\nStep 2: Removing all items from the order...")
+        
+        # Remove the first (and only) item
+        item_index_to_remove = 0
+        removal_data = {
+            "reason": "customer_changed_mind",
+            "notes": "Customer removed all items from order"
+        }
+        
+        response = requests.delete(f"{API_URL}/orders/{order_id}/items/{item_index_to_remove}", 
+                                 json=removal_data, headers=headers)
+        response.raise_for_status()
+        removal_result = response.json()
+        
+        print(f"Item removal result: {removal_result.get('message')}")
+        
+        # Verify the order is now empty
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        empty_order = response.json()
+        
+        remaining_items = empty_order.get("items", [])
+        if len(remaining_items) != 0:
+            return print_test_result("Empty Order Cancel Fix", False, f"Order should be empty but has {len(remaining_items)} items")
+        
+        print(f"✅ Order is now empty (0 items remaining)")
+        print(f"Order subtotal after removal: ${empty_order.get('subtotal', 0):.2f}")
+        
+        # Step 3: Test Cancel API - Test the cancel order endpoint directly with proper POST request
+        print("\nStep 3: Testing cancel order endpoint with POST request...")
+        
+        # Test the specific cancellation data mentioned in the review request
+        cancellation_data = {
+            "reason": "empty_order",
+            "notes": "Order cancelled because all items were removed"
+        }
+        
+        # This is the key test - ensure we're using POST method, not PUT
+        print("Making POST request to cancel endpoint...")
+        response = requests.post(f"{API_URL}/orders/{order_id}/cancel", json=cancellation_data, headers=headers)
+        response.raise_for_status()
+        cancel_result = response.json()
+        
+        print(f"✅ Cancel request successful: {cancel_result.get('message')}")
+        
+        # Verify cancellation info is returned
+        cancellation_info = cancel_result.get("cancellation_info")
+        if not cancellation_info:
+            return print_test_result("Empty Order Cancel Fix", False, "Cancellation info not returned in response")
+        
+        print(f"Cancellation reason: {cancellation_info.get('reason')}")
+        print(f"Cancellation notes: {cancellation_info.get('notes')}")
+        print(f"Cancelled by: {cancellation_info.get('cancelled_by')}")
+        
+        # Step 4: Verify Results
+        print("\nStep 4: Verifying cancellation results...")
+        
+        # Verify order status changes to "cancelled"
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        cancelled_order = response.json()
+        
+        if cancelled_order.get("status") != "cancelled":
+            return print_test_result("Empty Order Cancel Fix", False, f"Order status should be 'cancelled' but is '{cancelled_order.get('status')}'")
+        
+        print(f"✅ Order status correctly changed to: {cancelled_order.get('status')}")
+        
+        # Verify cancellation info is properly recorded
+        stored_cancellation_info = cancelled_order.get("cancellation_info")
+        if not stored_cancellation_info:
+            return print_test_result("Empty Order Cancel Fix", False, "Cancellation info not stored in order")
+        
+        if stored_cancellation_info.get("reason") != "empty_order":
+            return print_test_result("Empty Order Cancel Fix", False, f"Cancellation reason should be 'empty_order' but is '{stored_cancellation_info.get('reason')}'")
+        
+        if stored_cancellation_info.get("notes") != "Order cancelled because all items were removed":
+            return print_test_result("Empty Order Cancel Fix", False, "Cancellation notes not properly recorded")
+        
+        print(f"✅ Cancellation info properly recorded:")
+        print(f"   Reason: {stored_cancellation_info.get('reason')}")
+        print(f"   Notes: {stored_cancellation_info.get('notes')}")
+        print(f"   Cancelled by: {stored_cancellation_info.get('cancelled_by')}")
+        print(f"   Cancelled at: {stored_cancellation_info.get('cancelled_at')}")
+        
+        # Verify table is freed (status becomes "available", current_order_id becomes null)
+        print("\nVerifying table is freed...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        updated_tables = response.json()
+        
+        table_freed = False
+        for table in updated_tables:
+            if table.get("id") == table_id:
+                table_status = table.get("status")
+                current_order_id = table.get("current_order_id")
+                
+                print(f"Table {table.get('number')} status: {table_status}")
+                print(f"Table {table.get('number')} current_order_id: {current_order_id}")
+                
+                if table_status == "available" and current_order_id is None:
+                    table_freed = True
+                    print(f"✅ Table {table.get('number')} properly freed")
+                break
+        
+        if not table_freed:
+            return print_test_result("Empty Order Cancel Fix", False, "Table not properly freed after order cancellation")
+        
+        # Test that the fix works with the specific HTTP method issue
+        print("\nStep 5: Verifying HTTP method fix...")
+        
+        # Create another test order to verify the fix works consistently
+        test_order_data = {
+            "customer_name": "HTTP Method Test",
+            "customer_phone": "5558888888",
+            "customer_address": "456 Method Test St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "HTTP method test item"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 1.00,
+            "order_notes": "HTTP method test order"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=test_order_data, headers=headers)
+        response.raise_for_status()
+        test_order = response.json()
+        test_order_id = test_order.get("id")
+        
+        # Send to kitchen
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Remove all items
+        response = requests.delete(f"{API_URL}/orders/{test_order_id}/items/0", 
+                                 json={"reason": "other", "notes": "Test removal"}, headers=headers)
+        response.raise_for_status()
+        
+        # Test cancellation with POST method (the fix)
+        test_cancellation_data = {
+            "reason": "other",
+            "notes": "Testing POST method fix"
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/cancel", json=test_cancellation_data, headers=headers)
+        response.raise_for_status()
+        
+        print("✅ Second test order cancelled successfully with POST method")
+        
+        # Verify this order is also properly cancelled
+        response = requests.get(f"{API_URL}/orders/{test_order_id}", headers=headers)
+        response.raise_for_status()
+        test_cancelled_order = response.json()
+        
+        if test_cancelled_order.get("status") != "cancelled":
+            return print_test_result("Empty Order Cancel Fix", False, "Second test order not properly cancelled")
+        
+        print("✅ Second test order status correctly set to cancelled")
+        
+        return print_test_result("Empty Order Cancel Fix", True, 
+                               "✅ Empty Order Cancel fix working correctly: "
+                               "1) Created dine-in order with menu item and sent to kitchen ✓ "
+                               "2) Removed all items to make order empty ✓ "
+                               "3) Successfully cancelled empty order using POST method (not PUT) ✓ "
+                               "4) Order status changed to 'cancelled' ✓ "
+                               "5) Table properly freed (status: available, current_order_id: null) ✓ "
+                               "6) Cancellation info properly recorded with reason and notes ✓ "
+                               "The HTTP method fix (POST instead of PUT) is working as expected.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Empty Order Cancel fix test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Empty Order Cancel Fix", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
