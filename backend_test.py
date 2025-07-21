@@ -2905,6 +2905,205 @@ def test_tax_charges_management_api():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Tax & Charges Management API", False, error_msg)
 
+# 19. Test Cancelled Order Table Cleanup Bug Investigation (Review Request)
+def test_cancelled_order_table_cleanup_bug():
+    global auth_token, menu_item_id
+    print("\n=== Testing Cancelled Order Table Cleanup Bug Investigation ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Cancelled Order Table Cleanup Bug", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # Step 1: Check current data for tables 1-4 and any cancelled orders
+        print("\nStep 1: Investigating current table and order data...")
+        
+        # Get all tables to see current status
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        all_tables = response.json()
+        
+        print(f"Found {len(all_tables)} total tables in system")
+        
+        # Look specifically for tables 1-4
+        tables_1_to_4 = []
+        for table in all_tables:
+            table_number = table.get("number")
+            if table_number and 1 <= table_number <= 4:
+                tables_1_to_4.append(table)
+                print(f"Table {table_number}: Status={table.get('status')}, Current Order ID={table.get('current_order_id')}")
+        
+        if not tables_1_to_4:
+            print("No tables 1-4 found in system. Creating them for testing...")
+            # Create tables 1-4 for testing
+            for i in range(1, 5):
+                table_data = {"number": i, "capacity": 4}
+                response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+                response.raise_for_status()
+                created_table = response.json()
+                tables_1_to_4.append(created_table)
+                print(f"Created Table {i} with ID: {created_table.get('id')}")
+        
+        # Step 2: Check for cancelled orders and their table reference fields
+        print("\nStep 2: Checking cancelled orders and their table reference fields...")
+        
+        # Get all orders to find cancelled ones
+        response = requests.get(f"{API_URL}/orders", headers=headers)
+        response.raise_for_status()
+        all_orders = response.json()
+        
+        cancelled_orders = [order for order in all_orders if order.get("status") == "cancelled"]
+        print(f"Found {len(cancelled_orders)} cancelled orders")
+        
+        for order in cancelled_orders:
+            order_id = order.get("id")
+            table_id = order.get("table_id")
+            table_number = order.get("table_number")
+            print(f"Cancelled Order {order_id[:8]}...: table_id={table_id}, table_number={table_number}")
+            
+            # Check if this order references tables 1-4
+            if table_number and 1 <= table_number <= 4:
+                print(f"  ⚠️  This cancelled order references Table {table_number}")
+        
+        # Step 3: Create test scenario to reproduce the bug
+        print("\nStep 3: Creating test scenario to reproduce table cleanup bug...")
+        
+        # Find an available table from 1-4 or use the first one
+        test_table = tables_1_to_4[0]
+        test_table_id = test_table.get("id")
+        test_table_number = test_table.get("number")
+        
+        print(f"Using Table {test_table_number} (ID: {test_table_id}) for test")
+        
+        # Create an order and assign it to this table
+        order_data = {
+            "customer_name": "Table Cleanup Bug Test",
+            "customer_phone": "5559999999",
+            "customer_address": "Bug Test Address",
+            "table_id": test_table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Bug test order"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 1.00,
+            "order_notes": "Testing table cleanup bug"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        test_order = response.json()
+        test_order_id = test_order.get("id")
+        
+        print(f"Created test order {test_order_id[:8]}... with table_id={test_order.get('table_id')}, table_number={test_order.get('table_number')}")
+        
+        # Send order to kitchen to occupy the table
+        print("\nSending order to kitchen to occupy table...")
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify table is now occupied
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        updated_tables = response.json()
+        
+        table_occupied = False
+        for table in updated_tables:
+            if table.get("id") == test_table_id:
+                if table.get("status") == "occupied" and table.get("current_order_id") == test_order_id:
+                    table_occupied = True
+                    print(f"✅ Table {test_table_number} is now occupied with order {test_order_id[:8]}...")
+                break
+        
+        if not table_occupied:
+            return print_test_result("Cancelled Order Table Cleanup Bug", False, "Table not properly occupied after sending order to kitchen")
+        
+        # Step 4: Cancel the order and test table cleanup logic
+        print("\nStep 4: Cancelling order and testing table cleanup...")
+        
+        cancellation_data = {
+            "reason": "other",
+            "notes": "Testing table cleanup bug - cancelled via table management"
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/cancel", json=cancellation_data, headers=headers)
+        response.raise_for_status()
+        cancel_result = response.json()
+        
+        print(f"Order cancelled: {cancel_result.get('message')}")
+        
+        # Step 5: Check if table cleanup worked
+        print("\nStep 5: Verifying table cleanup after cancellation...")
+        
+        # Get the cancelled order to check its table reference fields
+        response = requests.get(f"{API_URL}/orders/{test_order_id}", headers=headers)
+        response.raise_for_status()
+        cancelled_order = response.json()
+        
+        print(f"Cancelled order data:")
+        print(f"  - Status: {cancelled_order.get('status')}")
+        print(f"  - table_id: {cancelled_order.get('table_id')}")
+        print(f"  - table_number: {cancelled_order.get('table_number')}")
+        
+        # Check table status after cancellation
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        final_tables = response.json()
+        
+        table_freed = False
+        for table in final_tables:
+            if table.get("id") == test_table_id:
+                table_status = table.get("status")
+                current_order_id = table.get("current_order_id")
+                print(f"Table {test_table_number} after cancellation:")
+                print(f"  - Status: {table_status}")
+                print(f"  - Current Order ID: {current_order_id}")
+                
+                if table_status == "available" and current_order_id is None:
+                    table_freed = True
+                    print("✅ Table properly freed after order cancellation")
+                else:
+                    print("❌ Table NOT freed after order cancellation - BUG CONFIRMED")
+                break
+        
+        # Step 6: Analyze the root cause
+        print("\nStep 6: Root cause analysis...")
+        
+        if not table_freed:
+            print("🔍 INVESTIGATING ROOT CAUSE:")
+            print("The cancel order endpoint checks for order.get('table_id') at line 1179")
+            print("Let's verify what field the cancelled order actually has:")
+            
+            if cancelled_order.get("table_id"):
+                print(f"✅ Order HAS table_id field: {cancelled_order.get('table_id')}")
+                print("❌ BUG: Table cleanup logic should have worked but didn't")
+                return print_test_result("Cancelled Order Table Cleanup Bug", False, 
+                                       "Table cleanup logic failed despite order having table_id field")
+            else:
+                print("❌ Order MISSING table_id field")
+                if cancelled_order.get("table_number"):
+                    print(f"✅ Order HAS table_number field: {cancelled_order.get('table_number')}")
+                    print("🐛 ROOT CAUSE IDENTIFIED: Cancel logic checks 'table_id' but order uses 'table_number'")
+                    return print_test_result("Cancelled Order Table Cleanup Bug", False, 
+                                           "ROOT CAUSE: Cancel order logic checks for 'table_id' but orders use 'table_number' field")
+                else:
+                    print("❌ Order MISSING both table_id and table_number fields")
+                    return print_test_result("Cancelled Order Table Cleanup Bug", False, 
+                                           "Order missing both table_id and table_number fields")
+        else:
+            return print_test_result("Cancelled Order Table Cleanup Bug", True, 
+                                   "Table cleanup working correctly - table freed after order cancellation")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Cancelled order table cleanup bug test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Cancelled Order Table Cleanup Bug", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
