@@ -32,7 +32,8 @@ test_results = {
     "Bug 7 Fix: Order Total Becomes 0 When Removing Items": {"success": False, "details": ""},
     "Active Order Table Assignment State Loading": {"success": False, "details": ""},
     "Tax & Charges Management API": {"success": False, "details": ""},
-    "Cancelled Order Table Cleanup Bug": {"success": False, "details": ""}
+    "Cancelled Order Table Cleanup Bug": {"success": False, "details": ""},
+    "Final Data Cleanup - Tables 1-4 Synchronization": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
