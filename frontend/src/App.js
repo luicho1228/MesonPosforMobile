@@ -2712,19 +2712,11 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
 
   const cancelEmptyOrder = async () => {
     try {
-      // Cancel the empty order
-      await axios.put(`${API}/orders/${emptyOrderData.id}/cancel`, {
+      // Cancel the empty order using correct POST endpoint
+      await axios.post(`${API}/orders/${emptyOrderData.id}/cancel`, {
         reason: 'empty_order',
         notes: 'Order cancelled because all items were removed'
       });
-      
-      // If order had a table assigned, make it available
-      if (emptyOrderData.table_id) {
-        await axios.put(`${API}/tables/${emptyOrderData.table_id}`, {
-          status: 'available',
-          current_order_id: null
-        });
-      }
       
       alert('Order cancelled successfully');
       setShowEmptyOrderModal(false);
@@ -2736,7 +2728,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       }
     } catch (error) {
       console.error('Error cancelling empty order:', error);
-      alert('Failed to cancel order');
+      alert(`Failed to cancel order: ${error.response?.data?.detail || error.message}`);
     }
   };
 
