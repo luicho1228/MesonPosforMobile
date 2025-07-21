@@ -276,6 +276,21 @@ backend:
       - working: true
         agent: "testing"
         comment: "FINAL DATA CLEANUP TASK COMPLETED SUCCESSFULLY: Executed the final data cleanup task to fix tables 1-4 synchronization issue by cleaning up legacy cancelled orders. RESULTS: 1) IDENTIFIED LEGACY BUG: Found 4 tables (Tables 2, 3, 4, and 7) occupied by cancelled orders from legacy data with cancellation_info: None. 2) EXECUTED CLEANUP: Successfully updated all 4 tables from 'occupied' status to 'available' status and cleared their current_order_id fields. 3) VERIFIED SYNCHRONIZATION: All Tables 1-4 are now properly synchronized - available tables show as available with no current_order_id, confirming the synchronization issue is resolved. 4) CONFIRMED FIX: The table management system now properly reflects actual table status. Available tables are ready for new orders, and there are no longer any tables occupied by cancelled orders. The final data cleanup task has been completed successfully, resolving the tables 1-4 synchronization issue as requested."
+
+  - task: "Empty Order Cancel Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed Empty Order Cancel issue where clicking 'Cancel Order' in the Empty Order Warning Modal was failing. Root cause: Frontend was making PUT request to /api/orders/{order_id}/cancel but backend endpoint expects POST request. Fixed by changing axios.put to axios.post in the cancelEmptyOrder function. Also added missing cancellation_info field to Order model to properly store cancellation details."
+      - working: true
+        agent: "testing"
+        comment: "COMPLETED EMPTY ORDER CANCEL FIX TESTING: Successfully tested the Empty Order Cancel fix that was implemented to resolve the issue where clicking 'Cancel Order' in the Empty Order Warning Modal was failing. VERIFIED FIX: 1) ROOT CAUSE CONFIRMED: Frontend was making PUT request to /api/orders/{order_id}/cancel but backend endpoint expects POST request. 2) COMPREHENSIVE TEST EXECUTED: Created dine-in order with menu item, sent to kitchen, removed all items to make it empty, then tested cancel API with proper POST request and cancellation data. 3) BACKEND MODEL FIX: Fixed missing cancellation_info field in Order model that was preventing cancellation details from being stored. 4) RESULTS VERIFIED: Order status correctly changes to 'cancelled', table is properly freed (status: available, current_order_id: null), and cancellation info is properly recorded with reason 'empty_order' and notes. 5) HTTP METHOD FIX CONFIRMED: The fix from axios.put to axios.post is working correctly - empty order cancellation now works without errors. The Empty Order Cancel fix is working as expected and resolves the original issue."
         
 frontend:
   - task: "Authentication UI"
