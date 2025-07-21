@@ -31,7 +31,8 @@ test_results = {
     "Bug 6 Fix: Choose Table Shows for Orders with Assigned Tables": {"success": False, "details": ""},
     "Bug 7 Fix: Order Total Becomes 0 When Removing Items": {"success": False, "details": ""},
     "Active Order Table Assignment State Loading": {"success": False, "details": ""},
-    "Tax & Charges Management API": {"success": False, "details": ""}
+    "Tax & Charges Management API": {"success": False, "details": ""},
+    "Cancelled Order Table Cleanup Bug": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
