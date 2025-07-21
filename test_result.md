@@ -261,6 +261,21 @@ backend:
       - working: true
         agent: "testing"
         comment: "Successfully tested the order cancellation API fix. Created a comprehensive test that verified: 1) Order cancel endpoint accepts 'other' as a valid reason with custom notes, 2) Order status correctly changes to 'cancelled' after cancellation, 3) Table status is properly updated to 'available' with current_order_id set to null after cancellation, 4) Table update endpoint correctly handles setting current_order_id to null. All tests passed successfully, confirming that both the order cancellation endpoint and table update functionality are working correctly. The frontend should no longer encounter AxiosError when cancelling tables from Table Management."
+
+  - task: "Final Data Cleanup - Tables 1-4 Synchronization"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "FINAL DATA CLEANUP TASK: Fix the tables 1-4 synchronization issue by cleaning up legacy cancelled orders. Execute data cleanup: 1) GET /api/tables - Find all occupied tables, 2) For each occupied table: Check if current_order_id points to a cancelled order, 3) Clean up legacy data: For tables occupied by cancelled orders, update them with status 'available' and current_order_id null. Focus on Tables 1-4 that are showing as occupied but have no corresponding active orders."
+      - working: true
+        agent: "testing"
+        comment: "FINAL DATA CLEANUP TASK COMPLETED SUCCESSFULLY: Executed the final data cleanup task to fix tables 1-4 synchronization issue by cleaning up legacy cancelled orders. RESULTS: 1) IDENTIFIED LEGACY BUG: Found 4 tables (Tables 2, 3, 4, and 7) occupied by cancelled orders from legacy data with cancellation_info: None. 2) EXECUTED CLEANUP: Successfully updated all 4 tables from 'occupied' status to 'available' status and cleared their current_order_id fields. 3) VERIFIED SYNCHRONIZATION: All Tables 1-4 are now properly synchronized - available tables show as available with no current_order_id, confirming the synchronization issue is resolved. 4) CONFIRMED FIX: The table management system now properly reflects actual table status. Available tables are ready for new orders, and there are no longer any tables occupied by cancelled orders. The final data cleanup task has been completed successfully, resolving the tables 1-4 synchronization issue as requested."
         
 frontend:
   - task: "Authentication UI"
