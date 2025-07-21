@@ -3190,6 +3190,11 @@ def run_all_tests():
         tax_charges_success, tax_charges_details = test_tax_charges_management_api()
         test_results["Tax & Charges Management API"]["success"] = tax_charges_success
         test_results["Tax & Charges Management API"]["details"] = tax_charges_details
+        
+        # Test the Cancelled Order Table Cleanup Bug (Review Request)
+        cleanup_bug_success, cleanup_bug_details = test_cancelled_order_table_cleanup_bug()
+        test_results["Cancelled Order Table Cleanup Bug"]["success"] = cleanup_bug_success
+        test_results["Cancelled Order Table Cleanup Bug"]["details"] = cleanup_bug_details
     
     # Print summary
     print("\n========================================")
