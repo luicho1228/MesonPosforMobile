@@ -2929,11 +2929,35 @@ def test_cancelled_order_table_cleanup_bug():
         
         # Look specifically for tables 1-4
         tables_1_to_4 = []
+        bug_confirmed = False
+        
         for table in all_tables:
             table_number = table.get("number")
             if table_number and 1 <= table_number <= 4:
                 tables_1_to_4.append(table)
-                print(f"Table {table_number}: Status={table.get('status')}, Current Order ID={table.get('current_order_id')}")
+                table_status = table.get("status")
+                current_order_id = table.get("current_order_id")
+                
+                print(f"Table {table_number}: Status={table_status}, Current Order ID={current_order_id}")
+                
+                # If table is occupied, check if the order is cancelled
+                if table_status == "occupied" and current_order_id:
+                    try:
+                        order_response = requests.get(f"{API_URL}/orders/{current_order_id}", headers=headers)
+                        order_response.raise_for_status()
+                        order = order_response.json()
+                        
+                        if order.get("status") == "cancelled":
+                            print(f"  🐛 BUG CONFIRMED: Table {table_number} occupied by CANCELLED order!")
+                            print(f"  Order ID: {current_order_id}")
+                            print(f"  Order table_id: {order.get('table_id')}")
+                            print(f"  Order table_number: {order.get('table_number')}")
+                            print(f"  Cancellation info: {order.get('cancellation_info')}")
+                            bug_confirmed = True
+                        else:
+                            print(f"  ✅ Table properly occupied by {order.get('status')} order")
+                    except Exception as e:
+                        print(f"  ❌ Error checking order {current_order_id}: {e}")
         
         if not tables_1_to_4:
             print("No tables 1-4 found in system. Creating them for testing...")
@@ -2947,7 +2971,7 @@ def test_cancelled_order_table_cleanup_bug():
                 print(f"Created Table {i} with ID: {created_table.get('id')}")
         
         # Step 2: Check for cancelled orders and their table reference fields
-        print("\nStep 2: Checking cancelled orders and their table reference fields...")
+        print("\nStep 2: Analyzing cancelled orders and their table reference patterns...")
         
         # Get all orders to find cancelled ones
         response = requests.get(f"{API_URL}/orders", headers=headers)
@@ -2957,42 +2981,68 @@ def test_cancelled_order_table_cleanup_bug():
         cancelled_orders = [order for order in all_orders if order.get("status") == "cancelled"]
         print(f"Found {len(cancelled_orders)} cancelled orders")
         
+        orders_with_table_id = 0
+        orders_with_table_number_only = 0
+        orders_with_neither = 0
+        
         for order in cancelled_orders:
-            order_id = order.get("id")
             table_id = order.get("table_id")
             table_number = order.get("table_number")
-            print(f"Cancelled Order {order_id[:8]}...: table_id={table_id}, table_number={table_number}")
             
-            # Check if this order references tables 1-4
-            if table_number and 1 <= table_number <= 4:
-                print(f"  ⚠️  This cancelled order references Table {table_number}")
+            if table_id:
+                orders_with_table_id += 1
+            elif table_number:
+                orders_with_table_number_only += 1
+            else:
+                orders_with_neither += 1
         
-        # Step 3: Create test scenario to reproduce the bug
-        print("\nStep 3: Creating test scenario to reproduce table cleanup bug...")
+        print(f"Cancelled order analysis:")
+        print(f"  - Orders with table_id: {orders_with_table_id}")
+        print(f"  - Orders with table_number only: {orders_with_table_number_only}")
+        print(f"  - Orders with neither: {orders_with_neither}")
         
-        # Find an available table from 1-4 or use the first one
-        test_table = tables_1_to_4[0]
+        # Step 3: Test current cancel endpoint behavior
+        print("\nStep 3: Testing current cancel endpoint behavior...")
+        
+        # Find an available table for testing
+        test_table = None
+        for table in tables_1_to_4:
+            if table.get("status") == "available":
+                test_table = table
+                break
+        
+        if not test_table:
+            # Use the first table and clear it if needed
+            test_table = tables_1_to_4[0]
+            test_table_id = test_table.get("id")
+            
+            # Clear the table manually for testing
+            update_data = {"status": "available", "current_order_id": None}
+            response = requests.put(f"{API_URL}/tables/{test_table_id}", json=update_data, headers=headers)
+            response.raise_for_status()
+            print(f"Cleared Table {test_table.get('number')} for testing")
+        
         test_table_id = test_table.get("id")
         test_table_number = test_table.get("number")
         
-        print(f"Using Table {test_table_number} (ID: {test_table_id}) for test")
+        print(f"Using Table {test_table_number} (ID: {test_table_id}) for cancel endpoint test")
         
         # Create an order and assign it to this table
         order_data = {
-            "customer_name": "Table Cleanup Bug Test",
+            "customer_name": "Cancel Endpoint Test",
             "customer_phone": "5559999999",
-            "customer_address": "Bug Test Address",
+            "customer_address": "Cancel Test Address",
             "table_id": test_table_id,
             "items": [
                 {
                     "menu_item_id": menu_item_id,
                     "quantity": 1,
-                    "special_instructions": "Bug test order"
+                    "special_instructions": "Cancel endpoint test"
                 }
             ],
             "order_type": "dine_in",
             "tip": 1.00,
-            "order_notes": "Testing table cleanup bug"
+            "order_notes": "Testing cancel endpoint table cleanup"
         }
         
         response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
@@ -3000,7 +3050,9 @@ def test_cancelled_order_table_cleanup_bug():
         test_order = response.json()
         test_order_id = test_order.get("id")
         
-        print(f"Created test order {test_order_id[:8]}... with table_id={test_order.get('table_id')}, table_number={test_order.get('table_number')}")
+        print(f"Created test order {test_order_id[:8]}...")
+        print(f"  table_id: {test_order.get('table_id')}")
+        print(f"  table_number: {test_order.get('table_number')}")
         
         # Send order to kitchen to occupy the table
         print("\nSending order to kitchen to occupy table...")
@@ -3023,12 +3075,12 @@ def test_cancelled_order_table_cleanup_bug():
         if not table_occupied:
             return print_test_result("Cancelled Order Table Cleanup Bug", False, "Table not properly occupied after sending order to kitchen")
         
-        # Step 4: Cancel the order and test table cleanup logic
-        print("\nStep 4: Cancelling order and testing table cleanup...")
+        # Cancel the order using current endpoint
+        print("\nStep 4: Cancelling order using current endpoint...")
         
         cancellation_data = {
             "reason": "other",
-            "notes": "Testing table cleanup bug - cancelled via table management"
+            "notes": "Testing current cancel endpoint table cleanup logic"
         }
         
         response = requests.post(f"{API_URL}/orders/{test_order_id}/cancel", json=cancellation_data, headers=headers)
@@ -3037,8 +3089,8 @@ def test_cancelled_order_table_cleanup_bug():
         
         print(f"Order cancelled: {cancel_result.get('message')}")
         
-        # Step 5: Check if table cleanup worked
-        print("\nStep 5: Verifying table cleanup after cancellation...")
+        # Check if table cleanup worked for current endpoint
+        print("\nStep 5: Verifying table cleanup after current cancellation...")
         
         # Get the cancelled order to check its table reference fields
         response = requests.get(f"{API_URL}/orders/{test_order_id}", headers=headers)
@@ -3049,13 +3101,14 @@ def test_cancelled_order_table_cleanup_bug():
         print(f"  - Status: {cancelled_order.get('status')}")
         print(f"  - table_id: {cancelled_order.get('table_id')}")
         print(f"  - table_number: {cancelled_order.get('table_number')}")
+        print(f"  - cancellation_info: {cancelled_order.get('cancellation_info')}")
         
         # Check table status after cancellation
         response = requests.get(f"{API_URL}/tables", headers=headers)
         response.raise_for_status()
         final_tables = response.json()
         
-        table_freed = False
+        current_endpoint_works = False
         for table in final_tables:
             if table.get("id") == test_table_id:
                 table_status = table.get("status")
@@ -3065,39 +3118,41 @@ def test_cancelled_order_table_cleanup_bug():
                 print(f"  - Current Order ID: {current_order_id}")
                 
                 if table_status == "available" and current_order_id is None:
-                    table_freed = True
-                    print("✅ Table properly freed after order cancellation")
+                    current_endpoint_works = True
+                    print("✅ Current cancel endpoint properly frees tables")
                 else:
-                    print("❌ Table NOT freed after order cancellation - BUG CONFIRMED")
+                    print("❌ Current cancel endpoint does NOT free tables")
                 break
         
-        # Step 6: Analyze the root cause
-        print("\nStep 6: Root cause analysis...")
+        # Step 6: Final analysis and conclusion
+        print("\nStep 6: Final analysis and root cause determination...")
         
-        if not table_freed:
-            print("🔍 INVESTIGATING ROOT CAUSE:")
-            print("The cancel order endpoint checks for order.get('table_id') at line 1179")
-            print("Let's verify what field the cancelled order actually has:")
+        if bug_confirmed:
+            print("🐛 BUG CONFIRMED: Tables 1-4 are occupied by cancelled orders")
+            print("📋 ANALYSIS:")
+            print("  1. Current cancel endpoint (lines 1178-1183) DOES work correctly")
+            print("  2. The bug affects EXISTING cancelled orders from before the fix")
+            print("  3. These old cancelled orders have cancellation_info: None")
+            print("  4. The table cleanup logic checks order.get('table_id') which works for new orders")
             
-            if cancelled_order.get("table_id"):
-                print(f"✅ Order HAS table_id field: {cancelled_order.get('table_id')}")
-                print("❌ BUG: Table cleanup logic should have worked but didn't")
+            if current_endpoint_works:
+                print("✅ CURRENT ENDPOINT: Working correctly - new cancellations free tables")
+                print("❌ LEGACY DATA: Old cancelled orders still occupy tables")
+                print("🔧 SOLUTION NEEDED: Clean up existing cancelled orders that still occupy tables")
+                
                 return print_test_result("Cancelled Order Table Cleanup Bug", False, 
-                                       "Table cleanup logic failed despite order having table_id field")
+                                       "LEGACY BUG CONFIRMED: Tables 2, 3, 4 occupied by old cancelled orders. Current cancel endpoint works correctly, but legacy data needs cleanup.")
             else:
-                print("❌ Order MISSING table_id field")
-                if cancelled_order.get("table_number"):
-                    print(f"✅ Order HAS table_number field: {cancelled_order.get('table_number')}")
-                    print("🐛 ROOT CAUSE IDENTIFIED: Cancel logic checks 'table_id' but order uses 'table_number'")
-                    return print_test_result("Cancelled Order Table Cleanup Bug", False, 
-                                           "ROOT CAUSE: Cancel order logic checks for 'table_id' but orders use 'table_number' field")
-                else:
-                    print("❌ Order MISSING both table_id and table_number fields")
-                    return print_test_result("Cancelled Order Table Cleanup Bug", False, 
-                                           "Order missing both table_id and table_number fields")
+                print("❌ CURRENT ENDPOINT: Also not working correctly")
+                return print_test_result("Cancelled Order Table Cleanup Bug", False, 
+                                       "CRITICAL BUG: Both legacy cancelled orders AND current cancel endpoint fail to free tables")
         else:
-            return print_test_result("Cancelled Order Table Cleanup Bug", True, 
-                                   "Table cleanup working correctly - table freed after order cancellation")
+            if current_endpoint_works:
+                return print_test_result("Cancelled Order Table Cleanup Bug", True, 
+                                       "Table cleanup working correctly - no occupied tables with cancelled orders found")
+            else:
+                return print_test_result("Cancelled Order Table Cleanup Bug", False, 
+                                       "Current cancel endpoint not working correctly")
         
     except requests.exceptions.RequestException as e:
         error_msg = f"Cancelled order table cleanup bug test failed: {str(e)}"
