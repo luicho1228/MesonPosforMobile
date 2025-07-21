@@ -3477,6 +3477,11 @@ def run_all_tests():
         cleanup_bug_success, cleanup_bug_details = test_cancelled_order_table_cleanup_bug()
         test_results["Cancelled Order Table Cleanup Bug"]["success"] = cleanup_bug_success
         test_results["Cancelled Order Table Cleanup Bug"]["details"] = cleanup_bug_details
+        
+        # Execute Final Data Cleanup - Tables 1-4 Synchronization (Review Request)
+        final_cleanup_success, final_cleanup_details = test_final_data_cleanup_tables_synchronization()
+        test_results["Final Data Cleanup - Tables 1-4 Synchronization"]["success"] = final_cleanup_success
+        test_results["Final Data Cleanup - Tables 1-4 Synchronization"]["details"] = final_cleanup_details
     
     # Print summary
     print("\n========================================")
