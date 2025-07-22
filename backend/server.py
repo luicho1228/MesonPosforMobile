@@ -186,6 +186,7 @@ class Customer(BaseModel):
     phone: str
     email: str = ""
     address: str = ""
+    apartment: str = ""  # Apartment/unit number
     notes: str = ""  # Additional notes about customer
     total_orders: int = 0  # Total number of orders
     total_spent: float = 0.0  # Total amount spent
