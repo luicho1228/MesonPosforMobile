@@ -34,7 +34,8 @@ test_results = {
     "Tax & Charges Management API": {"success": False, "details": ""},
     "Cancelled Order Table Cleanup Bug": {"success": False, "details": ""},
     "Final Data Cleanup - Tables 1-4 Synchronization": {"success": False, "details": ""},
-    "Empty Order Cancel Fix": {"success": False, "details": ""}
+    "Empty Order Cancel Fix": {"success": False, "details": ""},
+    "Delivery Order Customer Info Persistence": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
