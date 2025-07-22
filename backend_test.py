@@ -3939,6 +3939,171 @@ def test_delivery_order_customer_info_persistence():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Delivery Order Customer Info Persistence", False, error_msg)
 
+# 39. Test Apartment Information Persistence Fix (REVIEW REQUEST FOCUS)
+def test_apartment_information_persistence_fix():
+    global auth_token, menu_item_id
+    print("\n=== Testing Apartment Information Persistence Fix ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Apartment Information Persistence Fix", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # Step 1: Create a delivery order with apartment information
+        print("\nStep 1: Creating delivery order with apartment information...")
+        apartment_number = f"Apt {random.randint(100, 999)}"
+        customer_phone = f"555{random_string(7)}"
+        order_data = {
+            "customer_name": "Apartment Test Customer",
+            "customer_phone": customer_phone,
+            "customer_address": "123 Apartment Building St",
+            "customer_apartment": apartment_number,  # This is the key field to test
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Apartment delivery test"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 2.00,
+            "delivery_instructions": "Call when you arrive",
+            "order_notes": "Apartment field persistence test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        order_id = order.get("id")
+        
+        print(f"✅ Delivery order created with ID: {order_id}")
+        print(f"✅ Customer apartment saved: '{order.get('customer_apartment')}'")
+        
+        # Verify apartment field is saved correctly
+        if order.get("customer_apartment") != apartment_number:
+            return print_test_result("Apartment Information Persistence Fix", False, 
+                                   f"❌ Apartment field not saved correctly. Expected: '{apartment_number}', Got: '{order.get('customer_apartment')}'")
+        
+        # Step 2: Send order to kitchen to make it active
+        print("\nStep 2: Sending order to kitchen to make it active...")
+        response = requests.post(f"{API_URL}/orders/{order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify order is now active
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        active_order = response.json()
+        
+        if active_order.get("status") != "pending":
+            return print_test_result("Apartment Information Persistence Fix", False, "❌ Order not marked as pending after sending to kitchen")
+        
+        print(f"✅ Order status: {active_order.get('status')}")
+        print(f"✅ Active order apartment: '{active_order.get('customer_apartment')}'")
+        
+        # Step 3: Retrieve order via active orders endpoint (KEY TEST)
+        print("\nStep 3: 🔍 CRITICAL TEST - Retrieving order via active orders endpoint...")
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        active_orders = response.json()
+        
+        print(f"✅ Retrieved {len(active_orders)} active orders from /api/orders/active")
+        
+        # Find our order in the active orders list
+        our_order = None
+        for active_order in active_orders:
+            if active_order.get("id") == order_id:
+                our_order = active_order
+                break
+        
+        if not our_order:
+            return print_test_result("Apartment Information Persistence Fix", False, "❌ Order not found in active orders endpoint")
+        
+        print(f"✅ Found our order in active orders list")
+        
+        # Step 4: CRITICAL VERIFICATION - Check apartment data in active orders response
+        print("\nStep 4: 🔍 CRITICAL VERIFICATION - Checking apartment data in active orders...")
+        
+        print(f"📋 Order details from /api/orders/active:")
+        print(f"   - Order ID: {our_order.get('id')}")
+        print(f"   - Customer Name: '{our_order.get('customer_name')}'")
+        print(f"   - Customer Phone: '{our_order.get('customer_phone')}'")
+        print(f"   - Customer Address: '{our_order.get('customer_address')}'")
+        print(f"   - Customer Apartment: '{our_order.get('customer_apartment')}'")
+        print(f"   - Order Type: {our_order.get('order_type')}")
+        
+        # Check that apartment field exists and has correct value
+        if "customer_apartment" not in our_order:
+            return print_test_result("Apartment Information Persistence Fix", False, 
+                                   "❌ CRITICAL ISSUE: customer_apartment field missing from active orders response")
+        
+        if our_order.get("customer_apartment") != apartment_number:
+            return print_test_result("Apartment Information Persistence Fix", False, 
+                                   f"❌ CRITICAL ISSUE: Apartment field incorrect in active orders. Expected: '{apartment_number}', Got: '{our_order.get('customer_apartment')}'")
+        
+        # Verify other customer fields are also present
+        required_customer_fields = ["customer_name", "customer_phone", "customer_address", "customer_apartment"]
+        missing_fields = [field for field in required_customer_fields if field not in our_order or our_order.get(field) is None]
+        
+        if missing_fields:
+            return print_test_result("Apartment Information Persistence Fix", False, 
+                                   f"❌ Missing or null customer fields in active orders: {missing_fields}")
+        
+        print(f"✅ All customer fields present and populated in active orders response")
+        
+        # Step 5: Test individual order endpoint as well
+        print("\nStep 5: Testing individual order endpoint for comparison...")
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        individual_order = response.json()
+        
+        print(f"📋 Order details from /api/orders/{order_id}:")
+        print(f"   - Customer Apartment: '{individual_order.get('customer_apartment')}'")
+        
+        if individual_order.get("customer_apartment") != apartment_number:
+            return print_test_result("Apartment Information Persistence Fix", False, 
+                                   f"❌ Apartment field incorrect in individual order endpoint. Expected: '{apartment_number}', Got: '{individual_order.get('customer_apartment')}'")
+        
+        # Step 6: Test that customer was created with apartment info
+        print("\nStep 6: Verifying customer record includes apartment...")
+        try:
+            response = requests.get(f"{API_URL}/customers/{customer_phone}", headers=headers)
+            response.raise_for_status()
+            customer = response.json()
+            
+            print(f"📋 Customer record details:")
+            print(f"   - Customer Name: '{customer.get('name')}'")
+            print(f"   - Customer Phone: '{customer.get('phone')}'")
+            print(f"   - Customer Address: '{customer.get('address')}'")
+            print(f"   - Customer Apartment: '{customer.get('apartment')}'")
+            
+            if customer.get("apartment") != apartment_number:
+                print(f"⚠️  Warning: Customer apartment field mismatch. Expected: '{apartment_number}', Got: '{customer.get('apartment')}'")
+            else:
+                print(f"✅ Customer record also contains correct apartment information")
+                
+        except Exception as e:
+            print(f"⚠️  Could not verify customer record: {e}")
+        
+        # Clean up - pay the order
+        print("\nCleaning up - paying order...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        return print_test_result("Apartment Information Persistence Fix", True, 
+                               f"✅ APARTMENT FIELD LOADING VERIFIED: customer_apartment='{apartment_number}' correctly saved and retrieved from /api/orders/active endpoint. Backend data persistence is working correctly.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Apartment information persistence test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Apartment Information Persistence Fix", False, error_msg)
+
 # 22. Test Apartment Information Persistence Fix (Review Request)
 def test_apartment_information_persistence_fix():
     global auth_token, menu_item_id
