@@ -199,6 +199,7 @@ class CustomerCreate(BaseModel):
     phone: str
     email: str = ""
     address: str = ""
+    apartment: str = ""
     notes: str = ""
 
 class CustomerUpdate(BaseModel):
