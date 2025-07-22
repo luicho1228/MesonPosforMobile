@@ -251,6 +251,7 @@ class Order(BaseModel):
     customer_name: str = ""
     customer_phone: str = ""
     customer_address: str = ""
+    customer_apartment: str = ""  # Customer apartment/unit number
     table_id: Optional[str] = None
     table_number: Optional[int] = None
     items: List[OrderItem]
