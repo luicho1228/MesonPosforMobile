@@ -306,6 +306,18 @@ backend:
       - working: true
         agent: "testing"
         comment: "COMPLETED DELIVERY ORDER CUSTOMER INFO PERSISTENCE TESTING: Successfully tested the backend data persistence for delivery orders with customer information. ✅ ALL TESTS PASSED: 1) DELIVERY ORDER CREATION: Created delivery order with complete customer information (name, phone, address) and verified all fields are properly stored in backend, 2) SEND TO KITCHEN: Successfully sent order to kitchen making it active (status: pending), 3) BACKEND DATA VERIFICATION: Confirmed order was saved with all customer fields (customer_name, customer_phone, customer_address) via individual order endpoint, 4) ACTIVE ORDERS ENDPOINT: Verified customer information is available and complete in /api/orders/active response, 5) CUSTOMER CREATION: Confirmed automatic customer record creation with phone-based lookup working correctly, 6) ORDER EDITING PERSISTENCE: Tested that customer info persists through order editing operations, 7) MULTIPLE ORDER TYPES: Verified delivery, takeout, and phone orders all properly store and retrieve customer information. CONCLUSION: Backend data persistence is working correctly - customer information is properly stored and retrievable for all order types. The issue was in frontend state management (showCustomerInfo not being set to true when loading orders with customer data), not backend data persistence."
+
+  - task: "Apartment Information Persistence Fix"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE IDENTIFIED: Apartment field loading issue confirmed through comprehensive testing. PROBLEM: The user reports that apartment information is being saved correctly, but when they go back to edit a delivery order from active orders, the apartment field appears empty. TESTING RESULTS: 1) ✅ CUSTOMER MODEL: Customer apartment field works correctly - customers can be created with apartment info and it persists in phone lookup, 2) ❌ ORDER MODEL: Order customer_apartment field is NOT being saved - when creating delivery orders with customer_apartment field, the value is not stored in the order record, 3) ✅ ACTIVE ORDERS API: The /api/orders/active endpoint would return apartment data if it existed, but since it's not being saved in orders, it appears empty. ROOT CAUSE: The Order model accepts customer_apartment in the API but the field is not being properly saved to the database. This is a backend data persistence issue, not a frontend display issue. The apartment field needs to be properly implemented in the Order model and order creation logic."
         
 frontend:
   - task: "Authentication UI"
