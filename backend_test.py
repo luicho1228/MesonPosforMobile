@@ -4038,6 +4038,11 @@ def run_all_tests():
         empty_order_cancel_success, empty_order_cancel_details = test_empty_order_cancel_fix()
         test_results["Empty Order Cancel Fix"]["success"] = empty_order_cancel_success
         test_results["Empty Order Cancel Fix"]["details"] = empty_order_cancel_details
+        
+        # Test Delivery Order Customer Info Persistence (Review Request)
+        delivery_customer_success, delivery_customer_details = test_delivery_order_customer_info_persistence()
+        test_results["Delivery Order Customer Info Persistence"]["success"] = delivery_customer_success
+        test_results["Delivery Order Customer Info Persistence"]["details"] = delivery_customer_details
     
     # Print summary
     print("\n========================================")
