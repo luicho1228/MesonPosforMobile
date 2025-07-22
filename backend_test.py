@@ -3651,6 +3651,293 @@ def test_empty_order_cancel_fix():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Empty Order Cancel Fix", False, error_msg)
 
+# 18. Test Delivery Order Customer Info Persistence
+def test_delivery_order_customer_info_persistence():
+    global auth_token, menu_item_id
+    print("\n=== Testing Delivery Order Customer Info Persistence ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Delivery Order Customer Info Persistence", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # Step 1: Create a delivery order with customer information
+        print("\nStep 1: Creating delivery order with customer information...")
+        customer_name = f"Delivery Customer {random_string(4)}"
+        customer_phone = f"555{random_string(7)}"
+        customer_address = f"{random.randint(100, 999)} Delivery St, Apt {random.randint(1, 50)}, Test City, TS 12345"
+        
+        delivery_order_data = {
+            "customer_name": customer_name,
+            "customer_phone": customer_phone,
+            "customer_address": customer_address,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Extra sauce"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 4.00,
+            "delivery_instructions": "Ring doorbell twice",
+            "order_notes": "Customer info persistence test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=delivery_order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        
+        order_id = order.get("id")
+        print(f"Delivery order created with ID: {order_id}")
+        print(f"Customer Name: {order.get('customer_name')}")
+        print(f"Customer Phone: {order.get('customer_phone')}")
+        print(f"Customer Address: {order.get('customer_address')}")
+        
+        # Verify customer information is properly stored
+        if not order.get("customer_name") or not order.get("customer_phone") or not order.get("customer_address"):
+            return print_test_result("Delivery Order Customer Info Persistence", False, "Customer information not properly stored in order")
+        
+        # Step 2: Send order to kitchen to make it active
+        print("\nStep 2: Sending delivery order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{order_id}/send", headers=headers)
+        response.raise_for_status()
+        send_result = response.json()
+        print(f"Order sent to kitchen: {send_result.get('message')}")
+        
+        # Verify order status is now pending (active)
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        active_order = response.json()
+        
+        if active_order.get("status") != "pending":
+            return print_test_result("Delivery Order Customer Info Persistence", False, f"Order status should be 'pending' but is '{active_order.get('status')}'")
+        
+        print(f"Order status after sending to kitchen: {active_order.get('status')}")
+        
+        # Step 3: Verify backend data persistence - check that order was saved with customer information
+        print("\nStep 3: Verifying backend data persistence...")
+        
+        # Check individual order endpoint
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        stored_order = response.json()
+        
+        # Verify all customer fields are present and match
+        stored_customer_name = stored_order.get("customer_name")
+        stored_customer_phone = stored_order.get("customer_phone")
+        stored_customer_address = stored_order.get("customer_address")
+        
+        print(f"Stored Customer Name: {stored_customer_name}")
+        print(f"Stored Customer Phone: {stored_customer_phone}")
+        print(f"Stored Customer Address: {stored_customer_address}")
+        
+        if stored_customer_name != customer_name:
+            return print_test_result("Delivery Order Customer Info Persistence", False, f"Customer name mismatch. Expected: '{customer_name}', Got: '{stored_customer_name}'")
+        
+        if stored_customer_phone != customer_phone:
+            return print_test_result("Delivery Order Customer Info Persistence", False, f"Customer phone mismatch. Expected: '{customer_phone}', Got: '{stored_customer_phone}'")
+        
+        if stored_customer_address != customer_address:
+            return print_test_result("Delivery Order Customer Info Persistence", False, f"Customer address mismatch. Expected: '{customer_address}', Got: '{stored_customer_address}'")
+        
+        # Step 4: Test customer info loading via active orders endpoint
+        print("\nStep 4: Testing customer info availability via active orders endpoint...")
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        active_orders = response.json()
+        
+        # Find our order in the active orders list
+        our_active_order = None
+        for active_order in active_orders:
+            if active_order.get("id") == order_id:
+                our_active_order = active_order
+                break
+        
+        if not our_active_order:
+            return print_test_result("Delivery Order Customer Info Persistence", False, "Delivery order not found in active orders list")
+        
+        # Verify customer information is available in active orders response
+        active_customer_name = our_active_order.get("customer_name")
+        active_customer_phone = our_active_order.get("customer_phone")
+        active_customer_address = our_active_order.get("customer_address")
+        
+        print(f"Active Orders - Customer Name: {active_customer_name}")
+        print(f"Active Orders - Customer Phone: {active_customer_phone}")
+        print(f"Active Orders - Customer Address: {active_customer_address}")
+        
+        if not active_customer_name or not active_customer_phone or not active_customer_address:
+            return print_test_result("Delivery Order Customer Info Persistence", False, "Customer information missing from active orders response")
+        
+        if active_customer_name != customer_name or active_customer_phone != customer_phone or active_customer_address != customer_address:
+            return print_test_result("Delivery Order Customer Info Persistence", False, "Customer information in active orders doesn't match original data")
+        
+        # Step 5: Test customer creation/lookup functionality
+        print("\nStep 5: Testing customer creation/lookup functionality...")
+        
+        # Check if customer was automatically created in customers collection
+        try:
+            response = requests.get(f"{API_URL}/customers/{customer_phone}", headers=headers)
+            if response.status_code == 200:
+                customer_record = response.json()
+                print(f"Customer record found: {customer_record.get('name')} - {customer_record.get('phone')}")
+                
+                # Verify customer record matches order data
+                if customer_record.get("name") != customer_name:
+                    print(f"Warning: Customer record name mismatch. Order: '{customer_name}', Customer: '{customer_record.get('name')}'")
+                
+                if customer_record.get("address") != customer_address:
+                    print(f"Warning: Customer record address mismatch. Order: '{customer_address}', Customer: '{customer_record.get('address')}'")
+            else:
+                print("Customer record not found (this may be expected depending on implementation)")
+        except Exception as e:
+            print(f"Customer lookup test skipped: {str(e)}")
+        
+        # Step 6: Test order editing to verify customer info persists
+        print("\nStep 6: Testing order editing to verify customer info persistence...")
+        
+        # Edit the order (add an item) and verify customer info is preserved
+        updated_order_data = {
+            "customer_name": customer_name,
+            "customer_phone": customer_phone,
+            "customer_address": customer_address,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Extra sauce"
+                },
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "No sauce"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 4.00,
+            "delivery_instructions": "Ring doorbell twice",
+            "order_notes": "Customer info persistence test - edited"
+        }
+        
+        response = requests.put(f"{API_URL}/orders/{order_id}", json=updated_order_data, headers=headers)
+        response.raise_for_status()
+        edited_order = response.json()
+        
+        # Verify customer info is still present after editing
+        if (edited_order.get("customer_name") != customer_name or 
+            edited_order.get("customer_phone") != customer_phone or 
+            edited_order.get("customer_address") != customer_address):
+            return print_test_result("Delivery Order Customer Info Persistence", False, "Customer information lost after order editing")
+        
+        print("Customer information preserved after order editing ✅")
+        
+        # Step 7: Test different order types with customer info
+        print("\nStep 7: Testing takeout order with customer info...")
+        
+        takeout_order_data = {
+            "customer_name": f"Takeout Customer {random_string(4)}",
+            "customer_phone": f"555{random_string(7)}",
+            "customer_address": f"{random.randint(100, 999)} Takeout Ave, Test City, TS 12345",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Takeout test"
+                }
+            ],
+            "order_type": "takeout",
+            "tip": 2.00,
+            "order_notes": "Takeout customer info test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=takeout_order_data, headers=headers)
+        response.raise_for_status()
+        takeout_order = response.json()
+        takeout_order_id = takeout_order.get("id")
+        
+        # Send takeout order to kitchen
+        response = requests.post(f"{API_URL}/orders/{takeout_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify takeout order customer info is also available
+        response = requests.get(f"{API_URL}/orders/{takeout_order_id}", headers=headers)
+        response.raise_for_status()
+        stored_takeout_order = response.json()
+        
+        if (not stored_takeout_order.get("customer_name") or 
+            not stored_takeout_order.get("customer_phone") or 
+            not stored_takeout_order.get("customer_address")):
+            return print_test_result("Delivery Order Customer Info Persistence", False, "Takeout order customer information not properly stored")
+        
+        print("Takeout order customer information properly stored ✅")
+        
+        # Step 8: Test phone order with customer info
+        print("\nStep 8: Testing phone order with customer info...")
+        
+        phone_order_data = {
+            "customer_name": f"Phone Customer {random_string(4)}",
+            "customer_phone": f"555{random_string(7)}",
+            "customer_address": f"{random.randint(100, 999)} Phone Blvd, Test City, TS 12345",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Phone order test"
+                }
+            ],
+            "order_type": "phone_order",
+            "tip": 1.50,
+            "order_notes": "Phone order customer info test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=phone_order_data, headers=headers)
+        response.raise_for_status()
+        phone_order = response.json()
+        phone_order_id = phone_order.get("id")
+        
+        # Send phone order to kitchen
+        response = requests.post(f"{API_URL}/orders/{phone_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify phone order customer info is also available
+        response = requests.get(f"{API_URL}/orders/{phone_order_id}", headers=headers)
+        response.raise_for_status()
+        stored_phone_order = response.json()
+        
+        if (not stored_phone_order.get("customer_name") or 
+            not stored_phone_order.get("customer_phone") or 
+            not stored_phone_order.get("customer_address")):
+            return print_test_result("Delivery Order Customer Info Persistence", False, "Phone order customer information not properly stored")
+        
+        print("Phone order customer information properly stored ✅")
+        
+        # Clean up - pay all orders
+        print("\nCleaning up - paying all test orders...")
+        for test_order_id in [order_id, takeout_order_id, phone_order_id]:
+            try:
+                payment_data = {
+                    "payment_method": "card",
+                    "print_receipt": False
+                }
+                response = requests.post(f"{API_URL}/orders/{test_order_id}/pay", json=payment_data, headers=headers)
+                response.raise_for_status()
+                print(f"Order {test_order_id} paid successfully")
+            except Exception as e:
+                print(f"Warning: Could not pay order {test_order_id}: {str(e)}")
+        
+        return print_test_result("Delivery Order Customer Info Persistence", True, 
+                               "✅ ALL TESTS PASSED: Delivery order customer information properly stored and retrievable. "
+                               "Backend provides complete customer data (name, phone, address) for delivery, takeout, and phone orders. "
+                               "Customer info persists through order creation, sending to kitchen, editing, and retrieval via both individual order and active orders endpoints. "
+                               "The backend data persistence is working correctly - the issue was in frontend state management (showCustomerInfo not being set to true when loading orders with customer data).")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Delivery order customer info persistence test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Delivery Order Customer Info Persistence", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
