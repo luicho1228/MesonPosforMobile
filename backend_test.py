@@ -4433,6 +4433,11 @@ def run_all_tests():
         delivery_customer_success, delivery_customer_details = test_delivery_order_customer_info_persistence()
         test_results["Delivery Order Customer Info Persistence"]["success"] = delivery_customer_success
         test_results["Delivery Order Customer Info Persistence"]["details"] = delivery_customer_details
+        
+        # Test Apartment Information Persistence Fix (Review Request)
+        apartment_success, apartment_details = test_apartment_information_persistence_fix()
+        test_results["Apartment Information Persistence Fix"]["success"] = apartment_success
+        test_results["Apartment Information Persistence Fix"]["details"] = apartment_details
     
     # Print summary
     print("\n========================================")
