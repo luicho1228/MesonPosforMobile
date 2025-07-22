@@ -35,7 +35,8 @@ test_results = {
     "Cancelled Order Table Cleanup Bug": {"success": False, "details": ""},
     "Final Data Cleanup - Tables 1-4 Synchronization": {"success": False, "details": ""},
     "Empty Order Cancel Fix": {"success": False, "details": ""},
-    "Delivery Order Customer Info Persistence": {"success": False, "details": ""}
+    "Delivery Order Customer Info Persistence": {"success": False, "details": ""},
+    "Apartment Information Persistence Fix": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
