@@ -283,6 +283,7 @@ class OrderCreate(BaseModel):
     customer_name: str = ""
     customer_phone: str = ""
     customer_address: str = ""
+    customer_apartment: str = ""
     table_id: Optional[str] = None
     items: List[Dict]  # Will be processed to OrderItem
     order_type: OrderType
