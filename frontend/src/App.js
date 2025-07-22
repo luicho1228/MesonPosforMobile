@@ -3725,7 +3725,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                 name: newCustomer.name,
                 phone: newCustomer.phone,
                 address: newCustomer.address,
-                apartment: ''
+                apartment: newCustomer.apartment || ''
               });
               
               // Show customer info section
