@@ -2888,7 +2888,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     setCustomerInfo({
       name: order.customer_name,
       phone: order.customer_phone,
-      address: order.customer_address
+      address: order.customer_address,
+      apartment: order.customer_apartment || ''
     });
     setOrderType(order.order_type);
     
