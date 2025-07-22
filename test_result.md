@@ -291,6 +291,21 @@ backend:
       - working: true
         agent: "testing"
         comment: "COMPLETED EMPTY ORDER CANCEL FIX TESTING: Successfully tested the Empty Order Cancel fix that was implemented to resolve the issue where clicking 'Cancel Order' in the Empty Order Warning Modal was failing. VERIFIED FIX: 1) ROOT CAUSE CONFIRMED: Frontend was making PUT request to /api/orders/{order_id}/cancel but backend endpoint expects POST request. 2) COMPREHENSIVE TEST EXECUTED: Created dine-in order with menu item, sent to kitchen, removed all items to make it empty, then tested cancel API with proper POST request and cancellation data. 3) BACKEND MODEL FIX: Fixed missing cancellation_info field in Order model that was preventing cancellation details from being stored. 4) RESULTS VERIFIED: Order status correctly changes to 'cancelled', table is properly freed (status: available, current_order_id: null), and cancellation info is properly recorded with reason 'empty_order' and notes. 5) HTTP METHOD FIX CONFIRMED: The fix from axios.put to axios.post is working correctly - empty order cancellation now works without errors. The Empty Order Cancel fix is working as expected and resolves the original issue."
+
+  - task: "Delivery Order Customer Info Persistence"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed delivery order customer info persistence issue where after sending a delivery order with customer information, when going back to edit that order from Active Orders, it was asking to add customer information again instead of showing the existing customer data. Root cause: The loadActiveOrder function was loading customer data into the state but not setting showCustomerInfo to true, so the customer info section wasn't visible. Fix Applied: Updated loadActiveOrder function to set showCustomerInfo = true when loading delivery/takeout/phone orders that have customer information."
+      - working: true
+        agent: "testing"
+        comment: "COMPLETED DELIVERY ORDER CUSTOMER INFO PERSISTENCE TESTING: Successfully tested the backend data persistence for delivery orders with customer information. ✅ ALL TESTS PASSED: 1) DELIVERY ORDER CREATION: Created delivery order with complete customer information (name, phone, address) and verified all fields are properly stored in backend, 2) SEND TO KITCHEN: Successfully sent order to kitchen making it active (status: pending), 3) BACKEND DATA VERIFICATION: Confirmed order was saved with all customer fields (customer_name, customer_phone, customer_address) via individual order endpoint, 4) ACTIVE ORDERS ENDPOINT: Verified customer information is available and complete in /api/orders/active response, 5) CUSTOMER CREATION: Confirmed automatic customer record creation with phone-based lookup working correctly, 6) ORDER EDITING PERSISTENCE: Tested that customer info persists through order editing operations, 7) MULTIPLE ORDER TYPES: Verified delivery, takeout, and phone orders all properly store and retrieve customer information. CONCLUSION: Backend data persistence is working correctly - customer information is properly stored and retrievable for all order types. The issue was in frontend state management (showCustomerInfo not being set to true when loading orders with customer data), not backend data persistence."
         
 frontend:
   - task: "Authentication UI"
