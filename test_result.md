@@ -396,7 +396,8 @@ metadata:
         comment: "Successfully tested the comprehensive Menu Management functionality. Verified that: 1) The Menu Management section is accessible from the Settings page, 2) The Menu Items tab displays existing menu items with proper details (name, description, price, category, availability status), 3) Search functionality works correctly for filtering items by name, 4) Category filtering dropdown works properly to filter items by category, 5) Add Item button opens a modal with all required form fields (Name, Description, Price, Category, Image URL, Modifier Groups, Available toggle), 6) Edit functionality works correctly - successfully edited a menu item's name and price, 7) Categories tab displays all existing categories with item counts, 8) Modifiers tab shows existing modifier groups and their modifiers, 9) Add Group and Add Modifier functionality works correctly in the Modifiers tab, 10) Navigation between tabs (Menu Items, Categories, Modifiers) works properly, 11) Back to Settings button correctly returns to the Settings page. All Menu Management functionality is working as expected with no critical issues found."
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Apartment Information Persistence Fix"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
