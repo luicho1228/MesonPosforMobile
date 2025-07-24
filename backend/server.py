@@ -203,6 +203,9 @@ class CustomerCreate(BaseModel):
     email: str = ""
     address: str = ""
     apartment: str = ""
+    city: str = ""
+    state: str = ""
+    zip_code: str = ""
     notes: str = ""
 
 class CustomerUpdate(BaseModel):
