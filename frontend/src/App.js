@@ -3495,14 +3495,32 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           {orderType === 'delivery' && (
             <div className="mb-6 bg-white rounded-xl p-4">
               {!showCustomerInfo ? (
-                // Show only Add Customer button initially
+                // Show customer selection options initially
                 <div className="text-center">
-                  <button
-                    onClick={() => setShowCustomerModal(true)}
-                    className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 text-lg font-medium"
-                  >
-                    + Add Customer
-                  </button>
+                  <h3 className="font-semibold text-lg mb-4 text-gray-700">Customer Information</h3>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => {
+                        fetchExistingCustomers();
+                        setShowCustomerSelectionModal(true);
+                      }}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg font-medium flex items-center justify-center"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Select Existing Customer
+                    </button>
+                    <button
+                      onClick={() => setShowCustomerModal(true)}
+                      className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 text-lg font-medium flex items-center justify-center"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Add New Customer
+                    </button>
+                  </div>
                 </div>
               ) : (
                 // Show customer information section
