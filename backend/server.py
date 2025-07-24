@@ -214,6 +214,9 @@ class CustomerUpdate(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
     apartment: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
     notes: Optional[str] = None
 
 class OrderItemModifier(BaseModel):
