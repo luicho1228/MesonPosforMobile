@@ -3836,7 +3836,10 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                 name: newCustomer.name,
                 phone: newCustomer.phone,
                 address: newCustomer.address,
-                apartment: newCustomer.apartment || ''
+                apartment: newCustomer.apartment || '',
+                city: newCustomer.city || '',
+                state: newCustomer.state || '',
+                zip_code: newCustomer.zip_code || ''
               });
               
               // Show customer info section
