@@ -3890,16 +3890,118 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
               
               // Show customer info section
               setShowCustomerInfo(true);
-              
               setShowCustomerModal(false);
-              alert('Customer added successfully!');
             } catch (error) {
-              console.error('Error adding customer:', error);
-              alert('Error adding customer');
+              console.error('Error creating customer:', error);
+              alert('Failed to create customer');
             }
           }}
           onClose={() => setShowCustomerModal(false)}
         />
+      )}
+
+      {/* Customer Selection Modal */}
+      {showCustomerSelectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Select Existing Customer</h2>
+                <button
+                  onClick={() => setShowCustomerSelectionModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {/* Search Bar */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search customers by name or phone..."
+                  value={customerSearchQuery}
+                  onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Customer List */}
+              <div className="max-h-96 overflow-y-auto">
+                {existingCustomers
+                  .filter(customer => 
+                    customer.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+                    customer.phone.includes(customerSearchQuery)
+                  )
+                  .length === 0 ? (
+                  <div className="text-center py-8">
+                    <span className="text-gray-500">
+                      {customerSearchQuery ? 'No customers found matching your search.' : 'No customers found.'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {existingCustomers
+                      .filter(customer => 
+                        customer.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+                        customer.phone.includes(customerSearchQuery)
+                      )
+                      .map(customer => (
+                        <div
+                          key={customer.id}
+                          onClick={() => handleSelectExistingCustomer(customer)}
+                          className="p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h3 className="font-medium text-gray-900">{customer.name}</h3>
+                              <p className="text-sm text-gray-600">{customer.phone}</p>
+                              {customer.address && (
+                                <p className="text-sm text-gray-500">
+                                  {customer.apartment && `${customer.apartment} `}
+                                  {customer.address}
+                                  {customer.city && `, ${customer.city}`}
+                                  {customer.state && `, ${customer.state}`}
+                                  {customer.zip_code && ` ${customer.zip_code}`}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              {customer.total_orders > 0 && (
+                                <div className="text-xs text-gray-500">
+                                  {customer.total_orders} orders • ${customer.total_spent?.toFixed(2) || '0.00'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50">
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setShowCustomerModal(true)}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                >
+                  Add New Customer
+                </button>
+                <button
+                  onClick={() => setShowCustomerSelectionModal(false)}
+                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       
       {/* Table Selection Modal */}
