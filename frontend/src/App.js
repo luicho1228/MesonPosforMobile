@@ -3987,7 +3987,10 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
             <div className="p-6 border-t bg-gray-50">
               <div className="flex justify-between">
                 <button
-                  onClick={() => setShowCustomerModal(true)}
+                  onClick={() => {
+                    setShowCustomerSelectionModal(false);
+                    setShowCustomerModal(true);
+                  }}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
                 >
                   Add New Customer
