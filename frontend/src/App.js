@@ -2924,7 +2924,10 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         name: order.customer_name,
         phone: order.customer_phone,
         address: order.customer_address,
-        apartment: order.customer_apartment || ''
+        apartment: order.customer_apartment || '',
+        city: order.customer_city || '',
+        state: order.customer_state || '',
+        zip_code: order.customer_zip_code || ''
       });
       setOrderType(order.order_type);
       
