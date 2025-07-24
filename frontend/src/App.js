@@ -654,7 +654,7 @@ const CustomerDetailModal = ({ customer, stats, orders, onClose, onEdit }) => {
         <div className="flex justify-between items-start mb-6">
           <div>
             <h3 className="text-xl font-bold text-gray-800">{customer.name}</h3>
-            <p className="text-gray-600">{customer.phone}</p>
+            <p className="text-gray-600">{formatPhoneNumber(customer.phone)}</p>
           </div>
           <div className="flex space-x-2">
             <button
@@ -679,6 +679,10 @@ const CustomerDetailModal = ({ customer, stats, orders, onClose, onEdit }) => {
             <div className="space-y-2 text-sm">
               <p><span className="font-medium">Email:</span> {customer.email || 'Not provided'}</p>
               <p><span className="font-medium">Address:</span> {customer.address || 'Not provided'}</p>
+              <p><span className="font-medium">Apartment:</span> {customer.apartment || 'Not provided'}</p>
+              <p><span className="font-medium">City:</span> {customer.city || 'Not provided'}</p>
+              <p><span className="font-medium">State:</span> {customer.state || 'Not provided'}</p>
+              <p><span className="font-medium">ZIP Code:</span> {customer.zip_code || 'Not provided'}</p>
               <p><span className="font-medium">Notes:</span> {customer.notes || 'None'}</p>
               <p><span className="font-medium">Customer Since:</span> {formatLocalDate(customer.created_at)}</p>
             </div>
