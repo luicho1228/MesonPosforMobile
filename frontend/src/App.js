@@ -3031,6 +3031,31 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
   };
 
+  const fetchExistingCustomers = async () => {
+    try {
+      const response = await axios.get(`${API}/customers`);
+      setExistingCustomers(response.data);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      setExistingCustomers([]);
+    }
+  };
+
+  const handleSelectExistingCustomer = (customer) => {
+    setCustomerInfo({
+      name: customer.name,
+      phone: customer.phone,
+      address: customer.address,
+      apartment: customer.apartment || '',
+      city: customer.city || '',
+      state: customer.state || '',
+      zip_code: customer.zip_code || ''
+    });
+    setShowCustomerInfo(true);
+    setShowCustomerSelectionModal(false);
+    setCustomerSearchQuery('');
+  };
+
   const fetchModifierData = async () => {
     try {
       const [groupsRes, modRes] = await Promise.all([
