@@ -734,6 +734,9 @@ const CustomerEditModal = ({ customer, onSave, onClose }) => {
     email: customer.email || '',
     address: customer.address || '',
     apartment: customer.apartment || '',
+    city: customer.city || '',
+    state: customer.state || '',
+    zip_code: customer.zip_code || '',
     notes: customer.notes || ''
   });
 
