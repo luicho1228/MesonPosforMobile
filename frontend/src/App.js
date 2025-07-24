@@ -632,6 +632,21 @@ const CustomerManagement = ({ onBack }) => {
   );
 };
 // Customer Detail Modal Component
+const formatPhoneNumber = (phone) => {
+  if (!phone) return 'Not provided';
+  
+  // Remove all non-digit characters
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Format as (555)555-5555 if we have 10 digits
+  if (digitsOnly.length === 10) {
+    return `(${digitsOnly.slice(0, 3)})${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
+  }
+  
+  // Return original if not 10 digits
+  return phone;
+};
+
 const CustomerDetailModal = ({ customer, stats, orders, onClose, onEdit }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
