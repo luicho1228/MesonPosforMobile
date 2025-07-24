@@ -808,6 +808,9 @@ const CustomerEditModal = ({ customer, onSave, onClose }) => {
           name: matchingCustomer.name || prev.name,
           phone: matchingCustomer.phone || prev.phone,
           apartment: matchingCustomer.apartment || prev.apartment,
+          city: matchingCustomer.city || prev.city,
+          state: matchingCustomer.state || prev.state,
+          zip_code: matchingCustomer.zip_code || prev.zip_code,
           email: matchingCustomer.email || prev.email,
           notes: matchingCustomer.notes || prev.notes
         }));
