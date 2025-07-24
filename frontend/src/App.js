@@ -780,6 +780,9 @@ const CustomerEditModal = ({ customer, onSave, onClose }) => {
         name: customer.name || prev.name,
         address: customer.address || prev.address,
         apartment: customer.apartment || prev.apartment,
+        city: customer.city || prev.city,
+        state: customer.state || prev.state,
+        zip_code: customer.zip_code || prev.zip_code,
         email: customer.email || prev.email,
         notes: customer.notes || prev.notes
       }));
