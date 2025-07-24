@@ -1911,31 +1911,6 @@ const TableManagement = ({ onTableSelect }) => {
     fetchTables();
   }, []);
 
-  const fetchExistingCustomers = async () => {
-    try {
-      const response = await axios.get(`${API}/customers`);
-      setExistingCustomers(response.data);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      setExistingCustomers([]);
-    }
-  };
-
-  const handleSelectExistingCustomer = (customer) => {
-    setCustomerInfo({
-      name: customer.name,
-      phone: customer.phone,
-      address: customer.address,
-      apartment: customer.apartment || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      zip_code: customer.zip_code || ''
-    });
-    setShowCustomerInfo(true);
-    setShowCustomerSelectionModal(false);
-    setCustomerSearchQuery('');
-  };
-
   const fetchTables = async () => {
     try {
       const response = await axios.get(`${API}/tables`);
