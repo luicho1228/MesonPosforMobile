@@ -8,7 +8,7 @@ import string
 from datetime import datetime
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://13c19c9e-804b-4911-b1a3-7e31ff49e079.preview.emergentagent.com"
+BACKEND_URL = "https://0fcaea1d-c526-4dab-91e4-3351bd44ae94.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 def analyze_merge_endpoint():
