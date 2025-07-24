@@ -3940,6 +3940,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                 customer_phone: customerInfo.phone,
                 customer_address: customerInfo.address,
                 customer_apartment: customerInfo.apartment,
+                customer_city: customerInfo.city,
+                customer_state: customerInfo.state,
+                customer_zip_code: customerInfo.zip_code,
                 order_type: orderType,
                 table_number: occupiedTableToMerge.number,
                 items: cart.map(item => ({
