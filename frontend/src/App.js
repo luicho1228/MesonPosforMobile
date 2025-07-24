@@ -2761,7 +2761,10 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     name: '',
     phone: '',
     address: '',
-    apartment: ''
+    apartment: '',
+    city: '',
+    state: '',
+    zip_code: ''
   });
 
   const updateOrderTableAssignment = async (orderId, tableId) => {
