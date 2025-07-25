@@ -4494,6 +4494,536 @@ def test_apartment_information_persistence_fix():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Apartment Information Persistence Fix", False, error_msg)
 
+# 22. Test Customer Selection Feature API (Review Request)
+def test_customer_selection_feature_api():
+    global auth_token, menu_item_id
+    print("\n=== Testing Customer Selection Feature API ===")
+    
+    if not auth_token:
+        return print_test_result("Customer Selection Feature API", False, "No auth token available")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        print("\n🎯 TESTING CUSTOMER API ENDPOINTS FOR CUSTOMER SELECTION FEATURE")
+        print("Testing customer API endpoints that support the newly implemented Customer Selection Feature for delivery orders")
+        
+        # Step 1: Test Customer Retrieval Endpoint - GET /api/customers
+        print("\n--- Step 1: Testing Customer Retrieval Endpoint (GET /api/customers) ---")
+        
+        response = requests.get(f"{API_URL}/customers", headers=headers)
+        response.raise_for_status()
+        initial_customers = response.json()
+        
+        print(f"✅ GET /api/customers successful")
+        print(f"   Retrieved {len(initial_customers)} existing customers")
+        
+        # Verify response structure
+        if initial_customers:
+            sample_customer = initial_customers[0]
+            required_fields = ["id", "name", "phone", "address", "apartment", "city", "state", "zip_code", 
+                             "total_orders", "total_spent", "created_at", "updated_at"]
+            missing_fields = [field for field in required_fields if field not in sample_customer]
+            
+            if missing_fields:
+                return print_test_result("Customer Selection Feature API", False, 
+                                       f"Customer objects missing required fields: {missing_fields}")
+            
+            print(f"✅ Customer objects contain all required fields for Customer Selection Modal")
+            print(f"   Sample customer fields: {list(sample_customer.keys())}")
+        
+        # Step 2: Test Customer Creation - POST /api/customers
+        print("\n--- Step 2: Testing Customer Creation (POST /api/customers) ---")
+        
+        # Create test customers with comprehensive address fields
+        test_customers_data = [
+            {
+                "name": "Sarah Johnson",
+                "phone": "5551234567",
+                "email": "sarah.johnson@email.com",
+                "address": "123 Main Street",
+                "apartment": "Apt 4B",
+                "city": "New York",
+                "state": "NY",
+                "zip_code": "10001",
+                "notes": "Regular customer, prefers contactless delivery"
+            },
+            {
+                "name": "Michael Chen",
+                "phone": "5552345678", 
+                "email": "m.chen@email.com",
+                "address": "456 Oak Avenue",
+                "apartment": "Unit 12",
+                "city": "Los Angeles",
+                "state": "CA", 
+                "zip_code": "90210",
+                "notes": "Business customer, office building"
+            },
+            {
+                "name": "Emily Rodriguez",
+                "phone": "5553456789",
+                "email": "emily.r@email.com", 
+                "address": "789 Pine Road",
+                "apartment": "",  # No apartment
+                "city": "Chicago",
+                "state": "IL",
+                "zip_code": "60601",
+                "notes": "House delivery, has dog"
+            },
+            {
+                "name": "David Kim",
+                "phone": "5554567890",
+                "email": "david.kim@email.com",
+                "address": "321 Elm Street",
+                "apartment": "Suite 200",
+                "city": "Seattle", 
+                "state": "WA",
+                "zip_code": "98101",
+                "notes": "Corporate account"
+            },
+            {
+                "name": "Lisa Thompson",
+                "phone": "5555678901",
+                "email": "lisa.t@email.com",
+                "address": "654 Maple Drive",
+                "apartment": "Apt 7A",
+                "city": "Miami",
+                "state": "FL",
+                "zip_code": "33101", 
+                "notes": "VIP customer, always tips well"
+            }
+        ]
+        
+        created_customers = []
+        
+        for customer_data in test_customers_data:
+            print(f"\nCreating customer: {customer_data['name']}")
+            
+            response = requests.post(f"{API_URL}/customers", json=customer_data, headers=headers)
+            response.raise_for_status()
+            created_customer = response.json()
+            
+            customer_id = created_customer.get("id")
+            if not customer_id:
+                return print_test_result("Customer Selection Feature API", False, 
+                                       f"Failed to create customer {customer_data['name']} - no ID returned")
+            
+            created_customers.append(created_customer)
+            
+            print(f"   ✅ Created customer ID: {customer_id}")
+            print(f"   Name: {created_customer.get('name')}")
+            print(f"   Phone: {created_customer.get('phone')}")
+            print(f"   Address: {created_customer.get('address')}")
+            print(f"   Apartment: {created_customer.get('apartment') or 'None'}")
+            print(f"   City: {created_customer.get('city')}")
+            print(f"   State: {created_customer.get('state')}")
+            print(f"   Zip: {created_customer.get('zip_code')}")
+            
+            # Verify all fields are properly stored
+            for field, expected_value in customer_data.items():
+                actual_value = created_customer.get(field)
+                if actual_value != expected_value:
+                    return print_test_result("Customer Selection Feature API", False, 
+                                           f"Customer {field} not properly stored. Expected: '{expected_value}', Got: '{actual_value}'")
+        
+        print(f"\n✅ Successfully created {len(created_customers)} test customers with comprehensive address fields")
+        
+        # Step 3: Test Customer Data Structure Verification
+        print("\n--- Step 3: Testing Customer Data Structure for CustomerSelectionModal ---")
+        
+        # Get updated customer list
+        response = requests.get(f"{API_URL}/customers", headers=headers)
+        response.raise_for_status()
+        all_customers = response.json()
+        
+        print(f"Total customers now: {len(all_customers)}")
+        
+        # Verify each customer has all required fields for the modal
+        modal_required_fields = {
+            "id": "Customer ID for selection",
+            "name": "Customer name for display",
+            "phone": "Phone number for search and display", 
+            "address": "Primary address for display",
+            "apartment": "Apartment/unit for building deliveries",
+            "city": "City for complete address",
+            "state": "State for complete address", 
+            "zip_code": "ZIP code for complete address",
+            "total_orders": "Order count statistics",
+            "total_spent": "Spending statistics",
+            "email": "Contact information",
+            "notes": "Additional customer notes",
+            "created_at": "Account creation date",
+            "updated_at": "Last update timestamp"
+        }
+        
+        for customer in all_customers:
+            customer_name = customer.get("name", "Unknown")
+            
+            for field, description in modal_required_fields.items():
+                if field not in customer:
+                    return print_test_result("Customer Selection Feature API", False, 
+                                           f"Customer '{customer_name}' missing field '{field}' ({description})")
+            
+            # Verify data types
+            if not isinstance(customer.get("total_orders"), int):
+                return print_test_result("Customer Selection Feature API", False, 
+                                       f"Customer '{customer_name}' total_orders should be integer")
+            
+            if not isinstance(customer.get("total_spent"), (int, float)):
+                return print_test_result("Customer Selection Feature API", False, 
+                                       f"Customer '{customer_name}' total_spent should be number")
+        
+        print("✅ All customers have required fields for CustomerSelectionModal")
+        print("   ✓ Basic info: id, name, phone, address, apartment, city, state, zip_code")
+        print("   ✓ Statistics: total_orders, total_spent") 
+        print("   ✓ Additional: email, notes, created_at, updated_at")
+        
+        # Step 4: Test Customer Search/Filter Functionality
+        print("\n--- Step 4: Testing Customer Search/Filter Support ---")
+        
+        # Test search by name (case-insensitive)
+        print("\nTesting name-based search capability...")
+        
+        search_tests = [
+            {"search_term": "sarah", "expected_matches": ["Sarah Johnson"]},
+            {"search_term": "chen", "expected_matches": ["Michael Chen"]},
+            {"search_term": "EMILY", "expected_matches": ["Emily Rodriguez"]},
+            {"search_term": "kim", "expected_matches": ["David Kim"]},
+            {"search_term": "thompson", "expected_matches": ["Lisa Thompson"]}
+        ]
+        
+        for search_test in search_tests:
+            search_term = search_test["search_term"]
+            expected_matches = search_test["expected_matches"]
+            
+            # Simulate frontend search logic
+            matching_customers = []
+            for customer in all_customers:
+                customer_name = customer.get("name", "").lower()
+                if search_term.lower() in customer_name:
+                    matching_customers.append(customer.get("name"))
+            
+            print(f"   Search '{search_term}': Found {len(matching_customers)} matches")
+            
+            for expected_name in expected_matches:
+                if expected_name not in matching_customers:
+                    return print_test_result("Customer Selection Feature API", False, 
+                                           f"Name search for '{search_term}' should find '{expected_name}'")
+        
+        print("✅ Name-based search functionality supported")
+        
+        # Test search by phone
+        print("\nTesting phone-based search capability...")
+        
+        phone_search_tests = [
+            {"search_term": "555123", "expected_phone": "5551234567"},
+            {"search_term": "234567", "expected_phone": "5552345678"},
+            {"search_term": "5553", "expected_phone": "5553456789"}
+        ]
+        
+        for phone_test in phone_search_tests:
+            search_term = phone_test["search_term"]
+            expected_phone = phone_test["expected_phone"]
+            
+            # Simulate frontend phone search logic
+            matching_customers = []
+            for customer in all_customers:
+                customer_phone = customer.get("phone", "")
+                if search_term in customer_phone:
+                    matching_customers.append(customer.get("phone"))
+            
+            print(f"   Phone search '{search_term}': Found {len(matching_customers)} matches")
+            
+            if expected_phone not in matching_customers:
+                return print_test_result("Customer Selection Feature API", False, 
+                                       f"Phone search for '{search_term}' should find '{expected_phone}'")
+        
+        print("✅ Phone-based search functionality supported")
+        
+        # Step 5: Test Individual Customer Retrieval by Phone
+        print("\n--- Step 5: Testing Individual Customer Retrieval by Phone ---")
+        
+        # Test GET /api/customers/{phone} endpoint
+        test_phone = "5551234567"  # Sarah Johnson's phone
+        
+        print(f"Testing GET /api/customers/{test_phone}")
+        response = requests.get(f"{API_URL}/customers/{test_phone}", headers=headers)
+        response.raise_for_status()
+        customer_by_phone = response.json()
+        
+        print(f"✅ Retrieved customer by phone: {customer_by_phone.get('name')}")
+        
+        if customer_by_phone.get("phone") != test_phone:
+            return print_test_result("Customer Selection Feature API", False, 
+                                   f"Phone lookup returned wrong customer. Expected phone: {test_phone}, Got: {customer_by_phone.get('phone')}")
+        
+        if customer_by_phone.get("name") != "Sarah Johnson":
+            return print_test_result("Customer Selection Feature API", False, 
+                                   f"Phone lookup returned wrong customer. Expected: Sarah Johnson, Got: {customer_by_phone.get('name')}")
+        
+        print("✅ Phone-based customer lookup working correctly")
+        
+        # Step 6: Integration Test - Create Orders to Update Customer Statistics
+        print("\n--- Step 6: Integration Test - Customer Statistics Update ---")
+        
+        # Create orders for some customers to test statistics
+        if not menu_item_id:
+            return print_test_result("Customer Selection Feature API", False, "No menu item available for order testing")
+        
+        # Create order for Sarah Johnson
+        sarah_customer = next((c for c in created_customers if c.get("name") == "Sarah Johnson"), None)
+        if not sarah_customer:
+            return print_test_result("Customer Selection Feature API", False, "Sarah Johnson customer not found for order test")
+        
+        print(f"\nCreating order for {sarah_customer.get('name')}...")
+        
+        order_data = {
+            "customer_name": sarah_customer.get("name"),
+            "customer_phone": sarah_customer.get("phone"),
+            "customer_address": f"{sarah_customer.get('address')}, {sarah_customer.get('apartment')}, {sarah_customer.get('city')}, {sarah_customer.get('state')} {sarah_customer.get('zip_code')}",
+            "customer_apartment": sarah_customer.get("apartment"),
+            "customer_city": sarah_customer.get("city"),
+            "customer_state": sarah_customer.get("state"),
+            "customer_zip_code": sarah_customer.get("zip_code"),
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Customer selection feature test order"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 5.00,
+            "delivery_instructions": "Test delivery for customer selection feature",
+            "order_notes": "Integration test order"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        test_order = response.json()
+        test_order_id = test_order.get("id")
+        
+        print(f"   Order created: {test_order_id}")
+        
+        # Send to kitchen and pay to update customer statistics
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        print("   Order paid successfully")
+        
+        # Verify customer statistics are updated
+        print("\nVerifying customer statistics update...")
+        
+        response = requests.get(f"{API_URL}/customers", headers=headers)
+        response.raise_for_status()
+        updated_customers = response.json()
+        
+        updated_sarah = next((c for c in updated_customers if c.get("phone") == sarah_customer.get("phone")), None)
+        if not updated_sarah:
+            return print_test_result("Customer Selection Feature API", False, "Could not find updated Sarah Johnson customer")
+        
+        print(f"   Updated customer statistics:")
+        print(f"   Total orders: {updated_sarah.get('total_orders')}")
+        print(f"   Total spent: ${updated_sarah.get('total_spent'):.2f}")
+        print(f"   Last order date: {updated_sarah.get('last_order_date')}")
+        
+        if updated_sarah.get("total_orders") < 1:
+            return print_test_result("Customer Selection Feature API", False, 
+                                   f"Customer total_orders not updated. Expected >= 1, Got: {updated_sarah.get('total_orders')}")
+        
+        if updated_sarah.get("total_spent") <= 0:
+            return print_test_result("Customer Selection Feature API", False, 
+                                   f"Customer total_spent not updated. Expected > 0, Got: {updated_sarah.get('total_spent')}")
+        
+        print("✅ Customer statistics properly updated after order payment")
+        
+        # Step 7: Test Customer Selection Modal Data Requirements
+        print("\n--- Step 7: Testing Customer Selection Modal Data Requirements ---")
+        
+        # Simulate the data that would be displayed in the CustomerSelectionModal
+        print("\nSimulating CustomerSelectionModal data display...")
+        
+        modal_customers = []
+        for customer in updated_customers[-5:]:  # Last 5 customers for display
+            modal_customer = {
+                "id": customer.get("id"),
+                "name": customer.get("name"),
+                "phone": customer.get("phone"),
+                "address": customer.get("address"),
+                "apartment": customer.get("apartment"),
+                "city": customer.get("city"),
+                "state": customer.get("state"),
+                "zip_code": customer.get("zip_code"),
+                "full_address": f"{customer.get('address')}{', ' + customer.get('apartment') if customer.get('apartment') else ''}, {customer.get('city')}, {customer.get('state')} {customer.get('zip_code')}",
+                "total_orders": customer.get("total_orders"),
+                "total_spent": customer.get("total_spent"),
+                "display_stats": f"{customer.get('total_orders')} orders • ${customer.get('total_spent'):.2f} spent"
+            }
+            modal_customers.append(modal_customer)
+        
+        print(f"✅ Prepared {len(modal_customers)} customers for modal display")
+        
+        for i, modal_customer in enumerate(modal_customers, 1):
+            print(f"\n   Customer {i}:")
+            print(f"   • Name: {modal_customer['name']}")
+            print(f"   • Phone: {modal_customer['phone']}")
+            print(f"   • Address: {modal_customer['full_address']}")
+            print(f"   • Stats: {modal_customer['display_stats']}")
+        
+        # Step 8: Test Customer Update Functionality
+        print("\n--- Step 8: Testing Customer Update Functionality ---")
+        
+        # Test updating a customer's information
+        customer_to_update = created_customers[0]  # Sarah Johnson
+        customer_id = customer_to_update.get("id")
+        
+        print(f"Testing customer update for: {customer_to_update.get('name')}")
+        
+        update_data = {
+            "name": "Sarah Johnson-Smith",  # Updated name
+            "email": "sarah.johnson.smith@email.com",  # Updated email
+            "apartment": "Apt 4C",  # Updated apartment
+            "notes": "Regular customer, prefers contactless delivery. Recently married."  # Updated notes
+        }
+        
+        response = requests.put(f"{API_URL}/customers/{customer_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        updated_customer = response.json()
+        
+        print(f"✅ Customer updated successfully")
+        print(f"   New name: {updated_customer.get('name')}")
+        print(f"   New email: {updated_customer.get('email')}")
+        print(f"   New apartment: {updated_customer.get('apartment')}")
+        
+        # Verify updates were applied
+        if updated_customer.get("name") != "Sarah Johnson-Smith":
+            return print_test_result("Customer Selection Feature API", False, "Customer name update failed")
+        
+        if updated_customer.get("apartment") != "Apt 4C":
+            return print_test_result("Customer Selection Feature API", False, "Customer apartment update failed")
+        
+        print("✅ Customer update functionality working correctly")
+        
+        # Step 9: Final Verification - Complete Customer Selection Workflow
+        print("\n--- Step 9: Final Verification - Complete Customer Selection Workflow ---")
+        
+        # Simulate the complete workflow that the frontend would use
+        print("\nSimulating complete Customer Selection Feature workflow...")
+        
+        # 1. Get all customers for modal display
+        response = requests.get(f"{API_URL}/customers", headers=headers)
+        response.raise_for_status()
+        workflow_customers = response.json()
+        
+        print(f"✅ Step 1: Retrieved {len(workflow_customers)} customers for selection modal")
+        
+        # 2. Search customers by name
+        search_query = "johnson"
+        filtered_customers = [c for c in workflow_customers if search_query.lower() in c.get("name", "").lower()]
+        
+        print(f"✅ Step 2: Filtered to {len(filtered_customers)} customers matching '{search_query}'")
+        
+        # 3. Select a customer (simulate user selection)
+        if filtered_customers:
+            selected_customer = filtered_customers[0]
+            print(f"✅ Step 3: Selected customer '{selected_customer.get('name')}'")
+            
+            # 4. Verify selected customer has all required data for order creation
+            required_order_fields = ["name", "phone", "address", "apartment", "city", "state", "zip_code"]
+            missing_order_fields = [field for field in required_order_fields if not selected_customer.get(field)]
+            
+            if missing_order_fields and "apartment" not in missing_order_fields:  # apartment can be empty
+                return print_test_result("Customer Selection Feature API", False, 
+                                       f"Selected customer missing required order fields: {missing_order_fields}")
+            
+            print(f"✅ Step 4: Selected customer has all required data for order creation")
+            
+            # 5. Create order using selected customer data
+            workflow_order_data = {
+                "customer_name": selected_customer.get("name"),
+                "customer_phone": selected_customer.get("phone"),
+                "customer_address": selected_customer.get("address"),
+                "customer_apartment": selected_customer.get("apartment", ""),
+                "customer_city": selected_customer.get("city"),
+                "customer_state": selected_customer.get("state"),
+                "customer_zip_code": selected_customer.get("zip_code"),
+                "items": [
+                    {
+                        "menu_item_id": menu_item_id,
+                        "quantity": 1,
+                        "special_instructions": "Customer selection workflow test"
+                    }
+                ],
+                "order_type": "delivery",
+                "tip": 3.00,
+                "delivery_instructions": "Complete workflow test",
+                "order_notes": "Order created via Customer Selection Feature"
+            }
+            
+            response = requests.post(f"{API_URL}/orders", json=workflow_order_data, headers=headers)
+            response.raise_for_status()
+            workflow_order = response.json()
+            
+            print(f"✅ Step 5: Created order using selected customer data")
+            print(f"   Order ID: {workflow_order.get('id')}")
+            print(f"   Customer: {workflow_order.get('customer_name')}")
+            print(f"   Phone: {workflow_order.get('customer_phone')}")
+            print(f"   Address: {workflow_order.get('customer_address')}")
+            print(f"   Apartment: {workflow_order.get('customer_apartment')}")
+            
+            # Verify all customer data was properly transferred to order
+            if workflow_order.get("customer_name") != selected_customer.get("name"):
+                return print_test_result("Customer Selection Feature API", False, "Customer name not properly transferred to order")
+            
+            if workflow_order.get("customer_phone") != selected_customer.get("phone"):
+                return print_test_result("Customer Selection Feature API", False, "Customer phone not properly transferred to order")
+            
+            if workflow_order.get("customer_apartment") != selected_customer.get("apartment"):
+                return print_test_result("Customer Selection Feature API", False, "Customer apartment not properly transferred to order")
+            
+            print("✅ All customer data properly transferred to order")
+        
+        # Final Summary
+        print("\n🎉 CUSTOMER SELECTION FEATURE API TESTING COMPLETE")
+        print("\n📋 COMPREHENSIVE TEST RESULTS:")
+        print("   ✅ Customer Retrieval Endpoint (GET /api/customers) - Working")
+        print("   ✅ Customer Creation (POST /api/customers) - Working with all address fields")
+        print("   ✅ Customer Data Structure - All required fields present")
+        print("   ✅ Customer Search/Filter Support - Name and phone search working")
+        print("   ✅ Individual Customer Retrieval by Phone - Working")
+        print("   ✅ Customer Statistics Integration - Updates after orders")
+        print("   ✅ Customer Update Functionality - Working")
+        print("   ✅ Complete Customer Selection Workflow - End-to-end working")
+        
+        print(f"\n📊 TEST DATA SUMMARY:")
+        print(f"   • Created {len(created_customers)} test customers")
+        print(f"   • Total customers in system: {len(workflow_customers)}")
+        print(f"   • Verified comprehensive address support (apartment, city, state, zip)")
+        print(f"   • Tested customer statistics (total_orders, total_spent)")
+        print(f"   • Verified search functionality (name and phone)")
+        print(f"   • Confirmed complete order creation workflow")
+        
+        return print_test_result("Customer Selection Feature API", True, 
+                               "✅ ALL CUSTOMER SELECTION FEATURE API ENDPOINTS WORKING CORRECTLY: "
+                               "Customer retrieval, creation, search/filter, phone lookup, statistics, "
+                               "updates, and complete workflow integration all functioning as expected. "
+                               "The backend provides all necessary data for the Customer Selection Feature "
+                               "to work properly with comprehensive address fields including apartment support.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Customer Selection Feature API test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Customer Selection Feature API", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
