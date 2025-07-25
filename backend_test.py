@@ -4539,7 +4539,7 @@ def test_customer_selection_feature_api():
         test_customers_data = [
             {
                 "name": "Sarah Johnson",
-                "phone": "5551234567",
+                "phone": f"555{random_string(7)}",
                 "email": "sarah.johnson@email.com",
                 "address": "123 Main Street",
                 "apartment": "Apt 4B",
@@ -4550,7 +4550,7 @@ def test_customer_selection_feature_api():
             },
             {
                 "name": "Michael Chen",
-                "phone": "5552345678", 
+                "phone": f"555{random_string(7)}", 
                 "email": "m.chen@email.com",
                 "address": "456 Oak Avenue",
                 "apartment": "Unit 12",
@@ -4561,7 +4561,7 @@ def test_customer_selection_feature_api():
             },
             {
                 "name": "Emily Rodriguez",
-                "phone": "5553456789",
+                "phone": f"555{random_string(7)}",
                 "email": "emily.r@email.com", 
                 "address": "789 Pine Road",
                 "apartment": "",  # No apartment
@@ -4572,7 +4572,7 @@ def test_customer_selection_feature_api():
             },
             {
                 "name": "David Kim",
-                "phone": "5554567890",
+                "phone": f"555{random_string(7)}",
                 "email": "david.kim@email.com",
                 "address": "321 Elm Street",
                 "apartment": "Suite 200",
@@ -4583,7 +4583,7 @@ def test_customer_selection_feature_api():
             },
             {
                 "name": "Lisa Thompson",
-                "phone": "5555678901",
+                "phone": f"555{random_string(7)}",
                 "email": "lisa.t@email.com",
                 "address": "654 Maple Drive",
                 "apartment": "Apt 7A",
