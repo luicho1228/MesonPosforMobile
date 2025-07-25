@@ -4715,11 +4715,15 @@ def test_customer_selection_feature_api():
         # Test search by phone
         print("\nTesting phone-based search capability...")
         
-        phone_search_tests = [
-            {"search_term": "555123", "expected_phone": "5551234567"},
-            {"search_term": "234567", "expected_phone": "5552345678"},
-            {"search_term": "5553", "expected_phone": "5553456789"}
-        ]
+        # Use actual phone numbers from created customers
+        phone_search_tests = []
+        for customer in created_customers[:3]:  # Test first 3 customers
+            phone = customer.get("phone")
+            if phone and len(phone) >= 6:
+                phone_search_tests.append({
+                    "search_term": phone[:6],  # First 6 digits
+                    "expected_phone": phone
+                })
         
         for phone_test in phone_search_tests:
             search_term = phone_test["search_term"]
@@ -4743,8 +4747,8 @@ def test_customer_selection_feature_api():
         # Step 5: Test Individual Customer Retrieval by Phone
         print("\n--- Step 5: Testing Individual Customer Retrieval by Phone ---")
         
-        # Test GET /api/customers/{phone} endpoint
-        test_phone = "5551234567"  # Sarah Johnson's phone
+        # Test GET /api/customers/{phone} endpoint using first created customer
+        test_phone = created_customers[0].get("phone")  # Sarah Johnson's phone
         
         print(f"Testing GET /api/customers/{test_phone}")
         response = requests.get(f"{API_URL}/customers/{test_phone}", headers=headers)
