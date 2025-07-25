@@ -5134,6 +5134,11 @@ def run_all_tests():
         apartment_success, apartment_details = test_apartment_information_persistence_fix()
         test_results["Apartment Information Persistence Fix"]["success"] = apartment_success
         test_results["Apartment Information Persistence Fix"]["details"] = apartment_details
+        
+        # Test Customer Selection Feature API (Review Request)
+        customer_selection_success, customer_selection_details = test_customer_selection_feature_api()
+        test_results["Customer Selection Feature API"]["success"] = customer_selection_success
+        test_results["Customer Selection Feature API"]["details"] = customer_selection_details
     
     # Print summary
     print("\n========================================")
