@@ -8105,14 +8105,20 @@ const TableSettingsComponent = ({ onBack }) => {
   };
 
   const handleUpdateTable = async () => {
-    if (!tableForm.capacity) {
-      alert('Please enter a capacity');
+    if (!tableForm.name || !tableForm.capacity) {
+      alert('Please enter a table name and capacity');
       return;
     }
 
     const capacity = parseInt(tableForm.capacity);
     if (isNaN(capacity) || capacity <= 0) {
       alert('Please enter a valid capacity');
+      return;
+    }
+
+    // Check if table name already exists (excluding current table)
+    if (tables.some(table => table.id !== editingTable.id && table.name === tableForm.name.trim())) {
+      alert('Table name already exists');
       return;
     }
 
@@ -8127,7 +8133,7 @@ const TableSettingsComponent = ({ onBack }) => {
       alert('Table updated successfully');
       setShowEditTableModal(false);
       setEditingTable(null);
-      setTableForm({ number: '', name: '', capacity: '4' });
+      setTableForm({ name: '', capacity: '4' });
       fetchTables();
     } catch (error) {
       console.error('Error updating table:', error);
