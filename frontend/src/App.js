@@ -2384,7 +2384,7 @@ const TableManagement = ({ onTableSelect }) => {
               <div className="text-sm text-gray-600">
                 {selectedTablesForCancel.map(tableId => {
                   const table = tables.find(t => t.id === tableId);
-                  return table ? `Table ${table.number}` : '';
+                  return table ? getTableDisplayName(table) : '';
                 }).filter(Boolean).join(', ')}
               </div>
             </div>
