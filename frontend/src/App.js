@@ -2053,7 +2053,7 @@ const TableManagement = ({ onTableSelect }) => {
             onClick={() => onTableSelect(table)}
           >
             <div className="text-center">
-              <div className="text-2xl font-bold mb-1">{table.number}</div>
+              <div className="text-2xl font-bold mb-1">{getTableDisplayName(table)}</div>
               <div className="text-xs capitalize">
                 {table.status.replace('_', ' ')}
               </div>
