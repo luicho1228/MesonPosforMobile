@@ -3182,18 +3182,16 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
             setShowEmptyOrderModal(true);
           }
         } else if (editingOrder) {
-          // Load existing table order and check if empty
-          const response = await axios.get(`${API}/tables/${editingOrder.id}/orders`);
-          if (response.data.length > 0) {
-            const tableOrder = response.data[0];
-            setCurrentOrder(tableOrder);
-            setCart(tableOrder.items);
-            
-            // Check if order is now empty and show warning modal
-            if (tableOrder.items.length === 0) {
-              setEmptyOrderData(tableOrder);
-              setShowEmptyOrderModal(true);
-            }
+          // Reload existing table order and check if empty
+          const response = await axios.get(`${API}/orders/${editingOrder.current_order_id}`);
+          const updatedOrder = response.data;
+          setCurrentOrder(updatedOrder);
+          setCart(updatedOrder.items);
+          
+          // Check if order is now empty and show warning modal
+          if (updatedOrder.items.length === 0) {
+            setEmptyOrderData(updatedOrder);
+            setShowEmptyOrderModal(true);
           }
         }
       } catch (error) {
