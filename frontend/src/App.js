@@ -2198,7 +2198,7 @@ const TableManagement = ({ onTableSelect }) => {
               <div className="flex items-center space-x-2">
                 <span className="text-yellow-600 text-lg">⚠️</span>
                 <p className="text-yellow-800 font-medium">
-                  Moving Table {mergeSourceTable.number} order to Table {mergeDestTable.number} (occupied). 
+                  Moving {getTableDisplayName(mergeSourceTable)} order to {getTableDisplayName(mergeDestTable)} (occupied). 
                   Orders will be merged together.
                 </p>
               </div>
