@@ -8000,39 +8000,32 @@ const TableSettingsComponent = ({ onBack }) => {
   };
 
   const handleAddTable = async () => {
-    if (!tableForm.number || !tableForm.capacity) {
-      alert('Please fill in table number and capacity');
+    if (!tableForm.name || !tableForm.capacity) {
+      alert('Please fill in table name and capacity');
       return;
     }
 
-    const tableNumber = parseInt(tableForm.number);
     const capacity = parseInt(tableForm.capacity);
-
-    if (isNaN(tableNumber) || tableNumber <= 0) {
-      alert('Please enter a valid table number');
-      return;
-    }
 
     if (isNaN(capacity) || capacity <= 0) {
       alert('Please enter a valid capacity');
       return;
     }
 
-    // Check if table number already exists
-    if (tables.some(table => table.number === tableNumber)) {
-      alert('Table number already exists');
+    // Check if table name already exists
+    if (tables.some(table => table.name === tableForm.name.trim())) {
+      alert('Table name already exists');
       return;
     }
 
     try {
       await axios.post(`${API}/tables`, {
-        number: tableNumber,
         name: tableForm.name.trim(),
         capacity: capacity
       });
       alert('Table added successfully');
       setShowAddTableModal(false);
-      setTableForm({ number: '', name: '', capacity: '4' });
+      setTableForm({ name: '', capacity: '4' });
       fetchTables();
     } catch (error) {
       console.error('Error adding table:', error);
