@@ -10087,6 +10087,27 @@ const POSInterface = () => {
   );
 };
 
+// Global helper function for displaying table names
+const getTableDisplayName = (table) => {
+  if (table && table.name && table.name.trim()) {
+    return table.name;
+  }
+  return table ? `Table ${table.number}` : 'Unknown Table';
+};
+
+// Helper function for orders - handles both table objects and table_number
+const getOrderTableDisplayName = (order) => {
+  // If order has a table object with name
+  if (order.table && order.table.name && order.table.name.trim()) {
+    return order.table.name;
+  }
+  // If order has table_number, check if we can find the table name
+  if (order.table_number) {
+    return `Table ${order.table_number}`;
+  }
+  return 'Unknown Table';
+};
+
 // App Component
 function App() {
   return (
