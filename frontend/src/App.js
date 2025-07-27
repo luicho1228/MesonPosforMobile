@@ -7964,7 +7964,6 @@ const TableSettingsComponent = ({ onBack }) => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   const [tableForm, setTableForm] = useState({
-    number: '',
     name: '',
     capacity: '4'
   });
