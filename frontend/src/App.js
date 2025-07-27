@@ -2328,7 +2328,7 @@ const TableManagement = ({ onTableSelect }) => {
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-xl font-bold">Table {table.number}</div>
+                    <div className="text-xl font-bold">{getTableDisplayName(table)}</div>
                     <div className="text-sm">Occupied</div>
                     {selectedTablesForCancel.includes(table.id) && (
                       <div className="text-xs text-red-600 mt-1">✓ Selected</div>
