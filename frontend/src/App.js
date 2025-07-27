@@ -8753,30 +8753,19 @@ const TableSettingsComponent = ({ onBack }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">Edit Table {editingTable.number}</h2>
+              <h2 className="text-xl font-semibold">Edit Table: {editingTable.name}</h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Table Number</label>
-                <input
-                  type="number"
-                  value={tableForm.number}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
-                  title="Table number cannot be changed"
-                />
-                <p className="text-xs text-gray-500 mt-1">Table number cannot be changed</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Table Name *</label>
                 <input
                   type="text"
                   value={tableForm.name}
                   onChange={(e) => setTableForm({...tableForm, name: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Bar 1, Patio A, Window Table"
+                  placeholder="e.g., Table 1, Bar 1, Patio A, Outside 1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Leave empty to use "Table [number]"</p>
+                <p className="text-xs text-gray-500 mt-1">Table name must be unique</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (seats) *</label>
