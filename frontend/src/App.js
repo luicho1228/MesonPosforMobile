@@ -2091,7 +2091,7 @@ const TableManagement = ({ onTableSelect }) => {
             {step === 'select-destination' && selectedSourceTable && (
               <>
                 <h3 className="text-lg font-bold mb-4">
-                  Move Table {selectedSourceTable.number} to:
+                  Move {getTableDisplayName(selectedSourceTable)} to:
                 </h3>
                 
                 <div className="mb-4">
@@ -2103,7 +2103,7 @@ const TableManagement = ({ onTableSelect }) => {
                         onClick={() => handleDestTableSelect(table)}
                         className="bg-green-100 border-2 border-green-500 text-green-800 p-3 rounded-lg hover:bg-green-200"
                       >
-                        Table {table.number}
+                        {getTableDisplayName(table)}
                       </button>
                     ))}
                   </div>
