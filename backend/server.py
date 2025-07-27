@@ -825,7 +825,7 @@ async def move_table_order(table_id: str, move_request: TableMoveRequest, user_i
     # Update order with new table
     await db.orders.update_one(
         {"id": order_id},
-        {"$set": {"table_id": move_request.new_table_id, "table_number": new_table["number"], "updated_at": get_current_time()}}
+        {"$set": {"table_id": move_request.new_table_id, "table_name": new_table["name"], "updated_at": get_current_time()}}
     )
     
     # Clear current table
