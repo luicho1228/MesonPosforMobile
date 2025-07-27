@@ -1410,10 +1410,10 @@ async def assign_table_to_order(order_id: str, table_data: dict, user_id: str = 
         raise HTTPException(status_code=404, detail="Table not found")
     
     # Update order with table assignment
-    table_number = table.get("number")
+    table_name = table.get("name")
     update_data = {
         "table_id": table_id,
-        "table_number": table_number,
+        "table_name": table_name,
         "updated_at": get_current_time()
     }
     
