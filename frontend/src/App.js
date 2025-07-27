@@ -4387,7 +4387,7 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
           <div className="flex items-center space-x-2">
             <span className="text-yellow-600 text-lg">⚠️</span>
             <p className="text-yellow-800 font-medium">
-              Table {occupiedTable.number} already has an active order. Your current cart items will be merged with the existing order.
+              {getTableDisplayName(occupiedTable)} already has an active order. Your current cart items will be merged with the existing order.
             </p>
           </div>
         </div>
