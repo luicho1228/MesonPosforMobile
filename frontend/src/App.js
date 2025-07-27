@@ -4050,7 +4050,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                   }`}
                   disabled={table.status === 'cleaning'}
                 >
-                  <div className="text-lg font-bold">Table {table.number}</div>
+                  <div className="text-lg font-bold">{getTableDisplayName(table)}</div>
                   <div className="text-sm capitalize">{table.status}</div>
                   {table.status === 'occupied' && (
                     <div className="text-xs mt-1">Click to merge</div>
