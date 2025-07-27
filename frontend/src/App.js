@@ -4197,7 +4197,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
               </div>
               
               <div className="mt-4 text-xs text-gray-400">
-                Order Info: {emptyOrderData.order_type === 'dine_in' ? `Table ${emptyOrderData.table_number}` : emptyOrderData.order_type}
+                Order Info: {emptyOrderData.order_type === 'dine_in' ? getOrderTableDisplayName(emptyOrderData) : emptyOrderData.order_type}
                 {emptyOrderData.customer_name && ` • ${emptyOrderData.customer_name}`}
               </div>
             </div>
