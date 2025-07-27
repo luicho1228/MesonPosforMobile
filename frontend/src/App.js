@@ -3447,7 +3447,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
               {assignedTable ? (
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div>
-                    <span className="font-medium">Table {assignedTable.number}</span>
+                    <span className="font-medium">{getTableDisplayName(assignedTable)}</span>
                     <span className="text-sm text-gray-600 ml-2">({assignedTable.status})</span>
                   </div>
                   {!fromTableManagement && !editingActiveOrder && (
