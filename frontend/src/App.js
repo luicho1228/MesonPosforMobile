@@ -8641,7 +8641,7 @@ const TableSettingsComponent = ({ onBack }) => {
               <button
                 onClick={() => {
                   setShowAddTableModal(false);
-                  setTableForm({ number: '', name: '', capacity: '4' });
+                  setTableForm({ name: '', capacity: '4' });
                 }}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
               >
