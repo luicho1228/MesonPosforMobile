@@ -1037,11 +1037,11 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
             customer_id = new_customer.id
     
     # Get table info if dine-in
-    table_number = None
+    table_name = None
     if order_data.table_id:
         table = await db.tables.find_one({"id": order_data.table_id})
         if table:
-            table_number = table["number"]
+            table_name = table["name"]
     
     order_obj = Order(
         order_number=order_number,
@@ -1050,7 +1050,7 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
         customer_phone=order_data.customer_phone,
         customer_address=order_data.customer_address,
         table_id=order_data.table_id,
-        table_number=table_number,
+        table_name=table_name,
         items=processed_items,
         subtotal=subtotal,
         tax=tax,
