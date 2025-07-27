@@ -8614,26 +8614,15 @@ const TableSettingsComponent = ({ onBack }) => {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Table Number *</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={tableForm.number}
-                  onChange={(e) => setTableForm({...tableForm, number: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter table number"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Name (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Table Name *</label>
                 <input
                   type="text"
                   value={tableForm.name}
                   onChange={(e) => setTableForm({...tableForm, name: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Bar 1, Patio A, Window Table"
+                  placeholder="e.g., Table 1, Bar 1, Patio A, Outside 1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Leave empty to use "Table [number]"</p>
+                <p className="text-xs text-gray-500 mt-1">Enter a unique name for this table</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (seats) *</label>
