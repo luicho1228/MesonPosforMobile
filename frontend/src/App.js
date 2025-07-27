@@ -8219,8 +8219,7 @@ const TableSettingsComponent = ({ onBack }) => {
   };
 
   const filteredTables = tables.filter(table => {
-    const matchesSearch = table.number.toString().includes(searchQuery) || 
-                         (table.name && table.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    const matchesSearch = table.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          table.capacity.toString().includes(searchQuery) ||
                          searchQuery === '';
     const matchesStatus = statusFilter === 'all' || table.status === statusFilter;
