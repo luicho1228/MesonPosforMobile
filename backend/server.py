@@ -743,7 +743,7 @@ async def create_table(table: TableCreate, user_id: str = Depends(verify_token))
 @api_router.get("/tables", response_model=List[Table])
 async def get_tables():
     tables = await db.tables.find().sort("name", 1).to_list(1000)
-    return [Table(**table) for table in tables]
+    return [Table.from_db_data(table) for table in tables]
 
 @api_router.put("/tables/{table_id}", response_model=Table)
 async def update_table(table_id: str, table_update: TableUpdate, user_id: str = Depends(verify_token)):
