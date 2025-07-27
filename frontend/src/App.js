@@ -2233,7 +2233,7 @@ const TableManagement = ({ onTableSelect }) => {
 
               {/* Destination Order */}
               <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-blue-800 mb-3">Table {mergeDestTable.number} Order</h3>
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">{getTableDisplayName(mergeDestTable)} Order</h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {mergeDestOrder.items?.length > 0 ? (
                     mergeDestOrder.items.map((item, index) => (
