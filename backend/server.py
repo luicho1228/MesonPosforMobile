@@ -710,10 +710,10 @@ async def get_menu_categories():
 # Table routes
 @api_router.post("/tables", response_model=Table)
 async def create_table(table: TableCreate, user_id: str = Depends(verify_token)):
-    # Check if table number already exists
-    existing_table = await db.tables.find_one({"number": table.number})
+    # Check if table name already exists
+    existing_table = await db.tables.find_one({"name": table.name})
     if existing_table:
-        raise HTTPException(status_code=400, detail="Table number already exists")
+        raise HTTPException(status_code=400, detail="Table name already exists")
     
     table_obj = Table(**table.dict())
     await db.tables.insert_one(table_obj.dict())
