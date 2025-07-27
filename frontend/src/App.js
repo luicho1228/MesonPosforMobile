@@ -3380,9 +3380,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
             <span>Back</span>
           </button>
           <h1 className="text-xl font-bold">
-            {editingOrder ? `Edit Table ${editingOrder.number} Order` : 
+            {editingOrder ? `Edit ${getTableDisplayName(editingOrder)} Order` : 
              editingActiveOrder ? `Edit Order ${editingActiveOrder.order_number}` :
-             selectedTable ? `New Order - Table ${selectedTable.number}` : 'New Order'}
+             selectedTable ? `New Order - ${getTableDisplayName(selectedTable)}` : 'New Order'}
           </h1>
           <div className="text-right">
             <div className="text-2xl font-bold text-green-600">${total.toFixed(2)}</div>
