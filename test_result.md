@@ -504,9 +504,21 @@ agent_communication:
         agent: "main"
         comment: "EMPTY ORDER WARNING FOR TABLE MANAGEMENT COMPLETED: User requested to add the empty order warning feature (already present in NewOrder component) to the Table Management section as well. Successfully implemented the same empty order detection and warning modal for when users remove all items from an order while editing from Table Management. Changes include: 1) Added empty order detection in removeFromCart function for editingOrder scenario (when editing from Table Management), 2) Updated the empty order detection to properly reload the table order using the correct API endpoint (orders/{order_id} instead of tables/{table_id}/orders), 3) Enhanced cancelEmptyOrder function to handle navigation back to Table Management and refresh the table status, 4) Maintained the same professional Empty Order Warning Modal with options to Cancel Order or Keep Order for adding items later. The feature now provides consistent user experience across both NewOrder and Table Management contexts."
 
+  - task: "Active Orders Table Display Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "ACTIVE ORDERS TABLE DISPLAY FIX COMPLETED: User reported that dine-in orders in the Active Orders tab were not showing table names or numbers when tables were assigned. Root cause: The Active Orders component was using the old table_number field check and wasn't properly displaying table information for dine-in orders. Fix implemented: 1) Updated Active Orders display logic to show table names for all dine-in orders using order.order_type === 'dine_in' condition, 2) Enhanced getOrderTableDisplayName() function to handle the new table_name field from backend and provide better fallback logic, 3) Added 'Table Not Assigned' fallback for dine-in orders without table assignments, 4) Maintained proper display for delivery orders with customer addresses. Screenshot verification shows dine-in order 'ORD-0203' now correctly displays 'DINE IN - jardin 5' with the table name visible."
+
 agent_communication:
   - agent: "main"
-    message: "EMPTY ORDER WARNING FOR TABLE MANAGEMENT COMPLETED: Successfully extended the empty order warning feature to the Table Management section. When users edit orders from Table Management and remove all items, they now get the same professional warning modal asking if they want to cancel the order or keep it for adding items later. This provides consistent UX across both NewOrder and Table Management workflows. The implementation correctly handles the different API endpoints and navigation flows for table management context."
+    message: "ACTIVE ORDERS TABLE DISPLAY FIX COMPLETED: Successfully fixed the issue where dine-in orders in Active Orders tab were not showing assigned table names. Updated the display logic to properly show table information for all dine-in orders and enhanced the table name resolution function to work with the updated backend schema. Screenshot verification confirms that dine-in orders now show 'DINE IN - [table_name]' format (e.g., 'DINE IN - jardin 5'), providing clear visibility of table assignments for kitchen and service staff."
   - agent: "testing"
     message: "CUSTOMER SELECTION FEATURE API TESTING COMPLETED SUCCESSFULLY: Conducted comprehensive testing of all customer API endpoints that support the newly implemented Customer Selection Feature for delivery orders. ✅ ALL TESTS PASSED: 1) Customer Retrieval Endpoint (GET /api/customers) - Returns all customers with required fields for modal display, 2) Customer Creation (POST /api/customers) - Working with comprehensive address fields including apartment, city, state, zip_code support, 3) Customer Search/Filter - Name and phone-based search functionality confirmed working, 4) Individual Customer Retrieval by Phone - Working correctly for auto-fill functionality, 5) Customer Statistics Integration - Properly updates after order payments, 6) Customer Update Functionality - Working correctly, 7) Complete Customer Selection Workflow - End-to-end integration test passed. Created 5 test customers, verified all required fields, tested search functionality, confirmed order creation workflow. The backend provides all necessary data for the Customer Selection Feature to work properly with the frontend implementation."
 
