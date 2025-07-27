@@ -164,6 +164,27 @@ class Table(BaseModel):
     status: TableStatus = TableStatus.AVAILABLE
     current_order_id: Optional[str] = None
     created_at: datetime = Field(default_factory=get_current_time)
+    
+    @classmethod
+    def from_db_data(cls, data: dict):
+        """Handle migration from old number+name structure to new name-only structure"""
+        # If it's old data with number field, convert to new structure
+        if 'number' in data and 'name' not in data:
+            data['name'] = f"Table {data['number']}"
+        elif 'number' in data and data.get('name', '').strip() == '':
+            # Has number but empty name, use "Table {number}"
+            data['name'] = f"Table {data['number']}"
+        elif 'number' in data and data.get('name', '').strip():
+            # Has both number and custom name, keep the custom name
+            data['name'] = data['name'].strip()
+        elif 'name' not in data:
+            # No name field at all, this shouldn't happen but handle it
+            data['name'] = "Unknown Table"
+            
+        # Remove the old number field if it exists
+        data.pop('number', None)
+        
+        return cls(**data)
 
 class TableCreate(BaseModel):
     name: str  # Table identifier/name
