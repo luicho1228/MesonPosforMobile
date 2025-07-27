@@ -4137,7 +4137,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
               // Clean up the temporary table
               await axios.delete(`${API}/tables/${tempTableId}`);
 
-              alert(`Order successfully merged with Table ${occupiedTableToMerge.number}!`);
+              alert(`Order successfully merged with ${getTableDisplayName(occupiedTableToMerge)}!`);
               
               // Clear cart and reset form
               setCart([]);
