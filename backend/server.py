@@ -1366,11 +1366,11 @@ async def update_order(order_id: str, order_data: OrderCreate, user_id: str = De
         customer_id = customer.id
     
     # Get table info if dine-in
-    table_number = existing_order.get("table_number")
+    table_name = existing_order.get("table_name")
     if order_data.table_id:
         table = await db.tables.find_one({"id": order_data.table_id})
         if table:
-            table_number = table["number"]
+            table_name = table["name"]
     
     # Update the order (keeping same order number and ID)
     update_data = {
@@ -1379,7 +1379,7 @@ async def update_order(order_id: str, order_data: OrderCreate, user_id: str = De
         "customer_phone": order_data.customer_phone,
         "customer_address": order_data.customer_address,
         "table_id": order_data.table_id,
-        "table_number": table_number,
+        "table_name": table_name,
         "items": [item.dict() for item in processed_items],
         "subtotal": subtotal,
         "tax": tax,
