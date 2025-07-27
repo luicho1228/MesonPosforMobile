@@ -1222,7 +1222,7 @@ const OrderHistory = ({ onBack }) => {
                           <div className="text-sm">
                             <div className="font-medium">{order.order_type.replace('_', ' ').toUpperCase()}</div>
                             {order.table_number && (
-                              <div className="text-gray-500">Table {order.table_number}</div>
+                              <div className="text-gray-500">{getOrderTableDisplayName(order)}</div>
                             )}
                           </div>
                         </td>
