@@ -263,7 +263,7 @@ class Order(BaseModel):
     customer_state: str = ""
     customer_zip_code: str = ""
     table_id: Optional[str] = None
-    table_number: Optional[int] = None
+    table_name: Optional[str] = None  # Changed from table_number to table_name
     items: List[OrderItem]
     removed_items: List[Dict] = []  # Track removed items with reasons
     subtotal: float
