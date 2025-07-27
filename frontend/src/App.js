@@ -2077,7 +2077,7 @@ const TableManagement = ({ onTableSelect }) => {
                       onClick={() => handleSourceTableSelect(table)}
                       className="bg-red-100 border-2 border-red-500 text-red-800 p-3 rounded-lg hover:bg-red-200"
                     >
-                      Table {table.number}
+                      {getTableDisplayName(table)}
                     </button>
                   ))}
                 </div>
