@@ -2793,6 +2793,14 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       if (onBack) {
         onBack();
       }
+      
+      // If editing from table management, also refresh tables
+      if (editingOrder && fromTableManagement) {
+        // Force refresh of table management when we go back
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error cancelling empty order:', error);
       alert(`Failed to cancel order: ${error.response?.data?.detail || error.message}`);
