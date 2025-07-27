@@ -1572,7 +1572,7 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
               <div className="mb-3">
                 <p className="text-sm font-medium">
                   {order.order_type.replace('_', ' ').toUpperCase()}
-                  {order.table_number && ` - Table ${order.table_number}`}
+                  {order.table_number && ` - ${getOrderTableDisplayName(order)}`}
                   {order.order_type === 'delivery' && order.customer_address && ` - ${order.customer_address.substring(0, 30)}...`}
                 </p>
                 {order.customer_name && (
