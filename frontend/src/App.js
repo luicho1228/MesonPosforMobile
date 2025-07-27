@@ -10093,7 +10093,7 @@ const getOrderTableDisplayName = (order, tables = []) => {
     return order.table.name;
   }
   
-  // If we have table_name field, use it directly
+  // If we have table_name field (new backend field), use it directly
   if (order.table_name) {
     return order.table_name;
   }
@@ -10105,6 +10105,11 @@ const getOrderTableDisplayName = (order, tables = []) => {
       return table.name;
     }
     return `Table ${order.table_number}`;
+  }
+  
+  // If it's a dine-in order but no table info, show generic message
+  if (order.order_type === 'dine_in') {
+    return 'Table Not Assigned';
   }
   
   return 'Unknown Table';
