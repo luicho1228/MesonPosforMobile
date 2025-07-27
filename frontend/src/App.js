@@ -8150,7 +8150,7 @@ const TableSettingsComponent = ({ onBack }) => {
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete Table ${table.number}?`)) {
+    if (window.confirm(`Are you sure you want to delete ${getTableDisplayName(table)}?`)) {
       try {
         await axios.delete(`${API}/tables/${table.id}`);
         alert('Table deleted successfully');
