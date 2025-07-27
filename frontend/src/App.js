@@ -4501,7 +4501,7 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
                 : 'bg-red-600 text-white hover:bg-red-700'
             }`}
           >
-            {currentCart.length === 0 ? 'No Items to Merge' : `Confirm Merge with Table ${occupiedTable.number}`}
+            {currentCart.length === 0 ? 'No Items to Merge' : `Confirm Merge with ${getTableDisplayName(occupiedTable)}`}
           </button>
         </div>
       </div>
