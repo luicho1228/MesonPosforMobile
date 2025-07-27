@@ -7990,7 +7990,7 @@ const TableSettingsComponent = ({ onBack }) => {
     try {
       setLoading(true);
       const response = await axios.get(`${API}/tables`);
-      setTables(response.data.sort((a, b) => a.number - b.number));
+      setTables(response.data.sort((a, b) => a.name.localeCompare(b.name)));
     } catch (error) {
       console.error('Error fetching tables:', error);
       alert('Failed to load tables');
