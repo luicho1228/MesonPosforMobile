@@ -10096,15 +10096,25 @@ const getTableDisplayName = (table) => {
 };
 
 // Helper function for orders - handles both table objects and table_number
-const getOrderTableDisplayName = (order) => {
+const getOrderTableDisplayName = (order, tables = []) => {
   // If order has a table object with name
   if (order.table && order.table.name && order.table.name.trim()) {
     return order.table.name;
   }
-  // If order has table_number, check if we can find the table name
+  
+  // If we have tables array, try to find table by number and get its name
+  if (order.table_number && tables.length > 0) {
+    const table = tables.find(t => t.number === order.table_number);
+    if (table && table.name && table.name.trim()) {
+      return table.name;
+    }
+  }
+  
+  // Fall back to table number display
   if (order.table_number) {
     return `Table ${order.table_number}`;
   }
+  
   return 'Unknown Table';
 };
 
