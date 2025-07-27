@@ -159,16 +159,14 @@ class ModifierCreate(BaseModel):
 
 class Table(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    number: int
-    name: str = ""  # Custom table name (e.g., "Bar 1", "Patio A")
+    name: str  # Table identifier/name (e.g., "Table 1", "Bar 1", "Patio A")
     capacity: int = 4
     status: TableStatus = TableStatus.AVAILABLE
     current_order_id: Optional[str] = None
     created_at: datetime = Field(default_factory=get_current_time)
 
 class TableCreate(BaseModel):
-    number: int
-    name: str = ""  # Custom table name
+    name: str  # Table identifier/name
     capacity: int = 4
 
 class TableUpdate(BaseModel):
