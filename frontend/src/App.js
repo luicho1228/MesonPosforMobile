@@ -2408,7 +2408,7 @@ const TableManagement = ({ onTableSelect }) => {
                       if (table && table.current_order_id) {
                         await axios.post(`${API}/orders/${table.current_order_id}/cancel`, {
                           reason: 'other',
-                          notes: `Table ${table.number} cancelled via table management`
+                          notes: `${getTableDisplayName(table)} cancelled via table management`
                         });
                       }
                       
