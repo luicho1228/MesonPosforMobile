@@ -2150,15 +2150,15 @@ const TableManagement = ({ onTableSelect }) => {
             <h3 className="text-lg font-bold mb-4 text-orange-600">⚠️ Table Occupied</h3>
             
             <p className="mb-4">
-              Table {selectedDestTable.number} is already occupied with an order. 
-              Do you want to <strong>merge</strong> the orders from Table {selectedSourceTable.number} 
-              into Table {selectedDestTable.number}?
+              {getTableDisplayName(selectedDestTable)} is already occupied with an order. 
+              Do you want to <strong>merge</strong> the orders from {getTableDisplayName(selectedSourceTable)} 
+              into {getTableDisplayName(selectedDestTable)}?
             </p>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
               <p className="text-sm text-yellow-800">
                 <strong>Note:</strong> This will combine all items from both tables into one order 
-                on Table {selectedDestTable.number}. Table {selectedSourceTable.number} will become available.
+                on {getTableDisplayName(selectedDestTable)}. {getTableDisplayName(selectedSourceTable)} will become available.
               </p>
             </div>
 
