@@ -2961,13 +2961,20 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
 
   const loadActiveOrder = async () => {
     const order = editingActiveOrder;
-    console.log('🔍 DEBUG loadActiveOrder: order =', order);
-    console.log('🔍 DEBUG loadActiveOrder: order.table_id =', order.table_id);
-    console.log('🔍 DEBUG loadActiveOrder: order.table_number =', order.table_number);
+    console.log('🔍 DEBUG loadActiveOrder: Full order object =', order);
+    console.log('🔍 DEBUG loadActiveOrder: Customer fields =', {
+      customer_name: order.customer_name,
+      customer_phone: order.customer_phone,
+      customer_address: order.customer_address,
+      customer_apartment: order.customer_apartment,
+      customer_city: order.customer_city,
+      customer_state: order.customer_state,
+      customer_zip_code: order.customer_zip_code
+    });
     
     setCurrentOrder(order);
     setCart(order.items);
-    setCustomerInfo({
+    const customerInfoData = {
       name: order.customer_name,
       phone: order.customer_phone,
       address: order.customer_address,
@@ -2975,7 +2982,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       city: order.customer_city || '',
       state: order.customer_state || '',
       zip_code: order.customer_zip_code || ''
-    });
+    };
+    console.log('🔍 DEBUG loadActiveOrder: Setting customerInfo to =', customerInfoData);
+    setCustomerInfo(customerInfoData);
     setOrderType(order.order_type);
     
     // Show customer info section if this is a delivery/takeout order with customer data
