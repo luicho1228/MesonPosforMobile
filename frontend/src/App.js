@@ -2961,16 +2961,6 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
 
   const loadActiveOrder = async () => {
     const order = editingActiveOrder;
-    console.log('🔍 DEBUG loadActiveOrder: Full order object =', order);
-    console.log('🔍 DEBUG loadActiveOrder: Customer fields =', {
-      customer_name: order.customer_name,
-      customer_phone: order.customer_phone,
-      customer_address: order.customer_address,
-      customer_apartment: order.customer_apartment,
-      customer_city: order.customer_city,
-      customer_state: order.customer_state,
-      customer_zip_code: order.customer_zip_code
-    });
     
     setCurrentOrder(order);
     setCart(order.items);
@@ -2989,10 +2979,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     // If customer ID exists but some fields are missing, try to fetch complete customer data
     if (order.customer_id && (!order.customer_apartment && !order.customer_city && !order.customer_state && !order.customer_zip_code)) {
       try {
-        console.log('🔍 DEBUG: Fetching complete customer info for customer_id:', order.customer_id);
         const customerResponse = await axios.get(`${API}/customers/${order.customer_id}`);
         const customerData = customerResponse.data;
-        console.log('🔍 DEBUG: Complete customer data from API:', customerData);
         
         // Update customer info with complete data from customer record
         customerInfoData = {
@@ -3004,14 +2992,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           state: customerData.state || order.customer_state || '',
           zip_code: customerData.zip_code || order.customer_zip_code || ''
         };
-        console.log('🔍 DEBUG: Enhanced customerInfo with complete data:', customerInfoData);
       } catch (error) {
-        console.log('🔍 DEBUG: Could not fetch complete customer data:', error);
-        // Continue with order data if customer lookup fails
+        // Continue with order data if customer lookup fails (customer may not exist)
+        console.log('Customer record not found, using order data');
       }
     }
     
-    console.log('🔍 DEBUG loadActiveOrder: Setting customerInfo to =', customerInfoData);
     setCustomerInfo(customerInfoData);
     setOrderType(order.order_type);
     
@@ -3019,41 +3005,32 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     if ((order.order_type === 'delivery' || order.order_type === 'takeout' || order.order_type === 'phone_order') && 
         (order.customer_name || order.customer_phone || order.customer_address)) {
       setShowCustomerInfo(true);
-      console.log('🔍 DEBUG loadActiveOrder: Setting showCustomerInfo to true for delivery/takeout order');
     }
     
     // If order has a table assigned (check both table_id and table_number)
     if (order.table_id || order.table_number) {
       try {
-        console.log('🔍 DEBUG loadActiveOrder: Fetching tables for assignment');
         const tableResponse = await axios.get(`${API}/tables`);
         const tables = tableResponse.data;
-        console.log('🔍 DEBUG loadActiveOrder: All tables:', tables);
         
         // Try to find table by table_id first, then by table_number
         let assignedTableData = null;
         if (order.table_id) {
           assignedTableData = tables.find(table => table.id === order.table_id);
-          console.log('🔍 DEBUG loadActiveOrder: Found by table_id:', assignedTableData);
         }
         
         if (!assignedTableData && order.table_number) {
           assignedTableData = tables.find(table => table.number === order.table_number);
-          console.log('🔍 DEBUG loadActiveOrder: Found by table_number:', assignedTableData);
         }
         
         if (assignedTableData) {
           setAssignedTable(assignedTableData);
-          console.log('🔍 DEBUG loadActiveOrder: Set assignedTable to:', assignedTableData);
-        } else {
-          console.log('🔍 DEBUG loadActiveOrder: No matching table found for table_id:', order.table_id, 'or table_number:', order.table_number);
         }
       } catch (error) {
         console.error('Error loading assigned table:', error);
       }
     } else {
       // Clear assigned table if order has no table
-      console.log('🔍 DEBUG loadActiveOrder: Order has no table assignment, clearing assignedTable');
       setAssignedTable(null);
     }
   };
