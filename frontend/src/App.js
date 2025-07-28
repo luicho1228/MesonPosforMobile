@@ -2974,7 +2974,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     
     setCurrentOrder(order);
     setCart(order.items);
-    const customerInfoData = {
+    
+    // Try to get complete customer information if order fields are incomplete
+    let customerInfoData = {
       name: order.customer_name,
       phone: order.customer_phone,
       address: order.customer_address,
@@ -2983,6 +2985,32 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       state: order.customer_state || '',
       zip_code: order.customer_zip_code || ''
     };
+    
+    // If customer ID exists but some fields are missing, try to fetch complete customer data
+    if (order.customer_id && (!order.customer_apartment && !order.customer_city && !order.customer_state && !order.customer_zip_code)) {
+      try {
+        console.log('🔍 DEBUG: Fetching complete customer info for customer_id:', order.customer_id);
+        const customerResponse = await axios.get(`${API}/customers/${order.customer_id}`);
+        const customerData = customerResponse.data;
+        console.log('🔍 DEBUG: Complete customer data from API:', customerData);
+        
+        // Update customer info with complete data from customer record
+        customerInfoData = {
+          name: customerData.name || order.customer_name,
+          phone: customerData.phone || order.customer_phone,
+          address: customerData.address || order.customer_address,
+          apartment: customerData.apartment || order.customer_apartment || '',
+          city: customerData.city || order.customer_city || '',
+          state: customerData.state || order.customer_state || '',
+          zip_code: customerData.zip_code || order.customer_zip_code || ''
+        };
+        console.log('🔍 DEBUG: Enhanced customerInfo with complete data:', customerInfoData);
+      } catch (error) {
+        console.log('🔍 DEBUG: Could not fetch complete customer data:', error);
+        // Continue with order data if customer lookup fails
+      }
+    }
+    
     console.log('🔍 DEBUG loadActiveOrder: Setting customerInfo to =', customerInfoData);
     setCustomerInfo(customerInfoData);
     setOrderType(order.order_type);
