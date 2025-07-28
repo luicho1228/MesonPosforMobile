@@ -890,7 +890,14 @@ async def get_customers(user_id: str = Depends(verify_token)):
     customers = await db.customers.find().sort("created_at", -1).to_list(1000)
     return [Customer(**customer) for customer in customers]
 
-@api_router.get("/customers/{phone}")
+@api_router.get("/customers/{customer_id}")
+async def get_customer_by_id(customer_id: str, user_id: str = Depends(verify_token)):
+    customer = await db.customers.find_one({"id": customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return Customer(**customer)
+
+@api_router.get("/customers/phone/{phone}")
 async def get_customer_by_phone(phone: str, user_id: str = Depends(verify_token)):
     customer = await db.customers.find_one({"phone": phone})
     if not customer:
