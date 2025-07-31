@@ -5115,30 +5115,69 @@ const TaxChargesComponent = ({ onBack }) => {
     }
   };
 
-  const toggleActive = (type, id) => {
-    switch (type) {
-      case 'tax':
-        setTaxRates(prev => prev.map(item => 
-          item.id === id ? { ...item, active: !item.active } : item
-        ));
-        break;
-      case 'charge':
-        setServiceCharges(prev => prev.map(item => 
-          item.id === id ? { ...item, active: !item.active } : item
-        ));
-        break;
-      case 'gratuity':
-        setGratuityRules(prev => prev.map(item => 
-          item.id === id ? { ...item, active: !item.active } : item
-        ));
-        break;
-      case 'discount':
-        setDiscountPolicies(prev => prev.map(item => 
-          item.id === id ? { ...item, active: !item.active } : item
-        ));
-        break;
+  const toggleActive = async (type, id) => {
+    try {
+      let endpoint = '';
+      let currentItem = null;
+      
+      // Find the current item and determine endpoint
+      switch (type) {
+        case 'tax':
+          currentItem = taxRates.find(item => item.id === id);
+          endpoint = `${API}/tax-charges/tax-rates/${id}`;
+          break;
+        case 'charge':
+          currentItem = serviceCharges.find(item => item.id === id);
+          endpoint = `${API}/tax-charges/service-charges/${id}`;
+          break;
+        case 'gratuity':
+          currentItem = gratuityRules.find(item => item.id === id);
+          endpoint = `${API}/tax-charges/gratuity-rules/${id}`;
+          break;
+        case 'discount':
+          currentItem = discountPolicies.find(item => item.id === id);
+          endpoint = `${API}/tax-charges/discount-policies/${id}`;
+          break;
+        default:
+          throw new Error('Invalid type');
+      }
+
+      if (!currentItem) {
+        throw new Error('Item not found');
+      }
+
+      // Update the item with toggled active status
+      const updatedItem = { ...currentItem, active: !currentItem.active };
+      const response = await axios.put(endpoint, updatedItem);
+
+      // Update local state with response data
+      switch (type) {
+        case 'tax':
+          setTaxRates(prev => prev.map(item => 
+            item.id === id ? response.data : item
+          ));
+          break;
+        case 'charge':
+          setServiceCharges(prev => prev.map(item => 
+            item.id === id ? response.data : item
+          ));
+          break;
+        case 'gratuity':
+          setGratuityRules(prev => prev.map(item => 
+            item.id === id ? response.data : item
+          ));
+          break;
+        case 'discount':
+          setDiscountPolicies(prev => prev.map(item => 
+            item.id === id ? response.data : item
+          ));
+          break;
+      }
+
+    } catch (error) {
+      console.error('Error toggling active status:', error);
+      alert('Failed to update status: ' + (error.response?.data?.detail || error.message));
     }
-    saveTaxChargesData();
   };
 
   const resetTaxForm = () => {
