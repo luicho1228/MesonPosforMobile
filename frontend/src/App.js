@@ -3219,14 +3219,150 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
   };
 
-  const calculateTotal = () => {
+  const calculateTotal = async () => {
     const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
-    const tax = subtotal * 0.08;
-    return {
-      subtotal,
-      tax,
-      total: subtotal + tax
-    };
+    
+    try {
+      // Fetch active tax and charges settings
+      const [taxRatesRes, serviceChargesRes, gratuityRulesRes, discountPoliciesRes] = await Promise.all([
+        axios.get(`${API}/tax-charges/tax-rates`),
+        axios.get(`${API}/tax-charges/service-charges`),
+        axios.get(`${API}/tax-charges/gratuity-rules`),
+        axios.get(`${API}/tax-charges/discount-policies`)
+      ]);
+
+      const activeTaxRates = taxRatesRes.data.filter(tax => tax.active);
+      const activeServiceCharges = serviceChargesRes.data.filter(charge => charge.active);
+      const activeGratuityRules = gratuityRulesRes.data.filter(rule => rule.active);
+      const activeDiscountPolicies = discountPoliciesRes.data.filter(discount => discount.active);
+
+      // Calculate taxes
+      let totalTaxes = 0;
+      const taxBreakdown = [];
+      for (const tax of activeTaxRates) {
+        let taxAmount = 0;
+        if (tax.type === 'percentage') {
+          taxAmount = subtotal * (tax.rate / 100);
+        } else if (tax.type === 'fixed') {
+          taxAmount = tax.rate;
+        }
+        taxBreakdown.push({
+          name: tax.name,
+          type: 'tax',
+          amount: taxAmount,
+          rate: tax.rate,
+          taxType: tax.type
+        });
+        totalTaxes += taxAmount;
+      }
+
+      // Calculate service charges
+      let totalServiceCharges = 0;
+      const serviceChargeBreakdown = [];
+      for (const charge of activeServiceCharges) {
+        let chargeAmount = 0;
+        if (charge.type === 'percentage') {
+          chargeAmount = subtotal * (charge.amount / 100);
+        } else if (charge.type === 'fixed') {
+          chargeAmount = charge.amount;
+        }
+        serviceChargeBreakdown.push({
+          name: charge.name,
+          type: 'service_charge',
+          amount: chargeAmount,
+          rate: charge.amount,
+          chargeType: charge.type
+        });
+        totalServiceCharges += chargeAmount;
+      }
+
+      // Calculate gratuity (if applicable based on conditions)
+      let totalGratuity = 0;
+      const gratuityBreakdown = [];
+      for (const gratuity of activeGratuityRules) {
+        // Check if gratuity conditions are met
+        let shouldApply = false;
+        if (gratuity.trigger_condition === 'order_amount' && subtotal >= (gratuity.order_amount_min || 0)) {
+          shouldApply = true;
+        } else if (gratuity.trigger_condition === 'party_size') {
+          // For now, assume party size of 1 unless specified
+          shouldApply = true;
+        }
+
+        if (shouldApply && gratuity.auto_apply) {
+          let gratuityAmount = 0;
+          if (gratuity.type === 'percentage') {
+            gratuityAmount = subtotal * (gratuity.amount / 100);
+          } else if (gratuity.type === 'fixed') {
+            gratuityAmount = gratuity.amount;
+          }
+          gratuityBreakdown.push({
+            name: gratuity.name,
+            type: 'gratuity',
+            amount: gratuityAmount,
+            rate: gratuity.amount,
+            gratuityType: gratuity.type
+          });
+          totalGratuity += gratuityAmount;
+        }
+      }
+
+      // Calculate discounts
+      let totalDiscounts = 0;
+      const discountBreakdown = [];
+      for (const discount of activeDiscountPolicies) {
+        // For now, apply all active discounts that meet minimum order conditions
+        if (subtotal >= (discount.minimum_order_amount || 0)) {
+          let discountAmount = 0;
+          if (discount.type === 'percentage') {
+            discountAmount = subtotal * (discount.amount / 100);
+          } else if (discount.type === 'fixed') {
+            discountAmount = discount.amount;
+          }
+          discountBreakdown.push({
+            name: discount.name,
+            type: 'discount',
+            amount: discountAmount,
+            rate: discount.amount,
+            discountType: discount.type
+          });
+          totalDiscounts += discountAmount;
+        }
+      }
+
+      return {
+        subtotal,
+        taxes: totalTaxes,
+        serviceCharges: totalServiceCharges,
+        gratuity: totalGratuity,
+        discounts: totalDiscounts,
+        total: subtotal + totalTaxes + totalServiceCharges + totalGratuity - totalDiscounts,
+        breakdown: {
+          taxes: taxBreakdown,
+          serviceCharges: serviceChargeBreakdown,
+          gratuity: gratuityBreakdown,
+          discounts: discountBreakdown
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching tax/charges settings:', error);
+      // Fallback to simple calculation
+      const tax = subtotal * 0.08;
+      return {
+        subtotal,
+        taxes: tax,
+        serviceCharges: 0,
+        gratuity: 0,
+        discounts: 0,
+        total: subtotal + tax,
+        breakdown: {
+          taxes: [{ name: 'Default Tax', type: 'tax', amount: tax, rate: 8, taxType: 'percentage' }],
+          serviceCharges: [],
+          gratuity: [],
+          discounts: []
+        }
+      };
+    }
   };
 
   const createOrUpdateOrder = async () => {
