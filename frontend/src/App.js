@@ -3435,7 +3435,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
 
     try {
-      const totals = await calculateTotal();
+      const totals = calculateTotal();
       const orderData = currentOrder || {
         ...totals,
         items: cart,
