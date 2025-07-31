@@ -3547,8 +3547,31 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   // Update totals when cart changes
   useEffect(() => {
     const updateTotals = async () => {
-      const totals = await calculateTotal();
-      setOrderTotals(totals);
+      try {
+        console.log('🔍 DEBUG: Updating totals for cart:', cart);
+        const totals = await calculateTotal();
+        console.log('🔍 DEBUG: Calculated totals:', totals);
+        setOrderTotals(totals);
+      } catch (error) {
+        console.error('Error updating totals:', error);
+        // Fallback to simple calculation
+        const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
+        const tax = subtotal * 0.08;
+        setOrderTotals({
+          subtotal,
+          taxes: tax,
+          serviceCharges: 0,
+          gratuity: 0,
+          discounts: 0,
+          total: subtotal + tax,
+          breakdown: {
+            taxes: [{ name: 'Default Tax', type: 'tax', amount: tax, rate: 8, taxType: 'percentage' }],
+            serviceCharges: [],
+            gratuity: [],
+            discounts: []
+          }
+        });
+      }
     };
     
     if (cart.length > 0) {
