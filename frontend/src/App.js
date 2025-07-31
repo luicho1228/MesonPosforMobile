@@ -3570,6 +3570,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
   }, [cart]);
 
+  const filteredItems = selectedCategory === 'all' 
+    ? menuItems 
+    : menuItems.filter(item => item.category === selectedCategory);
+
+  const { subtotal, taxes, serviceCharges, gratuity, discounts, total, breakdown } = orderTotals;
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
