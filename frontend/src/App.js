@@ -4850,32 +4850,41 @@ const TaxChargesComponent = ({ onBack }) => {
     }
 
     const chargeData = {
-      id: editingItem ? editingItem.id : Date.now().toString(),
       name: chargeForm.name,
       description: chargeForm.description,
       amount: amount,
       type: chargeForm.type,
+      applies_to: chargeForm.applies_to,
+      conditions: chargeForm.conditions,
+      minimum_amount: parseFloat(chargeForm.minimum_amount) || 0,
+      party_size_threshold: parseInt(chargeForm.party_size_threshold) || 0,
+      order_types: chargeForm.order_types,
       active: chargeForm.active,
-      mandatory: chargeForm.mandatory,
-      applies_to_subtotal: chargeForm.applies_to_subtotal,
-      applies_to_order_types: chargeForm.applies_to_order_types,
-      minimum_order_amount: parseFloat(chargeForm.minimum_order_amount) || 0
+      mandatory: chargeForm.mandatory
     };
 
-    if (editingItem) {
-      setServiceCharges(prev => prev.map(item => 
-        item.id === editingItem.id ? chargeData : item
-      ));
-      alert('Service charge updated successfully');
-    } else {
-      setServiceCharges(prev => [...prev, chargeData]);
-      alert('Service charge added successfully');
-    }
+    try {
+      if (editingItem) {
+        // Update existing service charge
+        const response = await axios.put(`${API}/tax-charges/service-charges/${editingItem.id}`, chargeData);
+        setServiceCharges(prev => prev.map(item => 
+          item.id === editingItem.id ? response.data : item
+        ));
+        alert('Service charge updated successfully');
+      } else {
+        // Create new service charge
+        const response = await axios.post(`${API}/tax-charges/service-charges`, chargeData);
+        setServiceCharges(prev => [...prev, response.data]);
+        alert('Service charge added successfully');
+      }
 
-    setShowChargeModal(false);
-    setEditingItem(null);
-    resetChargeForm();
-    saveTaxChargesData();
+      setShowChargeModal(false);
+      setEditingItem(null);
+      resetChargeForm();
+    } catch (error) {
+      console.error('Error saving service charge:', error);
+      alert('Failed to save service charge: ' + (error.response?.data?.detail || error.message));
+    }
   };
 
   const handleSaveGratuity = async () => {
