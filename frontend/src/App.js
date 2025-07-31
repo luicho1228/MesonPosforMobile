@@ -5068,24 +5068,50 @@ const TaxChargesComponent = ({ onBack }) => {
     setShowDiscountModal(true);
   };
 
-  const handleDelete = (type, id) => {
+  const handleDelete = async (type, id) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      switch (type) {
-        case 'tax':
-          setTaxRates(prev => prev.filter(item => item.id !== id));
-          break;
-        case 'charge':
-          setServiceCharges(prev => prev.filter(item => item.id !== id));
-          break;
-        case 'gratuity':
-          setGratuityRules(prev => prev.filter(item => item.id !== id));
-          break;
-        case 'discount':
-          setDiscountPolicies(prev => prev.filter(item => item.id !== id));
-          break;
+      try {
+        let endpoint = '';
+        switch (type) {
+          case 'tax':
+            endpoint = `${API}/tax-charges/tax-rates/${id}`;
+            break;
+          case 'charge':
+            endpoint = `${API}/tax-charges/service-charges/${id}`;
+            break;
+          case 'gratuity':
+            endpoint = `${API}/tax-charges/gratuity-rules/${id}`;
+            break;
+          case 'discount':
+            endpoint = `${API}/tax-charges/discount-policies/${id}`;
+            break;
+          default:
+            throw new Error('Invalid type');
+        }
+
+        await axios.delete(endpoint);
+
+        // Update local state after successful deletion
+        switch (type) {
+          case 'tax':
+            setTaxRates(prev => prev.filter(item => item.id !== id));
+            break;
+          case 'charge':
+            setServiceCharges(prev => prev.filter(item => item.id !== id));
+            break;
+          case 'gratuity':
+            setGratuityRules(prev => prev.filter(item => item.id !== id));
+            break;
+          case 'discount':
+            setDiscountPolicies(prev => prev.filter(item => item.id !== id));
+            break;
+        }
+
+        alert('Item deleted successfully');
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('Failed to delete item: ' + (error.response?.data?.detail || error.message));
       }
-      saveTaxChargesData();
-      alert('Item deleted successfully');
     }
   };
 
