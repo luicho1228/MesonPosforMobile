@@ -4643,16 +4643,28 @@ const TaxChargesComponent = ({ onBack }) => {
   const fetchTaxChargesData = async () => {
     try {
       setLoading(true);
-      // Temporarily using localStorage while API integration is stabilized
-      const savedData = JSON.parse(localStorage.getItem('taxChargesData') || '{}');
       
-      setTaxRates(savedData.taxRates || getDefaultTaxRates());
-      setServiceCharges(savedData.serviceCharges || getDefaultServiceCharges());
-      setGratuityRules(savedData.gratuityRules || getDefaultGratuityRules());
-      setDiscountPolicies(savedData.discountPolicies || getDefaultDiscountPolicies());
+      // Fetch all tax and charges data from backend APIs
+      const [taxRatesRes, serviceChargesRes, gratuityRulesRes, discountPoliciesRes] = await Promise.all([
+        axios.get(`${API}/tax-charges/tax-rates`),
+        axios.get(`${API}/tax-charges/service-charges`),
+        axios.get(`${API}/tax-charges/gratuity-rules`),
+        axios.get(`${API}/tax-charges/discount-policies`)
+      ]);
+      
+      setTaxRates(taxRatesRes.data.length > 0 ? taxRatesRes.data : getDefaultTaxRates());
+      setServiceCharges(serviceChargesRes.data.length > 0 ? serviceChargesRes.data : getDefaultServiceCharges());
+      setGratuityRules(gratuityRulesRes.data.length > 0 ? gratuityRulesRes.data : getDefaultGratuityRules());
+      setDiscountPolicies(discountPoliciesRes.data.length > 0 ? discountPoliciesRes.data : getDefaultDiscountPolicies());
+      
     } catch (error) {
       console.error('Error fetching tax/charges data:', error);
-      alert('Failed to load tax and charges configuration');
+      // Fallback to default data if API fails
+      setTaxRates(getDefaultTaxRates());
+      setServiceCharges(getDefaultServiceCharges());
+      setGratuityRules(getDefaultGratuityRules());
+      setDiscountPolicies(getDefaultDiscountPolicies());
+      alert('Failed to load tax and charges configuration from server. Using default settings.');
     } finally {
       setLoading(false);
     }
