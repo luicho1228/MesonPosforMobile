@@ -4801,29 +4801,40 @@ const TaxChargesComponent = ({ onBack }) => {
     }
 
     const taxData = {
-      id: editingItem ? editingItem.id : Date.now().toString(),
       name: taxForm.name,
       description: taxForm.description,
       rate: rate,
       type: taxForm.type,
+      category: taxForm.category,
+      applies_to: taxForm.applies_to,
+      jurisdiction: taxForm.jurisdiction,
+      tax_id: taxForm.tax_id,
       active: taxForm.active,
-      applies_to_order_types: taxForm.applies_to_order_types
+      inclusive: taxForm.inclusive
     };
 
-    if (editingItem) {
-      setTaxRates(prev => prev.map(item => 
-        item.id === editingItem.id ? taxData : item
-      ));
-      alert('Tax rate updated successfully');
-    } else {
-      setTaxRates(prev => [...prev, taxData]);
-      alert('Tax rate added successfully');
-    }
+    try {
+      if (editingItem) {
+        // Update existing tax rate
+        const response = await axios.put(`${API}/tax-charges/tax-rates/${editingItem.id}`, taxData);
+        setTaxRates(prev => prev.map(item => 
+          item.id === editingItem.id ? response.data : item
+        ));
+        alert('Tax rate updated successfully');
+      } else {
+        // Create new tax rate
+        const response = await axios.post(`${API}/tax-charges/tax-rates`, taxData);
+        setTaxRates(prev => [...prev, response.data]);
+        alert('Tax rate added successfully');
+      }
 
-    setShowTaxModal(false);
-    setEditingItem(null);
-    resetTaxForm();
-    saveTaxChargesData();
+      setShowTaxModal(false);
+      setEditingItem(null);
+      resetTaxForm();
+    } catch (error) {
+      console.error('Error saving tax rate:', error);
+      alert('Failed to save tax rate: ' + (error.response?.data?.detail || error.message));
+    }
   };
 
   const handleSaveCharge = async () => {
