@@ -4092,7 +4092,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
 
       <PaymentModal
         isOpen={showPaymentModal}
-        order={currentOrder || { ...calculateTotal(), id: 'temp' }}
+        order={currentOrder || { ...orderTotals, id: 'temp' }}
         onClose={() => setShowPaymentModal(false)}
         onPaymentComplete={() => {
           setShowPaymentModal(false);
