@@ -4900,32 +4900,41 @@ const TaxChargesComponent = ({ onBack }) => {
     }
 
     const gratuityData = {
-      id: editingItem ? editingItem.id : Date.now().toString(),
       name: gratuityForm.name,
       description: gratuityForm.description,
       amount: amount,
       type: gratuityForm.type,
-      active: gratuityForm.active,
-      minimum_order_amount: parseFloat(gratuityForm.minimum_order_amount) || 0,
-      maximum_order_amount: parseFloat(gratuityForm.maximum_order_amount) || 0,
+      trigger_condition: gratuityForm.trigger_condition,
+      party_size_min: parseInt(gratuityForm.party_size_min) || 0,
+      order_amount_min: parseFloat(gratuityForm.order_amount_min) || 0,
       applies_to_order_types: gratuityForm.applies_to_order_types,
-      party_size_minimum: parseInt(gratuityForm.party_size_minimum) || 0
+      auto_apply: gratuityForm.auto_apply,
+      customer_can_modify: gratuityForm.customer_can_modify,
+      active: gratuityForm.active
     };
 
-    if (editingItem) {
-      setGratuityRules(prev => prev.map(item => 
-        item.id === editingItem.id ? gratuityData : item
-      ));
-      alert('Gratuity rule updated successfully');
-    } else {
-      setGratuityRules(prev => [...prev, gratuityData]);
-      alert('Gratuity rule added successfully');
-    }
+    try {
+      if (editingItem) {
+        // Update existing gratuity rule
+        const response = await axios.put(`${API}/tax-charges/gratuity-rules/${editingItem.id}`, gratuityData);
+        setGratuityRules(prev => prev.map(item => 
+          item.id === editingItem.id ? response.data : item
+        ));
+        alert('Gratuity rule updated successfully');
+      } else {
+        // Create new gratuity rule
+        const response = await axios.post(`${API}/tax-charges/gratuity-rules`, gratuityData);
+        setGratuityRules(prev => [...prev, response.data]);
+        alert('Gratuity rule added successfully');
+      }
 
-    setShowGratuityModal(false);
-    setEditingItem(null);
-    resetGratuityForm();
-    saveTaxChargesData();
+      setShowGratuityModal(false);
+      setEditingItem(null);
+      resetGratuityForm();
+    } catch (error) {
+      console.error('Error saving gratuity rule:', error);
+      alert('Failed to save gratuity rule: ' + (error.response?.data?.detail || error.message));
+    }
   };
 
   const handleSaveDiscount = async () => {
