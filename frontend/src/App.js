@@ -3940,10 +3940,39 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
               <span>Subtotal:</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Tax (8%):</span>
-              <span>${tax.toFixed(2)}</span>
-            </div>
+            
+            {/* Tax Breakdown */}
+            {breakdown.taxes.map((tax, index) => (
+              <div key={index} className="flex justify-between text-sm text-gray-600">
+                <span>{tax.name} ({tax.taxType === 'percentage' ? `${tax.rate}%` : `$${tax.rate}`}):</span>
+                <span>${tax.amount.toFixed(2)}</span>
+              </div>
+            ))}
+            
+            {/* Service Charges Breakdown */}
+            {breakdown.serviceCharges.map((charge, index) => (
+              <div key={index} className="flex justify-between text-sm text-blue-600">
+                <span>{charge.name} ({charge.chargeType === 'percentage' ? `${charge.rate}%` : `$${charge.rate}`}):</span>
+                <span>${charge.amount.toFixed(2)}</span>
+              </div>
+            ))}
+            
+            {/* Gratuity Breakdown */}
+            {breakdown.gratuity.map((tip, index) => (
+              <div key={index} className="flex justify-between text-sm text-green-600">
+                <span>{tip.name} ({tip.gratuityType === 'percentage' ? `${tip.rate}%` : `$${tip.rate}`}):</span>
+                <span>${tip.amount.toFixed(2)}</span>
+              </div>
+            ))}
+            
+            {/* Discount Breakdown */}
+            {breakdown.discounts.map((discount, index) => (
+              <div key={index} className="flex justify-between text-sm text-red-600">
+                <span>{discount.name} ({discount.discountType === 'percentage' ? `${discount.rate}%` : `$${discount.rate}`}):</span>
+                <span>-${discount.amount.toFixed(2)}</span>
+              </div>
+            ))}
+            
             <div className="flex justify-between font-bold text-lg border-t pt-2">
               <span>Total:</span>
               <span>${total.toFixed(2)}</span>
