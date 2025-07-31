@@ -4950,34 +4950,46 @@ const TaxChargesComponent = ({ onBack }) => {
     }
 
     const discountData = {
-      id: editingItem ? editingItem.id : Date.now().toString(),
       name: discountForm.name,
       description: discountForm.description,
       amount: amount,
       type: discountForm.type,
-      active: discountForm.active,
-      applies_to_order_types: discountForm.applies_to_order_types,
+      category: discountForm.category,
+      conditions: discountForm.conditions,
       minimum_order_amount: parseFloat(discountForm.minimum_order_amount) || 0,
-      requires_manager_approval: discountForm.requires_manager_approval,
-      valid_from: discountForm.valid_from || null,
-      valid_until: discountForm.valid_until || null,
-      usage_limit: parseInt(discountForm.usage_limit) || 0
+      valid_days: discountForm.valid_days,
+      valid_hours_start: discountForm.valid_hours_start,
+      valid_hours_end: discountForm.valid_hours_end,
+      max_uses_per_day: parseInt(discountForm.max_uses_per_day) || 0,
+      requires_code: discountForm.requires_code,
+      discount_code: discountForm.discount_code,
+      stackable: discountForm.stackable,
+      active: discountForm.active,
+      expiry_date: discountForm.expiry_date
     };
 
-    if (editingItem) {
-      setDiscountPolicies(prev => prev.map(item => 
-        item.id === editingItem.id ? discountData : item
-      ));
-      alert('Discount policy updated successfully');
-    } else {
-      setDiscountPolicies(prev => [...prev, discountData]);
-      alert('Discount policy added successfully');
-    }
+    try {
+      if (editingItem) {
+        // Update existing discount policy
+        const response = await axios.put(`${API}/tax-charges/discount-policies/${editingItem.id}`, discountData);
+        setDiscountPolicies(prev => prev.map(item => 
+          item.id === editingItem.id ? response.data : item
+        ));
+        alert('Discount policy updated successfully');
+      } else {
+        // Create new discount policy
+        const response = await axios.post(`${API}/tax-charges/discount-policies`, discountData);
+        setDiscountPolicies(prev => [...prev, response.data]);
+        alert('Discount policy added successfully');
+      }
 
-    setShowDiscountModal(false);
-    setEditingItem(null);
-    resetDiscountForm();
-    saveTaxChargesData();
+      setShowDiscountModal(false);
+      setEditingItem(null);
+      resetDiscountForm();
+    } catch (error) {
+      console.error('Error saving discount policy:', error);
+      alert('Failed to save discount policy: ' + (error.response?.data?.detail || error.message));
+    }
   };
 
   const handleEditTax = (tax) => {
