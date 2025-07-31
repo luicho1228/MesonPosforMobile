@@ -3508,8 +3508,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
 
     try {
+      const totals = await calculateTotal();
       const orderData = currentOrder || {
-        ...calculateTotal(),
+        ...totals,
         items: cart,
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
