@@ -3528,11 +3528,47 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   };
 
 
-  const filteredItems = selectedCategory === 'all' 
-    ? menuItems 
-    : menuItems.filter(item => item.category === selectedCategory);
+  const [orderTotals, setOrderTotals] = useState({
+    subtotal: 0,
+    taxes: 0,
+    serviceCharges: 0,
+    gratuity: 0,
+    discounts: 0,
+    total: 0,
+    breakdown: {
+      taxes: [],
+      serviceCharges: [],
+      gratuity: [],
+      discounts: []
+    }
+  });
 
-  const { subtotal, tax, total } = calculateTotal();
+  // Update totals when cart changes
+  useEffect(() => {
+    const updateTotals = async () => {
+      const totals = await calculateTotal();
+      setOrderTotals(totals);
+    };
+    
+    if (cart.length > 0) {
+      updateTotals();
+    } else {
+      setOrderTotals({
+        subtotal: 0,
+        taxes: 0,
+        serviceCharges: 0,
+        gratuity: 0,
+        discounts: 0,
+        total: 0,
+        breakdown: {
+          taxes: [],
+          serviceCharges: [],
+          gratuity: [],
+          discounts: []
+        }
+      });
+    }
+  }, [cart]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
