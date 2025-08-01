@@ -4893,7 +4893,7 @@ const TaxChargesComponent = ({ onBack }) => {
 
   const getDefaultDiscountPolicies = () => [
     {
-      id: '1',
+      id: crypto.randomUUID(),
       name: 'Employee Discount',
       type: 'percentage',
       amount: 25,
@@ -4906,7 +4906,7 @@ const TaxChargesComponent = ({ onBack }) => {
       max_uses_per_day: '50'
     },
     {
-      id: '2',
+      id: crypto.randomUUID(),
       name: 'Senior Citizen Discount',
       type: 'percentage',
       amount: 10,
