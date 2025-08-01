@@ -6382,6 +6382,11 @@ def run_all_tests():
         customer_selection_success, customer_selection_details = test_customer_selection_feature_api()
         test_results["Customer Selection Feature API"]["success"] = customer_selection_success
         test_results["Customer Selection Feature API"]["details"] = customer_selection_details
+        
+        # Test Active Tax Application Investigation (Review Request)
+        tax_investigation_success, tax_investigation_details = test_active_tax_application_investigation()
+        test_results["Active Tax Application Investigation"]["success"] = tax_investigation_success
+        test_results["Active Tax Application Investigation"]["details"] = tax_investigation_details
     
     # Print summary
     print("\n========================================")
