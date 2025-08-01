@@ -37,7 +37,8 @@ test_results = {
     "Empty Order Cancel Fix": {"success": False, "details": ""},
     "Delivery Order Customer Info Persistence": {"success": False, "details": ""},
     "Apartment Information Persistence Fix": {"success": False, "details": ""},
-    "Customer Selection Feature API": {"success": False, "details": ""}
+    "Customer Selection Feature API": {"success": False, "details": ""},
+    "Tax Rate Deactivation Bug Fix": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
