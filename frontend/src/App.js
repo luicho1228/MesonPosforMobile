@@ -4864,7 +4864,7 @@ const TaxChargesComponent = ({ onBack }) => {
 
   const getDefaultGratuityRules = () => [
     {
-      id: '1',
+      id: crypto.randomUUID(),
       name: 'Automatic Gratuity - Large Parties',
       type: 'percentage',
       amount: 20,
@@ -4877,7 +4877,7 @@ const TaxChargesComponent = ({ onBack }) => {
       active: true
     },
     {
-      id: '2',
+      id: crypto.randomUUID(),
       name: 'High-Value Order Gratuity',
       type: 'percentage',
       amount: 15,
