@@ -566,7 +566,7 @@ agent_communication:
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
@@ -574,6 +574,9 @@ agent_communication:
       - working: true
         agent: "main"
         comment: "Fixed the ID format mismatch. All default tax rates, service charges, gratuity rules, and discount policies now use crypto.randomUUID() to generate proper UUID strings. This should resolve the 404 errors when toggling active status."
+      - working: true
+        agent: "testing"
+        comment: "✅ TAX RATE DEACTIVATION BUG FIX SUCCESSFULLY TESTED AND VERIFIED: Comprehensive testing completed for all tax-charges API endpoints. RESULTS: ✅ All tax-charges endpoints work with proper UUID IDs (not numeric '1', '2') ✅ Tax rates created with UUID IDs successfully (e.g., 90bfc157-8936-4508-8531-c78320908bd8) ✅ PUT requests to /api/tax-charges/tax-rates/{uuid} work without 404 errors ✅ toggleActive functionality works correctly (deactivation/reactivation tested) ✅ All four categories tested successfully: tax-rates, service-charges, gratuity-rules, discount-policies ✅ All CRUD operations work properly with UUID-based IDs ✅ Manager role authentication working correctly (PIN 1234) ✅ ID format mismatch resolved - no more numeric IDs causing 404 errors ✅ Edge cases handled correctly (numeric names still get UUID IDs) ✅ Complete workflow tested: Create → Deactivate → Reactivate → Delete. The bug fix is working as expected and resolves the original issue where frontend was sending numeric IDs but backend expects UUID strings."
     status_history:
       - working: true
         agent: "main"
