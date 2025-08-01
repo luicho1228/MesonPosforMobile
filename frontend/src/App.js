@@ -9799,12 +9799,14 @@ const MenuManagementComponent = ({ onBack }) => {
         </div>
       )}
 
-      {/* Add Category Modal */}
+      {/* Add/Edit Category Modal */}
       {showCategoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">Add Category</h2>
+              <h2 className="text-xl font-semibold">
+                {editingCategory ? 'Edit Category' : 'Add Category'}
+              </h2>
             </div>
             <div className="p-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
@@ -9821,6 +9823,7 @@ const MenuManagementComponent = ({ onBack }) => {
                 onClick={() => {
                   setShowCategoryModal(false);
                   setCategoryForm({ name: '' });
+                  setEditingCategory(null);
                 }}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
               >
