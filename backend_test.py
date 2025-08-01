@@ -5849,8 +5849,8 @@ def run_tests():
     print(f"Backend URL: {BACKEND_URL}")
     print(f"API URL: {API_URL}")
     
-    # Test only the Tax Rate Deactivation Bug Fix as requested
-    test_tax_rate_deactivation_bug_fix()
+    # Test the Dynamic Tax & Service Charges Application Bug Fix as requested
+    test_dynamic_tax_service_charges_application_bug_fix()
     
     # Print summary
     print("\n" + "="*80)
@@ -5861,7 +5861,7 @@ def run_tests():
     failed = 0
     
     for test_name, result in test_results.items():
-        if test_name == "Tax Rate Deactivation Bug Fix":  # Only show the requested test
+        if test_name == "Dynamic Tax & Service Charges Application Bug Fix":  # Only show the requested test
             status = "✅ PASSED" if result["success"] else "❌ FAILED"
             print(f"{test_name}: {status}")
             if result["details"]:
