@@ -2766,6 +2766,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     state: '',
     zip_code: ''
   });
+  
+  // Tax & Charges state - needed for calculateTotal function
+  const [taxRates, setTaxRates] = useState([]);
+  const [serviceCharges, setServiceCharges] = useState([]);
+  const [gratuityRules, setGratuityRules] = useState([]);
+  const [discountPolicies, setDiscountPolicies] = useState([]);
 
   const updateOrderTableAssignment = async (orderId, tableId) => {
     try {
