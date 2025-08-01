@@ -3222,19 +3222,11 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   const calculateTotal = () => {
     const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
     
-    // For now, let's use a synchronous approach with hardcoded active settings
-    // This can be enhanced later to fetch from API
-    
-    // Hardcoded active tax rates (should match your configured settings)
-    const activeTaxRates = [
-      { name: 'NYC Sales Tax', rate: 8.25, type: 'percentage' },
-      { name: 'State Tax', rate: 4, type: 'percentage' }
-    ];
-    
-    // Hardcoded active service charges
-    const activeServiceCharges = [
-      { name: 'Service Charge', amount: 15, type: 'percentage' }
-    ];
+    // Use actual active tax rates and service charges from state (loaded from backend API)
+    const activeTaxRates = taxRates.filter(tax => tax.active);
+    const activeServiceCharges = serviceCharges.filter(charge => charge.active);
+    const activeGratuityRules = gratuityRules.filter(gratuity => gratuity.active);
+    const activeDiscountPolicies = discountPolicies.filter(discount => discount.active);
     
     // Calculate taxes
     let totalTaxes = 0;
@@ -3276,18 +3268,28 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       totalServiceCharges += chargeAmount;
     }
 
+    // Calculate gratuity (for now, just add to breakdown but don't auto-apply)
+    const gratuityBreakdown = [];
+    // Note: Gratuity rules could be applied based on party size, order amount, etc.
+    // For now, we'll just prepare the breakdown structure
+
+    // Calculate discounts (for now, just add to breakdown but don't auto-apply)
+    const discountBreakdown = [];
+    // Note: Discount policies could be applied based on conditions, codes, etc.
+    // For now, we'll just prepare the breakdown structure
+
     return {
       subtotal,
       taxes: totalTaxes,
       serviceCharges: totalServiceCharges,
-      gratuity: 0, // No active gratuity rules for now
-      discounts: 0, // No active discounts for now
+      gratuity: 0, // Manual gratuity can still be added separately
+      discounts: 0, // Manual discounts can still be added separately
       total: subtotal + totalTaxes + totalServiceCharges,
       breakdown: {
         taxes: taxBreakdown,
         serviceCharges: serviceChargeBreakdown,
-        gratuity: [],
-        discounts: []
+        gratuity: gratuityBreakdown,
+        discounts: discountBreakdown
       }
     };
   };
