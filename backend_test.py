@@ -5028,6 +5028,459 @@ def test_customer_selection_feature_api():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Customer Selection Feature API", False, error_msg)
 
+# 41. Test Tax Rate Deactivation Bug Fix (REVIEW REQUEST FOCUS)
+def test_tax_rate_deactivation_bug_fix():
+    global auth_token
+    print("\n=== Testing Tax Rate Deactivation Bug Fix ===")
+    
+    if not auth_token:
+        return print_test_result("Tax Rate Deactivation Bug Fix", False, "No auth token available")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        print("\n🔍 TESTING TAX RATE DEACTIVATION BUG FIX")
+        print("Issue: Frontend was sending numeric IDs ('1', '2') but backend expects UUID strings")
+        print("Expected: All tax-charges endpoints should work with proper UUID IDs")
+        
+        # Step 1: Test authentication with manager role (PIN 1234)
+        print("\nStep 1: Verifying manager authentication...")
+        response = requests.get(f"{API_URL}/auth/me", headers=headers)
+        response.raise_for_status()
+        user_data = response.json()
+        
+        if user_data.get("role") != "manager":
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, "❌ Manager role required for tax-charges endpoints")
+        
+        print(f"✅ Authenticated as manager: {user_data.get('full_name')}")
+        
+        # Step 2: Test Tax Rates with UUID IDs
+        print("\nStep 2: Testing Tax Rates CRUD with UUID IDs...")
+        
+        # Create tax rate and verify UUID ID is assigned
+        tax_rate_data = {
+            "name": f"Test Tax Rate {random_string(4)}",
+            "description": "Testing UUID ID assignment",
+            "rate": 8.5,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"]
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=tax_rate_data, headers=headers)
+        response.raise_for_status()
+        created_tax_rate = response.json()
+        
+        tax_rate_id = created_tax_rate.get("id")
+        print(f"✅ Tax rate created with UUID ID: {tax_rate_id}")
+        
+        # Verify ID is UUID format (not numeric like '1', '2')
+        if not tax_rate_id or len(tax_rate_id) < 32:  # UUID should be at least 32 chars
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ Tax rate ID is not UUID format: '{tax_rate_id}'")
+        
+        if tax_rate_id.isdigit():
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ Tax rate ID is numeric (old bug): '{tax_rate_id}'")
+        
+        print(f"✅ Tax rate ID is proper UUID format (not numeric)")
+        
+        # Step 3: Test toggleActive functionality (PUT request to update status)
+        print("\nStep 3: Testing toggleActive functionality (deactivation)...")
+        
+        # Update tax rate to inactive (deactivate)
+        update_data = {
+            "name": created_tax_rate.get("name"),
+            "description": created_tax_rate.get("description"),
+            "rate": created_tax_rate.get("rate"),
+            "type": created_tax_rate.get("type"),
+            "active": False,  # Deactivate the tax rate
+            "applies_to_order_types": created_tax_rate.get("applies_to_order_types")
+        }
+        
+        response = requests.put(f"{API_URL}/tax-charges/tax-rates/{tax_rate_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        updated_tax_rate = response.json()
+        
+        print(f"✅ PUT request to /api/tax-charges/tax-rates/{tax_rate_id} successful")
+        print(f"✅ Tax rate status changed: {created_tax_rate.get('active')} → {updated_tax_rate.get('active')}")
+        
+        if updated_tax_rate.get("active") != False:
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, "❌ Tax rate not properly deactivated")
+        
+        # Test reactivation
+        print("\nTesting reactivation...")
+        update_data["active"] = True
+        response = requests.put(f"{API_URL}/tax-charges/tax-rates/{tax_rate_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        reactivated_tax_rate = response.json()
+        
+        if reactivated_tax_rate.get("active") != True:
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, "❌ Tax rate not properly reactivated")
+        
+        print(f"✅ Tax rate reactivated successfully")
+        
+        # Step 4: Test Service Charges with UUID IDs
+        print("\nStep 4: Testing Service Charges CRUD with UUID IDs...")
+        
+        service_charge_data = {
+            "name": f"Test Service Charge {random_string(4)}",
+            "description": "Testing UUID ID assignment",
+            "amount": 2.50,
+            "type": "fixed",
+            "active": True,
+            "mandatory": False,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in"],
+            "minimum_order_amount": 10.0
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/service-charges", json=service_charge_data, headers=headers)
+        response.raise_for_status()
+        created_service_charge = response.json()
+        
+        service_charge_id = created_service_charge.get("id")
+        print(f"✅ Service charge created with UUID ID: {service_charge_id}")
+        
+        # Verify UUID format
+        if not service_charge_id or len(service_charge_id) < 32 or service_charge_id.isdigit():
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ Service charge ID is not UUID format: '{service_charge_id}'")
+        
+        # Test deactivation
+        update_data = {
+            "name": created_service_charge.get("name"),
+            "description": created_service_charge.get("description"),
+            "amount": created_service_charge.get("amount"),
+            "type": created_service_charge.get("type"),
+            "active": False,
+            "mandatory": created_service_charge.get("mandatory"),
+            "applies_to_subtotal": created_service_charge.get("applies_to_subtotal"),
+            "applies_to_order_types": created_service_charge.get("applies_to_order_types"),
+            "minimum_order_amount": created_service_charge.get("minimum_order_amount")
+        }
+        
+        response = requests.put(f"{API_URL}/tax-charges/service-charges/{service_charge_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        updated_service_charge = response.json()
+        
+        print(f"✅ Service charge deactivated successfully")
+        
+        # Step 5: Test Gratuity Rules with UUID IDs
+        print("\nStep 5: Testing Gratuity Rules CRUD with UUID IDs...")
+        
+        gratuity_rule_data = {
+            "name": f"Test Gratuity Rule {random_string(4)}",
+            "description": "Testing UUID ID assignment",
+            "amount": 18.0,
+            "type": "percentage",
+            "active": True,
+            "minimum_order_amount": 50.0,
+            "maximum_order_amount": 0.0,
+            "applies_to_order_types": ["dine_in"],
+            "party_size_minimum": 6
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/gratuity-rules", json=gratuity_rule_data, headers=headers)
+        response.raise_for_status()
+        created_gratuity_rule = response.json()
+        
+        gratuity_rule_id = created_gratuity_rule.get("id")
+        print(f"✅ Gratuity rule created with UUID ID: {gratuity_rule_id}")
+        
+        # Verify UUID format
+        if not gratuity_rule_id or len(gratuity_rule_id) < 32 or gratuity_rule_id.isdigit():
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ Gratuity rule ID is not UUID format: '{gratuity_rule_id}'")
+        
+        # Test deactivation
+        update_data = {
+            "name": created_gratuity_rule.get("name"),
+            "description": created_gratuity_rule.get("description"),
+            "amount": created_gratuity_rule.get("amount"),
+            "type": created_gratuity_rule.get("type"),
+            "active": False,
+            "minimum_order_amount": created_gratuity_rule.get("minimum_order_amount"),
+            "maximum_order_amount": created_gratuity_rule.get("maximum_order_amount"),
+            "applies_to_order_types": created_gratuity_rule.get("applies_to_order_types"),
+            "party_size_minimum": created_gratuity_rule.get("party_size_minimum")
+        }
+        
+        response = requests.put(f"{API_URL}/tax-charges/gratuity-rules/{gratuity_rule_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        updated_gratuity_rule = response.json()
+        
+        print(f"✅ Gratuity rule deactivated successfully")
+        
+        # Step 6: Test Discount Policies with UUID IDs
+        print("\nStep 6: Testing Discount Policies CRUD with UUID IDs...")
+        
+        discount_policy_data = {
+            "name": f"Test Discount Policy {random_string(4)}",
+            "description": "Testing UUID ID assignment",
+            "amount": 10.0,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in", "takeout"],
+            "minimum_order_amount": 25.0,
+            "requires_manager_approval": False,
+            "usage_limit": 0
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/discount-policies", json=discount_policy_data, headers=headers)
+        response.raise_for_status()
+        created_discount_policy = response.json()
+        
+        discount_policy_id = created_discount_policy.get("id")
+        print(f"✅ Discount policy created with UUID ID: {discount_policy_id}")
+        
+        # Verify UUID format
+        if not discount_policy_id or len(discount_policy_id) < 32 or discount_policy_id.isdigit():
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ Discount policy ID is not UUID format: '{discount_policy_id}'")
+        
+        # Test deactivation
+        update_data = {
+            "name": created_discount_policy.get("name"),
+            "description": created_discount_policy.get("description"),
+            "amount": created_discount_policy.get("amount"),
+            "type": created_discount_policy.get("type"),
+            "active": False,
+            "applies_to_order_types": created_discount_policy.get("applies_to_order_types"),
+            "minimum_order_amount": created_discount_policy.get("minimum_order_amount"),
+            "requires_manager_approval": created_discount_policy.get("requires_manager_approval"),
+            "usage_limit": created_discount_policy.get("usage_limit")
+        }
+        
+        response = requests.put(f"{API_URL}/tax-charges/discount-policies/{discount_policy_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        updated_discount_policy = response.json()
+        
+        print(f"✅ Discount policy deactivated successfully")
+        
+        # Step 7: Test that 404 errors are resolved
+        print("\nStep 7: Testing that 404 errors are resolved with UUID IDs...")
+        
+        # Test GET requests with UUID IDs
+        test_ids = [tax_rate_id, service_charge_id, gratuity_rule_id, discount_policy_id]
+        endpoints = ["tax-rates", "service-charges", "gratuity-rules", "discount-policies"]
+        
+        for endpoint, test_id in zip(endpoints, test_ids):
+            try:
+                response = requests.get(f"{API_URL}/tax-charges/{endpoint}", headers=headers)
+                response.raise_for_status()
+                items = response.json()
+                
+                # Find our item in the list
+                found_item = None
+                for item in items:
+                    if item.get("id") == test_id:
+                        found_item = item
+                        break
+                
+                if not found_item:
+                    return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ Created item not found in {endpoint} list")
+                
+                print(f"✅ GET /api/tax-charges/{endpoint} - item found with UUID ID")
+                
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ 404 error still occurring for {endpoint}")
+                else:
+                    raise
+        
+        # Step 8: Test edge cases that might have caused the original bug
+        print("\nStep 8: Testing edge cases that might have caused the original bug...")
+        
+        # Test with numeric-looking names (but UUID IDs)
+        numeric_name_tax_rate = {
+            "name": "Tax Rate 1",  # Numeric name but UUID ID
+            "description": "Testing numeric name with UUID ID",
+            "rate": 5.0,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in"]
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=numeric_name_tax_rate, headers=headers)
+        response.raise_for_status()
+        numeric_name_rate = response.json()
+        numeric_name_rate_id = numeric_name_rate.get("id")
+        
+        # Verify it still gets UUID ID despite numeric name
+        if numeric_name_rate_id.isdigit():
+            return print_test_result("Tax Rate Deactivation Bug Fix", False, f"❌ Numeric name caused numeric ID: '{numeric_name_rate_id}'")
+        
+        print(f"✅ Numeric name 'Tax Rate 1' still gets UUID ID: {numeric_name_rate_id}")
+        
+        # Test deactivation of this item
+        update_data = {
+            "name": numeric_name_rate.get("name"),
+            "description": numeric_name_rate.get("description"),
+            "rate": numeric_name_rate.get("rate"),
+            "type": numeric_name_rate.get("type"),
+            "active": False,
+            "applies_to_order_types": numeric_name_rate.get("applies_to_order_types")
+        }
+        
+        response = requests.put(f"{API_URL}/tax-charges/tax-rates/{numeric_name_rate_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        
+        print(f"✅ Deactivation works correctly even with numeric name")
+        
+        # Step 9: Clean up test data
+        print("\nStep 9: Cleaning up test data...")
+        
+        cleanup_items = [
+            ("tax-rates", tax_rate_id),
+            ("service-charges", service_charge_id),
+            ("gratuity-rules", gratuity_rule_id),
+            ("discount-policies", discount_policy_id),
+            ("tax-rates", numeric_name_rate_id)
+        ]
+        
+        for endpoint, item_id in cleanup_items:
+            try:
+                response = requests.delete(f"{API_URL}/tax-charges/{endpoint}/{item_id}", headers=headers)
+                response.raise_for_status()
+                print(f"✅ Cleaned up {endpoint} item: {item_id}")
+            except Exception as e:
+                print(f"⚠️  Could not clean up {endpoint} item {item_id}: {str(e)}")
+        
+        # Step 10: Final verification
+        print("\nStep 10: Final verification - Testing complete workflow...")
+        
+        # Create, activate, deactivate, and delete a tax rate in one workflow
+        final_test_data = {
+            "name": "Final Test Tax Rate",
+            "description": "Complete workflow test",
+            "rate": 7.25,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery", "phone_order"]
+        }
+        
+        # Create
+        response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=final_test_data, headers=headers)
+        response.raise_for_status()
+        final_tax_rate = response.json()
+        final_tax_rate_id = final_tax_rate.get("id")
+        
+        # Deactivate
+        final_test_data["active"] = False
+        response = requests.put(f"{API_URL}/tax-charges/tax-rates/{final_tax_rate_id}", json=final_test_data, headers=headers)
+        response.raise_for_status()
+        
+        # Reactivate
+        final_test_data["active"] = True
+        response = requests.put(f"{API_URL}/tax-charges/tax-rates/{final_tax_rate_id}", json=final_test_data, headers=headers)
+        response.raise_for_status()
+        
+        # Delete
+        response = requests.delete(f"{API_URL}/tax-charges/tax-rates/{final_tax_rate_id}", headers=headers)
+        response.raise_for_status()
+        
+        print(f"✅ Complete workflow successful: Create → Deactivate → Reactivate → Delete")
+        
+        return print_test_result("Tax Rate Deactivation Bug Fix", True, 
+                               "✅ TAX RATE DEACTIVATION BUG FIX VERIFIED: "
+                               "✅ All tax-charges endpoints work with proper UUID IDs (not numeric '1', '2') "
+                               "✅ Tax rates created with UUID IDs successfully "
+                               "✅ PUT requests to /api/tax-charges/tax-rates/{uuid} work without 404 errors "
+                               "✅ toggleActive functionality works correctly (deactivation/reactivation) "
+                               "✅ All four categories tested: tax-rates, service-charges, gratuity-rules, discount-policies "
+                               "✅ All CRUD operations work properly with UUID-based IDs "
+                               "✅ Manager role authentication working correctly "
+                               "✅ ID format mismatch resolved - no more numeric IDs causing 404 errors "
+                               "✅ Edge cases handled correctly (numeric names still get UUID IDs) "
+                               "✅ Complete workflow tested: Create → Deactivate → Reactivate → Delete")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Tax Rate Deactivation Bug Fix test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Tax Rate Deactivation Bug Fix", False, error_msg)
+
+# Main execution function
+def run_tests():
+    print("🚀 Starting Backend API Testing...")
+    print(f"Backend URL: {BACKEND_URL}")
+    print(f"API URL: {API_URL}")
+    
+    # Test only the Tax Rate Deactivation Bug Fix as requested
+    test_tax_rate_deactivation_bug_fix()
+    
+    # Print summary
+    print("\n" + "="*80)
+    print("📊 TEST SUMMARY")
+    print("="*80)
+    
+    passed = 0
+    failed = 0
+    
+    for test_name, result in test_results.items():
+        if test_name == "Tax Rate Deactivation Bug Fix":  # Only show the requested test
+            status = "✅ PASSED" if result["success"] else "❌ FAILED"
+            print(f"{test_name}: {status}")
+            if result["details"]:
+                print(f"  Details: {result['details']}")
+            
+            if result["success"]:
+                passed += 1
+            else:
+                failed += 1
+    
+    print(f"\n📈 Results: {passed} passed, {failed} failed")
+    
+    if failed == 0:
+        print("🎉 All tests passed!")
+    else:
+        print("⚠️  Some tests failed. Check the details above.")
+
+if __name__ == "__main__":
+    # First, try to authenticate with PIN 1234 (manager)
+    print("🔐 Authenticating with PIN 1234 (manager)...")
+    
+    login_data = {"pin": "1234"}
+    try:
+        response = requests.post(f"{API_URL}/auth/login", json=login_data)
+        response.raise_for_status()
+        result = response.json()
+        
+        auth_token = result.get("access_token")
+        user_id = result.get("user", {}).get("id")
+        
+        if auth_token:
+            print(f"✅ Authentication successful")
+            print(f"User: {result.get('user', {}).get('full_name')}")
+            print(f"Role: {result.get('user', {}).get('role')}")
+            run_tests()
+        else:
+            print("❌ Authentication failed - no token received")
+    except Exception as e:
+        print(f"❌ Authentication failed: {str(e)}")
+        print("Creating manager account with PIN 1234...")
+        
+        # Try to create manager account
+        register_data = {
+            "pin": "1234",
+            "role": "manager",
+            "full_name": "Test Manager",
+            "phone": "1234567890"
+        }
+        
+        try:
+            response = requests.post(f"{API_URL}/auth/register", json=register_data)
+            response.raise_for_status()
+            result = response.json()
+            
+            auth_token = result.get("access_token")
+            user_id = result.get("user", {}).get("id")
+            
+            if auth_token:
+                print(f"✅ Manager account created and authenticated")
+                run_tests()
+            else:
+                print("❌ Failed to create manager account")
+        except Exception as e2:
+            print(f"❌ Failed to create manager account: {str(e2)}")
+            print("Cannot proceed without authentication")
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
