@@ -617,6 +617,8 @@ agent_communication:
         
   - task: "Staff Management Functionality"
     implemented: true
+  - agent: "main"
+    message: "TAX RATE DEACTIVATION BUG FIX COMPLETED: Successfully identified and resolved the critical issue where deactivating tax rates was failing with 'not found' error. ROOT CAUSE: Frontend was sending numeric IDs ('1', '2') from getDefaultTaxRates() fallback function while backend expects UUID strings. Backend logs showed 404 error for PUT /api/tax-charges/tax-rates/2 because numeric ID '2' doesn't exist in database. SOLUTION: Updated all default data functions (getDefaultTaxRates, getDefaultServiceCharges, getDefaultGratuityRules, getDefaultDiscountPolicies) to use crypto.randomUUID() instead of hardcoded numeric strings ('1', '2'). This ensures all IDs are proper UUIDs matching backend expectations and should resolve the 404 errors when toggling active status. Ready for backend testing to verify the fix."
     working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
