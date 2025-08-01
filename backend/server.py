@@ -1122,6 +1122,7 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
         items=processed_items,
         subtotal=subtotal,
         tax=tax,
+        service_charges=service_charges_total,
         tip=order_data.tip,
         total=total,
         order_type=order_data.order_type,
