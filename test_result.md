@@ -397,7 +397,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Tax Rate Deactivation Bug Fix"
     - "Apartment Information Persistence Fix"
   stuck_tasks: []
   test_all: false
