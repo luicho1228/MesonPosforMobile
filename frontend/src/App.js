@@ -9194,6 +9194,74 @@ const MenuManagementComponent = ({ onBack }) => {
     }
   };
 
+  const handleSaveCategory = async () => {
+    if (!categoryForm.name.trim()) {
+      alert('Please enter a category name');
+      return;
+    }
+
+    const newCategoryName = categoryForm.name.trim();
+    
+    if (editingCategory) {
+      // Update existing category
+      if (newCategoryName === editingCategory) {
+        // No change, just close modal
+        setShowCategoryModal(false);
+        setCategoryForm({ name: '' });
+        setEditingCategory(null);
+        return;
+      }
+      
+      // Check if new name already exists
+      if (categories.includes(newCategoryName)) {
+        alert('A category with this name already exists');
+        return;
+      }
+      
+      try {
+        // Update all menu items with the old category name to use the new name
+        const itemsToUpdate = menuItems.filter(item => item.category === editingCategory);
+        
+        for (const item of itemsToUpdate) {
+          await axios.put(`${API}/menu-items/${item.id}`, {
+            ...item,
+            category: newCategoryName
+          });
+        }
+        
+        // Update local state
+        setMenuItems(prev => prev.map(item => 
+          item.category === editingCategory 
+            ? { ...item, category: newCategoryName }
+            : item
+        ));
+        
+        setCategories(prev => prev.map(cat => 
+          cat === editingCategory ? newCategoryName : cat
+        ));
+        
+        alert('Category updated successfully');
+      } catch (error) {
+        console.error('Error updating category:', error);
+        alert('Failed to update category');
+      }
+    } else {
+      // Add new category
+      if (categories.includes(newCategoryName)) {
+        alert('A category with this name already exists');
+        return;
+      }
+      
+      // Add to categories list
+      setCategories(prev => [...prev, newCategoryName]);
+      alert('Category added successfully. You can now assign menu items to this category.');
+    }
+    
+    setShowCategoryModal(false);
+    setCategoryForm({ name: '' });
+    setEditingCategory(null);
+  };
+
   const handleEditItem = (item) => {
     setItemForm({
       name: item.name,
