@@ -9539,7 +9539,11 @@ const MenuManagementComponent = ({ onBack }) => {
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Menu Categories</h2>
               <button
-                onClick={() => setShowCategoryModal(true)}
+                onClick={() => {
+                  setCategoryForm({ name: '' });
+                  setEditingCategory(null);
+                  setShowCategoryModal(true);
+                }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
               >
                 <span>+</span>
