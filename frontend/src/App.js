@@ -9759,15 +9759,10 @@ const MenuManagementComponent = ({ onBack }) => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  // Just close modal for now - categories are auto-created when items are added
-                  setShowCategoryModal(false);
-                  setCategoryForm({ name: '' });
-                  alert('Categories are automatically created when you add menu items with that category');
-                }}
+                onClick={handleSaveCategory}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                OK
+                {editingCategory ? 'Update Category' : 'Add Category'}
               </button>
             </div>
           </div>
