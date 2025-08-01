@@ -521,6 +521,42 @@ async def verify_user_pin(pin: str) -> Optional[Dict]:
             return user
     return None
 
+async def calculate_order_taxes_and_charges(subtotal: float, order_type: str) -> tuple[float, float]:
+    """Calculate dynamic taxes and service charges for an order"""
+    total_tax = 0.0
+    total_service_charges = 0.0
+    
+    # Get active tax rates that apply to this order type
+    tax_rates = await db.tax_rates.find({
+        "active": True,
+        "applies_to_order_types": {"$in": [order_type]}
+    }).to_list(1000)
+    
+    for tax_rate in tax_rates:
+        if tax_rate["type"] == "percentage":
+            total_tax += subtotal * (tax_rate["rate"] / 100)
+        else:  # fixed
+            total_tax += tax_rate["rate"]
+    
+    # Get active service charges that apply to this order type
+    service_charges = await db.service_charges.find({
+        "active": True,
+        "applies_to_order_types": {"$in": [order_type]},
+        "minimum_order_amount": {"$lte": subtotal}
+    }).to_list(1000)
+    
+    for charge in service_charges:
+        if charge["type"] == "percentage":
+            if charge["applies_to_subtotal"]:
+                total_service_charges += subtotal * (charge["amount"] / 100)
+            else:
+                # Apply to subtotal + tax
+                total_service_charges += (subtotal + total_tax) * (charge["amount"] / 100)
+        else:  # fixed
+            total_service_charges += charge["amount"]
+    
+    return total_tax, total_service_charges
+
 # Routes
 
 # Auth routes
