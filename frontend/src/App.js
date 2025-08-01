@@ -9493,6 +9493,7 @@ const MenuManagementComponent = ({ onBack }) => {
                         <button
                           onClick={() => {
                             setCategoryForm({ name: category });
+                            setEditingCategory(category);
                             setShowCategoryModal(true);
                           }}
                           className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm"
