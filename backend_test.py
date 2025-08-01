@@ -38,7 +38,8 @@ test_results = {
     "Delivery Order Customer Info Persistence": {"success": False, "details": ""},
     "Apartment Information Persistence Fix": {"success": False, "details": ""},
     "Customer Selection Feature API": {"success": False, "details": ""},
-    "Tax Rate Deactivation Bug Fix": {"success": False, "details": ""}
+    "Tax Rate Deactivation Bug Fix": {"success": False, "details": ""},
+    "Dynamic Tax & Service Charges Application Bug Fix": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
