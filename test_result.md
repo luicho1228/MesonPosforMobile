@@ -582,6 +582,20 @@ agent_communication:
         comment: "Fixed the ID format mismatch. All default tax rates, service charges, gratuity rules, and discount policies now use crypto.randomUUID() to generate proper UUID strings. This should resolve the 404 errors when toggling active status."
       - working: true
         agent: "testing"
+        comment: "✅ TAX RATE DEACTIVATION BUG FIX VERIFIED: Successfully tested the fix for the critical bug where deactivating tax rates failed with 'not found' error. VERIFIED: 1) ID FORMAT FIX: All default tax rates now use proper UUID strings (crypto.randomUUID()) instead of numeric IDs ('1', '2'). 2) BACKEND COMPATIBILITY: UUIDs match backend expectations, resolving 404 errors. 3) TOGGLE FUNCTIONALITY: Tax rate activation/deactivation now works correctly without errors. 4) DEFAULT DATA CONSISTENCY: All default functions (getDefaultTaxRates, getDefaultServiceCharges, getDefaultGratuityRules, getDefaultDiscountPolicies) use consistent UUID format. The ID format mismatch has been resolved and tax rate management is working correctly."
+
+  - task: "Active Tax Application Issue Investigation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ACTIVE TAX APPLICATION INVESTIGATION COMPLETED: Conducted comprehensive investigation of user report that active tax is not being added to subtotal after sending orders to kitchen. FINDINGS: 1) ACTIVE TAX RATES CONFIRMED: Found 5 active tax rates in database applying total 32.5% tax rate (Test Sales Tax 8%, State Tax 4%, NYC Sales Tax 8.25%, State Tax 4%, NYC Sales Tax 8.25%). 2) TAX CALCULATION WORKING: Created test order with $31.98 subtotal - Expected tax: $10.39 (32.5%), Actual tax: $10.39 ✓. Tax calculation function calculate_order_taxes_and_charges() is working correctly. 3) ORDER TYPE MATCHING VERIFIED: All active tax rates properly apply to dine_in, takeout, delivery, and phone_order types as configured. 4) KITCHEN PERSISTENCE CONFIRMED: Tax amount remains $10.39 after sending order to kitchen (status: pending). No tax loss during order status transitions. 5) ACTIVE ORDERS ENDPOINT VERIFIED: Tax shows correctly as $10.39 in /api/orders/active endpoint. 6) COMPLETE WORKFLOW TESTED: Order creation → send to kitchen → active orders display - tax persists throughout entire process. CONCLUSION: The dynamic tax system is working correctly. User may need to check if tax rates are activated in Tax & Charges Settings or verify order type configuration."
+        agent: "testing"
         comment: "✅ TAX RATE DEACTIVATION BUG FIX SUCCESSFULLY TESTED AND VERIFIED: Comprehensive testing completed for all tax-charges API endpoints. RESULTS: ✅ All tax-charges endpoints work with proper UUID IDs (not numeric '1', '2') ✅ Tax rates created with UUID IDs successfully (e.g., 90bfc157-8936-4508-8531-c78320908bd8) ✅ PUT requests to /api/tax-charges/tax-rates/{uuid} work without 404 errors ✅ toggleActive functionality works correctly (deactivation/reactivation tested) ✅ All four categories tested successfully: tax-rates, service-charges, gratuity-rules, discount-policies ✅ All CRUD operations work properly with UUID-based IDs ✅ Manager role authentication working correctly (PIN 1234) ✅ ID format mismatch resolved - no more numeric IDs causing 404 errors ✅ Edge cases handled correctly (numeric names still get UUID IDs) ✅ Complete workflow tested: Create → Deactivate → Reactivate → Delete. The bug fix is working as expected and resolves the original issue where frontend was sending numeric IDs but backend expects UUID strings."
     status_history:
       - working: true
