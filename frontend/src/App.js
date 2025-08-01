@@ -9115,6 +9115,8 @@ const MenuManagementComponent = ({ onBack }) => {
   const [categoryForm, setCategoryForm] = useState({
     name: ''
   });
+  
+  const [editingCategory, setEditingCategory] = useState(null);
 
   const [modifierForm, setModifierForm] = useState({
     name: '',
