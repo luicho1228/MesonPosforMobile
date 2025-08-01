@@ -17,7 +17,7 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BACKEND_URL = 'https://0fcaea1d-c526-4dab-91e4-3351bd44ae94.preview.emergentagent.com';
+  const BACKEND_URL = 'https://5019ac90-f84b-41e4-b986-f776bd62b398.preview.emergentagent.com';
   const API = `${BACKEND_URL}/api`;
 
   useEffect(() => {
