@@ -289,6 +289,7 @@ class Order(BaseModel):
     removed_items: List[Dict] = []  # Track removed items with reasons
     subtotal: float
     tax: float
+    service_charges: float = 0.0  # Track service charges separately
     tip: float = 0.0
     total: float
     order_type: OrderType
