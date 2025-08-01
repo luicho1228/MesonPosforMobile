@@ -1452,6 +1452,7 @@ async def update_order(order_id: str, order_data: OrderCreate, user_id: str = De
         "items": [item.dict() for item in processed_items],
         "subtotal": subtotal,
         "tax": tax,
+        "service_charges": service_charges_total,
         "tip": order_data.tip,
         "total": total,
         "order_type": order_data.order_type,
