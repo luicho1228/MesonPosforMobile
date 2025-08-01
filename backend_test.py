@@ -5849,6 +5849,30 @@ def run_tests():
     print(f"Backend URL: {BACKEND_URL}")
     print(f"API URL: {API_URL}")
     
+    # Set up required test data first
+    global menu_item_id, table_id
+    
+    # Create a menu item for testing
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    menu_item_data = {
+        "name": f"Test Pizza {random_string(4)}",
+        "description": "Test pizza for dynamic tax testing",
+        "price": 12.99,
+        "category": "Pizza",
+        "available": True,
+        "image_url": "https://example.com/pizza.jpg"
+    }
+    
+    try:
+        response = requests.post(f"{API_URL}/menu/items", json=menu_item_data, headers=headers)
+        response.raise_for_status()
+        result = response.json()
+        menu_item_id = result.get("id")
+        print(f"✅ Created test menu item: {menu_item_id}")
+    except Exception as e:
+        print(f"❌ Failed to create test menu item: {e}")
+        return
+    
     # Test the Dynamic Tax & Service Charges Application Bug Fix as requested
     test_dynamic_tax_service_charges_application_bug_fix()
     
