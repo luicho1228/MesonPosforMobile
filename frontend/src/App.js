@@ -10001,12 +10001,6 @@ const POSInterface = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [fromTableManagement, setFromTableManagement] = useState(false);
   
-  // Tax & Charges state - moved here so calculateTotal can access them
-  const [taxRates, setTaxRates] = useState([]);
-  const [serviceCharges, setServiceCharges] = useState([]);
-  const [gratuityRules, setGratuityRules] = useState([]);
-  const [discountPolicies, setDiscountPolicies] = useState([]);
-  
   const { user, logout } = useAuth();
   const { connected, openPrinterManager } = usePrinter();
 
