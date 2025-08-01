@@ -4807,7 +4807,7 @@ const TaxChargesComponent = ({ onBack }) => {
 
   const getDefaultTaxRates = () => [
     {
-      id: '1',
+      id: crypto.randomUUID(),
       name: 'NYC Sales Tax',
       type: 'percentage',
       rate: 8.25,
@@ -4820,7 +4820,7 @@ const TaxChargesComponent = ({ onBack }) => {
       inclusive: false
     },
     {
-      id: '2',
+      id: crypto.randomUUID(),
       name: 'State Tax',
       type: 'percentage',
       rate: 4.0,
