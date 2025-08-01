@@ -1621,7 +1621,7 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
+                <span className="font-bold text-lg border-t pt-2">Total: ${order.total.toFixed(2)}</span>
                 <div className="flex space-x-2">
                   {/* Only show status buttons for delivery orders and not pending */}
                   {order.order_type === 'delivery' && order.status !== 'pending' && getNextStatus(order.status) && (
