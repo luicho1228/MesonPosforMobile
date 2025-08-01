@@ -5954,6 +5954,319 @@ if __name__ == "__main__":
             print(f"❌ Failed to create manager account: {str(e2)}")
             print("Cannot proceed without authentication")
 
+# 43. Test Active Tax Application Issue Investigation
+def test_active_tax_application_investigation():
+    global auth_token, menu_item_id, table_id
+    print("\n=== INVESTIGATING ACTIVE TAX APPLICATION ISSUE ===")
+    
+    if not auth_token:
+        return print_test_result("Active Tax Application Investigation", False, "No auth token available")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # STEP 1: Check what tax rates are currently active in the database
+        print("\n🔍 STEP 1: Checking active tax rates in database...")
+        response = requests.get(f"{API_URL}/tax-charges/tax-rates", headers=headers)
+        response.raise_for_status()
+        all_tax_rates = response.json()
+        
+        active_tax_rates = [rate for rate in all_tax_rates if rate.get("active", False)]
+        inactive_tax_rates = [rate for rate in all_tax_rates if not rate.get("active", False)]
+        
+        print(f"📊 FOUND {len(all_tax_rates)} total tax rates:")
+        print(f"   ✅ {len(active_tax_rates)} ACTIVE tax rates")
+        print(f"   ❌ {len(inactive_tax_rates)} INACTIVE tax rates")
+        
+        if len(active_tax_rates) == 0:
+            print("🚨 CRITICAL ISSUE: NO ACTIVE TAX RATES FOUND!")
+            print("   This explains why no tax is being added to orders.")
+            
+            # Create some test tax rates
+            print("\n🔧 Creating test tax rates for investigation...")
+            test_rates = [
+                {
+                    "name": "NYC Sales Tax",
+                    "description": "New York City Sales Tax",
+                    "rate": 8.25,
+                    "type": "percentage",
+                    "active": True,
+                    "applies_to_order_types": ["dine_in", "takeout", "delivery", "phone_order"]
+                },
+                {
+                    "name": "State Tax", 
+                    "description": "State Sales Tax",
+                    "rate": 4.0,
+                    "type": "percentage",
+                    "active": True,
+                    "applies_to_order_types": ["dine_in", "takeout", "delivery", "phone_order"]
+                }
+            ]
+            
+            created_rates = []
+            for rate_data in test_rates:
+                response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=rate_data, headers=headers)
+                response.raise_for_status()
+                created_rate = response.json()
+                created_rates.append(created_rate)
+                print(f"   ✅ Created: {created_rate.get('name')} - {created_rate.get('rate')}%")
+            
+            active_tax_rates = created_rates
+        
+        # Display active tax rates details
+        total_tax_percentage = 0
+        print(f"\n📋 ACTIVE TAX RATES DETAILS:")
+        for i, rate in enumerate(active_tax_rates, 1):
+            print(f"   {i}. {rate.get('name')}")
+            print(f"      Rate: {rate.get('rate')}% ({rate.get('type')})")
+            print(f"      Applies to: {rate.get('applies_to_order_types', [])}")
+            print(f"      ID: {rate.get('id')}")
+            if rate.get('type') == 'percentage':
+                total_tax_percentage += rate.get('rate', 0)
+        
+        print(f"\n💰 TOTAL EXPECTED TAX RATE: {total_tax_percentage}%")
+        
+        # STEP 2: Create a simple test order and verify step-by-step what happens
+        print(f"\n🔍 STEP 2: Creating test order to verify tax calculation...")
+        
+        # Get menu item details
+        if not menu_item_id:
+            # Create a simple menu item for testing
+            menu_item_data = {
+                "name": f"Tax Test Item {random_string(4)}",
+                "description": "Simple item for tax testing",
+                "price": 10.00,  # Nice round number for easy calculation
+                "category": "Test",
+                "available": True
+            }
+            
+            response = requests.post(f"{API_URL}/menu/items", json=menu_item_data, headers=headers)
+            response.raise_for_status()
+            menu_item = response.json()
+            menu_item_id = menu_item.get("id")
+            print(f"   ✅ Created test menu item: {menu_item.get('name')} - ${menu_item.get('price')}")
+        else:
+            # Get existing menu item details
+            response = requests.get(f"{API_URL}/menu/items/all", headers=headers)
+            response.raise_for_status()
+            menu_items = response.json()
+            menu_item = next((item for item in menu_items if item.get("id") == menu_item_id), None)
+            if menu_item:
+                print(f"   ✅ Using existing menu item: {menu_item.get('name')} - ${menu_item.get('price')}")
+        
+        # Create table if needed
+        if not table_id:
+            table_data = {"name": f"Tax Test Table {random_string(4)}", "capacity": 4}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            table = response.json()
+            table_id = table.get("id")
+            print(f"   ✅ Created test table: {table.get('name')}")
+        
+        # Calculate expected values
+        item_price = menu_item.get("price", 10.00)
+        quantity = 2
+        expected_subtotal = item_price * quantity
+        expected_tax = expected_subtotal * (total_tax_percentage / 100)
+        expected_total = expected_subtotal + expected_tax
+        
+        print(f"\n📊 EXPECTED CALCULATION:")
+        print(f"   Item Price: ${item_price}")
+        print(f"   Quantity: {quantity}")
+        print(f"   Expected Subtotal: ${expected_subtotal:.2f}")
+        print(f"   Expected Tax ({total_tax_percentage}%): ${expected_tax:.2f}")
+        print(f"   Expected Total: ${expected_total:.2f}")
+        
+        # Create the order
+        order_data = {
+            "customer_name": "Tax Investigation Customer",
+            "customer_phone": "5551234567",
+            "customer_address": "123 Tax Investigation St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": quantity,
+                    "special_instructions": "Tax investigation test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 0.0,
+            "order_notes": "Testing active tax application"
+        }
+        
+        print(f"\n🔧 Creating order...")
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        created_order = response.json()
+        
+        order_id = created_order.get("id")
+        actual_subtotal = created_order.get("subtotal", 0)
+        actual_tax = created_order.get("tax", 0)
+        actual_service_charges = created_order.get("service_charges", 0)
+        actual_total = created_order.get("total", 0)
+        order_status = created_order.get("status")
+        
+        print(f"\n📋 ORDER CREATION RESULTS:")
+        print(f"   Order ID: {order_id}")
+        print(f"   Status: {order_status}")
+        print(f"   Actual Subtotal: ${actual_subtotal:.2f}")
+        print(f"   Actual Tax: ${actual_tax:.2f}")
+        print(f"   Actual Service Charges: ${actual_service_charges:.2f}")
+        print(f"   Actual Total: ${actual_total:.2f}")
+        
+        # STEP 3: Test the calculate_order_taxes_and_charges function
+        print(f"\n🔍 STEP 3: Analyzing tax calculation results...")
+        
+        tax_calculation_working = True
+        issues_found = []
+        
+        # Check subtotal
+        if abs(actual_subtotal - expected_subtotal) > 0.01:
+            issues_found.append(f"Subtotal mismatch: Expected ${expected_subtotal:.2f}, Got ${actual_subtotal:.2f}")
+            tax_calculation_working = False
+        
+        # Check tax (MAIN ISSUE)
+        if actual_tax == 0:
+            issues_found.append(f"❌ CRITICAL: Tax is 0! Expected ${expected_tax:.2f}")
+            tax_calculation_working = False
+        elif abs(actual_tax - expected_tax) > 0.01:
+            issues_found.append(f"Tax calculation off: Expected ${expected_tax:.2f}, Got ${actual_tax:.2f}")
+        
+        # Check total
+        expected_calculated_total = actual_subtotal + actual_tax + actual_service_charges
+        if abs(actual_total - expected_calculated_total) > 0.01:
+            issues_found.append(f"Total calculation off: Expected ${expected_calculated_total:.2f}, Got ${actual_total:.2f}")
+        
+        if issues_found:
+            print(f"   🚨 ISSUES FOUND:")
+            for issue in issues_found:
+                print(f"      - {issue}")
+        else:
+            print(f"   ✅ Tax calculation appears correct at order creation")
+        
+        # STEP 4: Send order to kitchen and verify tax persists
+        print(f"\n🔍 STEP 4: Sending order to kitchen...")
+        
+        response = requests.post(f"{API_URL}/orders/{order_id}/send", headers=headers)
+        response.raise_for_status()
+        send_result = response.json()
+        print(f"   ✅ Order sent to kitchen: {send_result.get('message')}")
+        
+        # Get order after sending to kitchen
+        response = requests.get(f"{API_URL}/orders/{order_id}", headers=headers)
+        response.raise_for_status()
+        kitchen_order = response.json()
+        
+        kitchen_subtotal = kitchen_order.get("subtotal", 0)
+        kitchen_tax = kitchen_order.get("tax", 0)
+        kitchen_service_charges = kitchen_order.get("service_charges", 0)
+        kitchen_total = kitchen_order.get("total", 0)
+        kitchen_status = kitchen_order.get("status")
+        
+        print(f"\n📋 AFTER SENDING TO KITCHEN:")
+        print(f"   Status: {kitchen_status}")
+        print(f"   Subtotal: ${kitchen_subtotal:.2f}")
+        print(f"   Tax: ${kitchen_tax:.2f}")
+        print(f"   Service Charges: ${kitchen_service_charges:.2f}")
+        print(f"   Total: ${kitchen_total:.2f}")
+        
+        # Check if tax persists after sending to kitchen
+        if kitchen_tax == 0 and actual_tax > 0:
+            issues_found.append("❌ CRITICAL: Tax becomes 0 after sending to kitchen!")
+            tax_calculation_working = False
+        elif kitchen_tax != actual_tax:
+            issues_found.append(f"Tax changed after sending to kitchen: Was ${actual_tax:.2f}, Now ${kitchen_tax:.2f}")
+        
+        # STEP 5: Check order type matching
+        print(f"\n🔍 STEP 5: Verifying order type matching...")
+        
+        order_type = created_order.get("order_type")
+        print(f"   Order Type: {order_type}")
+        
+        matching_tax_rates = []
+        for rate in active_tax_rates:
+            applies_to = rate.get("applies_to_order_types", [])
+            if order_type in applies_to:
+                matching_tax_rates.append(rate)
+                print(f"   ✅ Tax rate '{rate.get('name')}' applies to {order_type} orders")
+            else:
+                print(f"   ❌ Tax rate '{rate.get('name')}' does NOT apply to {order_type} orders (applies to: {applies_to})")
+        
+        if len(matching_tax_rates) == 0:
+            issues_found.append(f"❌ CRITICAL: No tax rates apply to {order_type} orders!")
+            tax_calculation_working = False
+        
+        # STEP 6: Check active orders endpoint
+        print(f"\n🔍 STEP 6: Checking active orders endpoint...")
+        
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        active_orders = response.json()
+        
+        test_order_in_active = None
+        for order in active_orders:
+            if order.get("id") == order_id:
+                test_order_in_active = order
+                break
+        
+        if test_order_in_active:
+            active_tax = test_order_in_active.get("tax", 0)
+            active_total = test_order_in_active.get("total", 0)
+            print(f"   ✅ Order found in active orders")
+            print(f"   Tax in active orders: ${active_tax:.2f}")
+            print(f"   Total in active orders: ${active_total:.2f}")
+            
+            if active_tax == 0 and kitchen_tax > 0:
+                issues_found.append("❌ CRITICAL: Tax shows as 0 in active orders endpoint!")
+                tax_calculation_working = False
+        else:
+            issues_found.append("❌ Order not found in active orders endpoint")
+        
+        # FINAL ASSESSMENT
+        print(f"\n🎯 FINAL ASSESSMENT:")
+        
+        if tax_calculation_working and len(issues_found) == 0:
+            print(f"   ✅ TAX SYSTEM IS WORKING CORRECTLY")
+            print(f"   Tax Rate: {total_tax_percentage}%")
+            print(f"   Tax Applied: ${kitchen_tax:.2f}")
+            result_success = True
+            result_details = f"Tax system working correctly. {len(active_tax_rates)} active tax rates applying {total_tax_percentage}% total tax."
+        else:
+            print(f"   ❌ TAX SYSTEM ISSUES FOUND:")
+            for issue in issues_found:
+                print(f"      - {issue}")
+            
+            print(f"\n🔧 RECOMMENDED ACTIONS:")
+            if len(active_tax_rates) == 0:
+                print(f"      1. Activate tax rates in the Tax & Charges Settings")
+            if any("order type" in issue.lower() for issue in issues_found):
+                print(f"      2. Check tax rate 'applies_to_order_types' configuration")
+            if any("calculate" in issue.lower() for issue in issues_found):
+                print(f"      3. Debug the calculate_order_taxes_and_charges() function")
+            if any("kitchen" in issue.lower() for issue in issues_found):
+                print(f"      4. Check order update logic when sending to kitchen")
+            
+            result_success = False
+            result_details = f"Tax system issues found: {'; '.join(issues_found)}"
+        
+        # Clean up
+        print(f"\n🧹 Cleaning up test order...")
+        try:
+            payment_data = {"payment_method": "card", "print_receipt": False}
+            requests.post(f"{API_URL}/orders/{order_id}/pay", json=payment_data, headers=headers)
+            print(f"   ✅ Test order paid and cleaned up")
+        except Exception as e:
+            print(f"   ⚠️ Could not clean up test order: {str(e)}")
+        
+        return print_test_result("Active Tax Application Investigation", result_success, result_details)
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Tax investigation failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Active Tax Application Investigation", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
