@@ -5874,7 +5874,9 @@ def run_tests():
         return
     
     # Test the Dynamic Tax & Service Charges Application Bug Fix as requested
-    test_dynamic_tax_service_charges_application_bug_fix()
+    success, details = test_dynamic_tax_service_charges_application_bug_fix()
+    test_results["Dynamic Tax & Service Charges Application Bug Fix"]["success"] = success
+    test_results["Dynamic Tax & Service Charges Application Bug Fix"]["details"] = details
     
     # Print summary
     print("\n" + "="*80)
