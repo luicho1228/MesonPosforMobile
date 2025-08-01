@@ -3649,7 +3649,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     ? menuItems 
     : menuItems.filter(item => item.category === selectedCategory);
 
-  const { subtotal, taxes, serviceCharges, gratuity, discounts, total, breakdown } = orderTotals;
+  const { subtotal, taxes, serviceCharges: serviceChargesTotal, gratuity, discounts, total, breakdown } = orderTotals;
 
   return (
     <div className="bg-gray-50 min-h-screen">
