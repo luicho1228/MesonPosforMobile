@@ -1580,15 +1580,44 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                 )}
               </div>
 
-              <div className="mb-3 text-sm">
-                {order.items.slice(0, 2).map((item, index) => (
-                  <div key={index} className="flex justify-between">
-                    <span>{item.quantity}x {item.menu_item_name}</span>
+              <div className="mb-3">
+                {/* Order Items */}
+                <div className="text-sm mb-2">
+                  {order.items.slice(0, 2).map((item, index) => (
+                    <div key={index} className="flex justify-between">
+                      <span>{item.quantity}x {item.menu_item_name}</span>
+                    </div>
+                  ))}
+                  {order.items.length > 2 && (
+                    <p className="text-gray-500">+{order.items.length - 2} more items</p>
+                  )}
+                </div>
+                
+                {/* Tax and Charges Breakdown */}
+                <div className="text-xs text-gray-600 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>${order.subtotal.toFixed(2)}</span>
                   </div>
-                ))}
-                {order.items.length > 2 && (
-                  <p className="text-gray-500">+{order.items.length - 2} more items</p>
-                )}
+                  {order.tax > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Tax:</span>
+                      <span>${order.tax.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {order.service_charges > 0 && (
+                    <div className="flex justify-between text-blue-600">
+                      <span>Service Charges:</span>
+                      <span>${order.service_charges.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {order.tip > 0 && (
+                    <div className="flex justify-between text-purple-600">
+                      <span>Tip:</span>
+                      <span>${order.tip.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-between items-center">
