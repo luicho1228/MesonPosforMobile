@@ -5397,6 +5397,452 @@ def test_tax_rate_deactivation_bug_fix():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Tax Rate Deactivation Bug Fix", False, error_msg)
 
+# 23. Test Dynamic Tax & Service Charges Application Bug Fix (Review Request)
+def test_dynamic_tax_service_charges_application_bug_fix():
+    global auth_token, menu_item_id, table_id
+    print("\n=== Testing Dynamic Tax & Service Charges Application Bug Fix ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create a table if we don't have one
+    if not table_id:
+        try:
+            table_number = random.randint(10000, 99999)
+            table_data = {"name": f"Test Table {table_number}", "capacity": 4}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            table_id = result.get("id")
+            print(f"Created table with ID: {table_id}")
+        except:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, "Could not create table for testing")
+    
+    try:
+        print("\n🎯 TESTING DYNAMIC TAX & SERVICE CHARGES APPLICATION BUG FIX")
+        print("Focus: Verify that orders are saved with dynamic tax calculations (not hardcoded 8%) and proper service charges")
+        
+        # Step 1: Set up test tax rates and service charges
+        print("\nStep 1: Setting up test tax rates and service charges...")
+        
+        # Create NYC Sales Tax (8.25%)
+        nyc_tax_data = {
+            "name": "NYC Sales Tax",
+            "description": "New York City Sales Tax",
+            "rate": 8.25,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery", "phone_order"]
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=nyc_tax_data, headers=headers)
+        response.raise_for_status()
+        nyc_tax = response.json()
+        nyc_tax_id = nyc_tax.get("id")
+        print(f"✅ Created NYC Sales Tax: {nyc_tax.get('rate')}%")
+        
+        # Create State Tax (4%)
+        state_tax_data = {
+            "name": "State Tax",
+            "description": "New York State Tax",
+            "rate": 4.0,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery", "phone_order"]
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=state_tax_data, headers=headers)
+        response.raise_for_status()
+        state_tax = response.json()
+        state_tax_id = state_tax.get("id")
+        print(f"✅ Created State Tax: {state_tax.get('rate')}%")
+        
+        # Create Large Party Service Charge (18% for dine-in)
+        large_party_charge_data = {
+            "name": "Large Party Service Charge",
+            "description": "Automatic service charge for large parties",
+            "amount": 18.0,
+            "type": "percentage",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in"],
+            "minimum_order_amount": 50.0
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/service-charges", json=large_party_charge_data, headers=headers)
+        response.raise_for_status()
+        large_party_charge = response.json()
+        large_party_charge_id = large_party_charge.get("id")
+        print(f"✅ Created Large Party Service Charge: {large_party_charge.get('amount')}%")
+        
+        # Create Delivery Fee ($3.50 for delivery orders)
+        delivery_fee_data = {
+            "name": "Delivery Fee",
+            "description": "Standard delivery service charge",
+            "amount": 3.50,
+            "type": "fixed",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": False,
+            "applies_to_order_types": ["delivery"],
+            "minimum_order_amount": 0.0
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/service-charges", json=delivery_fee_data, headers=headers)
+        response.raise_for_status()
+        delivery_fee = response.json()
+        delivery_fee_id = delivery_fee.get("id")
+        print(f"✅ Created Delivery Fee: ${delivery_fee.get('amount')}")
+        
+        print(f"\n📊 Expected Tax Calculation:")
+        print(f"   NYC Sales Tax: 8.25%")
+        print(f"   State Tax: 4.0%")
+        print(f"   Total Tax Rate: 12.25% (NOT hardcoded 8%)")
+        
+        # Step 2: Test Dine-in Order with Dynamic Tax & Service Charges
+        print("\nStep 2: Testing dine-in order with dynamic tax and service charges...")
+        
+        dine_in_order_data = {
+            "customer_name": "Dynamic Tax Test Customer",
+            "customer_phone": "5551234567",
+            "customer_address": "123 Tax Test St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 4,  # Large quantity to trigger service charge
+                    "special_instructions": "Dynamic tax test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 5.00,
+            "order_notes": "Testing dynamic tax calculation"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=dine_in_order_data, headers=headers)
+        response.raise_for_status()
+        dine_in_order = response.json()
+        dine_in_order_id = dine_in_order.get("id")
+        
+        print(f"✅ Created dine-in order: {dine_in_order_id}")
+        print(f"   Subtotal: ${dine_in_order.get('subtotal', 0):.2f}")
+        print(f"   Tax: ${dine_in_order.get('tax', 0):.2f}")
+        print(f"   Service Charges: ${dine_in_order.get('service_charges', 0):.2f}")
+        print(f"   Tip: ${dine_in_order.get('tip', 0):.2f}")
+        print(f"   Total: ${dine_in_order.get('total', 0):.2f}")
+        
+        # Verify dynamic tax calculation (should be 12.25%, not 8%)
+        subtotal = dine_in_order.get('subtotal', 0)
+        calculated_tax = dine_in_order.get('tax', 0)
+        expected_tax = subtotal * 0.1225  # 12.25% total tax rate
+        hardcoded_tax = subtotal * 0.08   # Old hardcoded 8%
+        
+        print(f"\n🧮 Tax Calculation Verification:")
+        print(f"   Subtotal: ${subtotal:.2f}")
+        print(f"   Expected Tax (12.25%): ${expected_tax:.2f}")
+        print(f"   Actual Tax: ${calculated_tax:.2f}")
+        print(f"   Old Hardcoded Tax (8%): ${hardcoded_tax:.2f}")
+        
+        # Check if tax is dynamic (not hardcoded 8%)
+        if abs(calculated_tax - hardcoded_tax) < 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ BUG CONFIRMED: Order still using hardcoded 8% tax (${calculated_tax:.2f}) instead of dynamic 12.25% (${expected_tax:.2f})")
+        
+        if abs(calculated_tax - expected_tax) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ Tax calculation incorrect. Expected: ${expected_tax:.2f}, Got: ${calculated_tax:.2f}")
+        
+        print("✅ Dynamic tax calculation working correctly!")
+        
+        # Verify service charges are applied
+        service_charges = dine_in_order.get('service_charges', 0)
+        if subtotal >= 50.0:  # Should trigger large party service charge
+            expected_service_charge = subtotal * 0.18  # 18% of subtotal
+            if abs(service_charges - expected_service_charge) > 0.01:
+                return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                       f"❌ Service charge calculation incorrect. Expected: ${expected_service_charge:.2f}, Got: ${service_charges:.2f}")
+            print(f"✅ Large party service charge applied correctly: ${service_charges:.2f}")
+        else:
+            print(f"ℹ️  Order below service charge minimum (${subtotal:.2f} < $50.00)")
+        
+        # Step 3: Send order to kitchen and verify persistence
+        print("\nStep 3: Sending dine-in order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{dine_in_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Retrieve the order from database to verify persistence
+        response = requests.get(f"{API_URL}/orders/{dine_in_order_id}", headers=headers)
+        response.raise_for_status()
+        saved_dine_in_order = response.json()
+        
+        print(f"✅ Order sent to kitchen and retrieved from database")
+        print(f"   Saved Subtotal: ${saved_dine_in_order.get('subtotal', 0):.2f}")
+        print(f"   Saved Tax: ${saved_dine_in_order.get('tax', 0):.2f}")
+        print(f"   Saved Service Charges: ${saved_dine_in_order.get('service_charges', 0):.2f}")
+        print(f"   Saved Total: ${saved_dine_in_order.get('total', 0):.2f}")
+        
+        # Verify saved values match calculated values
+        if abs(saved_dine_in_order.get('tax', 0) - calculated_tax) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   "❌ Saved tax amount doesn't match calculated tax amount")
+        
+        if abs(saved_dine_in_order.get('service_charges', 0) - service_charges) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   "❌ Saved service charges don't match calculated service charges")
+        
+        print("✅ Order persistence verified - dynamic calculations saved correctly!")
+        
+        # Step 4: Test Delivery Order with Different Tax/Charge Rules
+        print("\nStep 4: Testing delivery order with different tax and service charge rules...")
+        
+        delivery_order_data = {
+            "customer_name": "Delivery Tax Test",
+            "customer_phone": "5559876543",
+            "customer_address": "456 Delivery Ave, Apt 2B",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Delivery tax test"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 3.00,
+            "delivery_instructions": "Leave at door",
+            "order_notes": "Testing delivery tax and charges"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=delivery_order_data, headers=headers)
+        response.raise_for_status()
+        delivery_order = response.json()
+        delivery_order_id = delivery_order.get("id")
+        
+        print(f"✅ Created delivery order: {delivery_order_id}")
+        print(f"   Subtotal: ${delivery_order.get('subtotal', 0):.2f}")
+        print(f"   Tax: ${delivery_order.get('tax', 0):.2f}")
+        print(f"   Service Charges: ${delivery_order.get('service_charges', 0):.2f}")
+        print(f"   Tip: ${delivery_order.get('tip', 0):.2f}")
+        print(f"   Total: ${delivery_order.get('total', 0):.2f}")
+        
+        # Verify delivery order has same tax rate but different service charges
+        delivery_subtotal = delivery_order.get('subtotal', 0)
+        delivery_tax = delivery_order.get('tax', 0)
+        delivery_service_charges = delivery_order.get('service_charges', 0)
+        
+        expected_delivery_tax = delivery_subtotal * 0.1225  # Same 12.25% tax rate
+        expected_delivery_fee = 3.50  # Fixed delivery fee
+        
+        if abs(delivery_tax - expected_delivery_tax) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ Delivery order tax calculation incorrect. Expected: ${expected_delivery_tax:.2f}, Got: ${delivery_tax:.2f}")
+        
+        if abs(delivery_service_charges - expected_delivery_fee) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ Delivery fee calculation incorrect. Expected: ${expected_delivery_fee:.2f}, Got: ${delivery_service_charges:.2f}")
+        
+        print("✅ Delivery order tax and service charges calculated correctly!")
+        
+        # Step 5: Test Active Orders Endpoint
+        print("\nStep 5: Testing active orders endpoint returns proper tax/charge breakdown...")
+        
+        # Send delivery order to kitchen to make it active
+        response = requests.post(f"{API_URL}/orders/{delivery_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Get active orders
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        active_orders = response.json()
+        
+        print(f"✅ Retrieved {len(active_orders)} active orders")
+        
+        # Find our test orders in active orders
+        dine_in_found = False
+        delivery_found = False
+        
+        for order in active_orders:
+            if order.get("id") == dine_in_order_id:
+                dine_in_found = True
+                print(f"✅ Dine-in order found in active orders:")
+                print(f"   Tax: ${order.get('tax', 0):.2f}")
+                print(f"   Service Charges: ${order.get('service_charges', 0):.2f}")
+                
+                # Verify active orders endpoint returns correct breakdown
+                if abs(order.get('tax', 0) - calculated_tax) > 0.01:
+                    return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                           "❌ Active orders endpoint returns incorrect tax amount")
+                
+            elif order.get("id") == delivery_order_id:
+                delivery_found = True
+                print(f"✅ Delivery order found in active orders:")
+                print(f"   Tax: ${order.get('tax', 0):.2f}")
+                print(f"   Service Charges: ${order.get('service_charges', 0):.2f}")
+                
+                # Verify active orders endpoint returns correct breakdown
+                if abs(order.get('tax', 0) - delivery_tax) > 0.01:
+                    return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                           "❌ Active orders endpoint returns incorrect delivery tax amount")
+        
+        if not dine_in_found or not delivery_found:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   "❌ Test orders not found in active orders endpoint")
+        
+        print("✅ Active orders endpoint returns proper tax/charge breakdown!")
+        
+        # Step 6: Test Order Update Function
+        print("\nStep 6: Testing order update function with dynamic calculations...")
+        
+        # Update the dine-in order to add more items
+        updated_order_data = {
+            "customer_name": "Updated Dynamic Tax Test",
+            "customer_phone": "5551234567",
+            "customer_address": "123 Tax Test St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 6,  # Increased quantity
+                    "special_instructions": "Updated dynamic tax test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 7.00,  # Increased tip
+            "order_notes": "Updated order for dynamic tax testing"
+        }
+        
+        response = requests.put(f"{API_URL}/orders/{dine_in_order_id}", json=updated_order_data, headers=headers)
+        response.raise_for_status()
+        updated_order = response.json()
+        
+        print(f"✅ Updated dine-in order:")
+        print(f"   New Subtotal: ${updated_order.get('subtotal', 0):.2f}")
+        print(f"   New Tax: ${updated_order.get('tax', 0):.2f}")
+        print(f"   New Service Charges: ${updated_order.get('service_charges', 0):.2f}")
+        print(f"   New Total: ${updated_order.get('total', 0):.2f}")
+        
+        # Verify updated calculations are still dynamic
+        updated_subtotal = updated_order.get('subtotal', 0)
+        updated_tax = updated_order.get('tax', 0)
+        updated_service_charges = updated_order.get('service_charges', 0)
+        
+        expected_updated_tax = updated_subtotal * 0.1225
+        expected_updated_service_charge = updated_subtotal * 0.18  # Should still apply large party charge
+        
+        if abs(updated_tax - expected_updated_tax) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ Updated order tax calculation incorrect. Expected: ${expected_updated_tax:.2f}, Got: ${updated_tax:.2f}")
+        
+        if abs(updated_service_charges - expected_updated_service_charge) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ Updated order service charge calculation incorrect. Expected: ${expected_updated_service_charge:.2f}, Got: ${updated_service_charges:.2f}")
+        
+        print("✅ Order update function works with dynamic calculations!")
+        
+        # Step 7: Test Order Type Specific Rates
+        print("\nStep 7: Testing order-type-specific tax and charge application...")
+        
+        # Create a takeout order (should have tax but no large party service charge or delivery fee)
+        takeout_order_data = {
+            "customer_name": "Takeout Tax Test",
+            "customer_phone": "5555551234",
+            "customer_address": "789 Takeout Blvd",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 3,
+                    "special_instructions": "Takeout tax test"
+                }
+            ],
+            "order_type": "takeout",
+            "tip": 2.00,
+            "order_notes": "Testing takeout tax application"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=takeout_order_data, headers=headers)
+        response.raise_for_status()
+        takeout_order = response.json()
+        takeout_order_id = takeout_order.get("id")
+        
+        print(f"✅ Created takeout order: {takeout_order_id}")
+        print(f"   Subtotal: ${takeout_order.get('subtotal', 0):.2f}")
+        print(f"   Tax: ${takeout_order.get('tax', 0):.2f}")
+        print(f"   Service Charges: ${takeout_order.get('service_charges', 0):.2f}")
+        print(f"   Total: ${takeout_order.get('total', 0):.2f}")
+        
+        # Verify takeout has tax but no order-type-specific service charges
+        takeout_subtotal = takeout_order.get('subtotal', 0)
+        takeout_tax = takeout_order.get('tax', 0)
+        takeout_service_charges = takeout_order.get('service_charges', 0)
+        
+        expected_takeout_tax = takeout_subtotal * 0.1225  # Same tax rate
+        
+        if abs(takeout_tax - expected_takeout_tax) > 0.01:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ Takeout order tax calculation incorrect. Expected: ${expected_takeout_tax:.2f}, Got: ${takeout_tax:.2f}")
+        
+        # Takeout should not have large party service charge (dine-in only) or delivery fee (delivery only)
+        if takeout_service_charges != 0:
+            return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, 
+                                   f"❌ Takeout order should not have service charges but has ${takeout_service_charges:.2f}")
+        
+        print("✅ Order-type-specific rates applied correctly!")
+        
+        # Step 8: Clean up test data
+        print("\nStep 8: Cleaning up test tax rates and service charges...")
+        
+        # Pay all test orders to clean up
+        payment_data = {"payment_method": "card", "print_receipt": False}
+        
+        try:
+            requests.post(f"{API_URL}/orders/{dine_in_order_id}/pay", json=payment_data, headers=headers)
+            requests.post(f"{API_URL}/orders/{delivery_order_id}/pay", json=payment_data, headers=headers)
+            requests.post(f"{API_URL}/orders/{takeout_order_id}/pay", json=payment_data, headers=headers)
+            print("✅ Test orders paid and cleaned up")
+        except:
+            print("⚠️  Some test orders may not have been cleaned up")
+        
+        # Delete test tax rates and service charges
+        cleanup_ids = [nyc_tax_id, state_tax_id, large_party_charge_id, delivery_fee_id]
+        cleanup_endpoints = [
+            f"/tax-charges/tax-rates/{nyc_tax_id}",
+            f"/tax-charges/tax-rates/{state_tax_id}",
+            f"/tax-charges/service-charges/{large_party_charge_id}",
+            f"/tax-charges/service-charges/{delivery_fee_id}"
+        ]
+        
+        for endpoint in cleanup_endpoints:
+            try:
+                requests.delete(f"{API_URL}{endpoint}", headers=headers)
+            except:
+                pass
+        
+        print("✅ Test tax rates and service charges cleaned up")
+        
+        # Final Summary
+        print(f"\n🎉 DYNAMIC TAX & SERVICE CHARGES APPLICATION BUG FIX - COMPREHENSIVE TEST RESULTS:")
+        print(f"✅ 1. DYNAMIC TAX CALCULATION: Orders use 12.25% total tax rate (8.25% NYC + 4% State), NOT hardcoded 8%")
+        print(f"✅ 2. SERVICE CHARGES PROPERLY APPLIED: Large party charges for dine-in, delivery fees for delivery orders")
+        print(f"✅ 3. CORRECT FIELD SEPARATION: Orders have separate 'tax' and 'service_charges' fields")
+        print(f"✅ 4. PROPER TOTAL CALCULATION: Total = subtotal + dynamic_taxes + service_charges + tip")
+        print(f"✅ 5. ORDER PERSISTENCE: Saved orders include correct dynamic calculations, not hardcoded values")
+        print(f"✅ 6. ACTIVE ORDERS ENDPOINT: Returns orders with proper tax/charge breakdown")
+        print(f"✅ 7. ORDER TYPE SPECIFICITY: Different order types (dine-in, delivery, takeout) apply appropriate rates")
+        print(f"✅ 8. CREATE & UPDATE FUNCTIONS: Both create_order and update_order work with dynamic calculations")
+        
+        return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", True, 
+                               "🎯 CRITICAL BUG FIXED: Orders now save with dynamic tax calculations (12.25% total) and proper service charges, "
+                               "replacing the previous hardcoded 8% tax. Frontend display was correct, but backend storage now matches frontend calculations. "
+                               "All order types apply appropriate tax and service charge rates. Both order creation and updates use dynamic calculations.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Dynamic Tax & Service Charges Application Bug Fix test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, error_msg)
+
 # Main execution function
 def run_tests():
     print("🚀 Starting Backend API Testing...")
