@@ -9223,7 +9223,7 @@ const MenuManagementComponent = ({ onBack }) => {
         const itemsToUpdate = menuItems.filter(item => item.category === editingCategory);
         
         for (const item of itemsToUpdate) {
-          await axios.put(`${API}/menu-items/${item.id}`, {
+          await axios.put(`${API}/menu/items/${item.id}`, {
             ...item,
             category: newCategoryName
           });
