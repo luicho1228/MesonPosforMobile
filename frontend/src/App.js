@@ -4836,7 +4836,7 @@ const TaxChargesComponent = ({ onBack }) => {
 
   const getDefaultServiceCharges = () => [
     {
-      id: '1',
+      id: crypto.randomUUID(),
       name: 'Large Party Service Charge',
       type: 'percentage',
       amount: 18,
@@ -4849,7 +4849,7 @@ const TaxChargesComponent = ({ onBack }) => {
       mandatory: true
     },
     {
-      id: '2',
+      id: crypto.randomUUID(),
       name: 'Delivery Fee',
       type: 'fixed',
       amount: 3.50,
