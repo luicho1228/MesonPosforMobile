@@ -3096,6 +3096,148 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
   };
 
+  const fetchTaxChargesData = async () => {
+    try {
+      // Fetch all tax and charges data from backend APIs
+      const [taxRatesRes, serviceChargesRes, gratuityRulesRes, discountPoliciesRes] = await Promise.all([
+        axios.get(`${API}/tax-charges/tax-rates`),
+        axios.get(`${API}/tax-charges/service-charges`),
+        axios.get(`${API}/tax-charges/gratuity-rules`),
+        axios.get(`${API}/tax-charges/discount-policies`)
+      ]);
+      
+      setTaxRates(taxRatesRes.data.length > 0 ? taxRatesRes.data : getDefaultTaxRates());
+      setServiceCharges(serviceChargesRes.data.length > 0 ? serviceChargesRes.data : getDefaultServiceCharges());
+      setGratuityRules(gratuityRulesRes.data.length > 0 ? gratuityRulesRes.data : getDefaultGratuityRules());
+      setDiscountPolicies(discountPoliciesRes.data.length > 0 ? discountPoliciesRes.data : getDefaultDiscountPolicies());
+      
+    } catch (error) {
+      console.error('Error fetching tax/charges data:', error);
+      // Fallback to default data if API fails
+      setTaxRates(getDefaultTaxRates());
+      setServiceCharges(getDefaultServiceCharges());
+      setGratuityRules(getDefaultGratuityRules());
+      setDiscountPolicies(getDefaultDiscountPolicies());
+      console.log('Using default tax and charges settings');
+    }
+  };
+
+  const getDefaultTaxRates = () => [
+    {
+      id: crypto.randomUUID(),
+      name: 'NYC Sales Tax',
+      type: 'percentage',
+      rate: 8.25,
+      description: 'New York City Sales Tax',
+      category: 'sales',
+      applies_to: 'subtotal',
+      jurisdiction: 'city',
+      tax_id: 'NYC-ST-001',
+      active: true,
+      inclusive: false
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'State Tax',
+      type: 'percentage',
+      rate: 4.0,
+      description: 'New York State Tax',
+      category: 'sales',
+      applies_to: 'subtotal',
+      jurisdiction: 'state',
+      tax_id: 'NYS-ST-001',
+      active: true,
+      inclusive: false
+    }
+  ];
+
+  const getDefaultServiceCharges = () => [
+    {
+      id: crypto.randomUUID(),
+      name: 'Large Party Service Charge',
+      type: 'percentage',
+      amount: 18,
+      description: 'Automatic service charge for parties of 6 or more',
+      applies_to: 'subtotal',
+      conditions: ['party_size'],
+      party_size_threshold: '6',
+      order_types: ['dine_in'],
+      active: true,
+      mandatory: true
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'Delivery Fee',
+      type: 'fixed',
+      amount: 3.50,
+      description: 'Standard delivery fee',
+      applies_to: 'subtotal',
+      conditions: ['order_type'],
+      order_types: ['delivery'],
+      active: true,
+      mandatory: true
+    }
+  ];
+
+  const getDefaultGratuityRules = () => [
+    {
+      id: crypto.randomUUID(),
+      name: 'Automatic Gratuity - Large Parties',
+      type: 'percentage',
+      amount: 20,
+      description: 'Automatic 20% gratuity for parties of 8+',
+      trigger_condition: 'party_size',
+      party_size_min: '8',
+      applies_to_order_types: ['dine_in'],
+      auto_apply: true,
+      customer_can_modify: true,
+      active: true
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'High-Value Order Gratuity',
+      type: 'percentage',
+      amount: 15,
+      description: 'Suggested 15% gratuity for orders over $200',
+      trigger_condition: 'order_amount',
+      order_amount_min: '200',
+      applies_to_order_types: ['dine_in', 'delivery'],
+      auto_apply: false,
+      customer_can_modify: true,
+      active: true
+    }
+  ];
+
+  const getDefaultDiscountPolicies = () => [
+    {
+      id: crypto.randomUUID(),
+      name: 'Employee Discount',
+      type: 'percentage',
+      amount: 25,
+      description: '25% discount for staff members',
+      category: 'employee',
+      conditions: ['requires_code'],
+      discount_code: 'STAFF25',
+      stackable: false,
+      active: true,
+      max_uses_per_day: '50'
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'Senior Citizen Discount',
+      type: 'percentage',
+      amount: 10,
+      description: '10% discount for seniors (65+)',
+      category: 'senior',
+      conditions: ['time_based'],
+      valid_days: ['monday', 'tuesday', 'wednesday', 'thursday'],
+      valid_hours_start: '14:00',
+      valid_hours_end: '17:00',
+      stackable: true,
+      active: true
+    }
+  ];
+
   const addToCart = (item) => {
     if (item.modifier_groups && item.modifier_groups.length > 0) {
       setSelectedMenuItem(item);
