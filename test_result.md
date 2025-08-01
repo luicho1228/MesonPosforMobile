@@ -543,15 +543,18 @@ agent_communication:
 
   - task: "Dynamic Tax & Charges Application to Orders"
     implemented: true
-    working: true  
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "DYNAMIC TAX & CHARGES APPLICATION COMPLETED: User reported that while Tax & Charges Settings were configured correctly, only the hardcoded 8% tax was being applied to orders instead of using the configured settings. Root cause: The calculateTotal() function was using hardcoded tax calculation (subtotal * 0.08) instead of fetching and applying the configured tax rates, service charges, gratuity rules, and discounts. Solution implemented: 1) Converted calculateTotal() to async function that fetches all active tax/charge settings from backend APIs, 2) Added comprehensive calculation logic for taxes (percentage/fixed), service charges (percentage/fixed), gratuity rules (with trigger conditions), and discount policies (with minimum order requirements), 3) Created detailed breakdown structure showing each charge with name, type, rate, and amount, 4) Updated cart display to show itemized breakdown of all charges with proper labels and color coding (taxes in gray, service charges in blue, gratuity in green, discounts in red), 5) Updated all dependent functions (printReceipt, PaymentModal, etc.) to use new async structure, 6) Added proper error handling with fallback to default 8% tax if API fails. Result: Orders now dynamically apply all configured taxes, service charges, gratuity, and discounts with detailed breakdown display in cart."
+      - working: true
+        agent: "testing"
+        comment: "✅ DYNAMIC TAX & SERVICE CHARGES APPLICATION BUG FIX SUCCESSFULLY TESTED: Conducted comprehensive testing of the critical bug fix where orders were saved with hardcoded 8% tax instead of dynamic calculations. VERIFIED FIXES: 1) DYNAMIC TAX CALCULATION: Orders now use 12.25% total tax rate (8.25% NYC + 4% State), NOT hardcoded 8%. Created test orders with $51.96 subtotal - Expected tax: $6.37 (12.25%), Actual tax: $6.37 ✓, Old hardcoded: $4.16 (8%) ❌. 2) SERVICE CHARGES PROPERLY APPLIED: Large party charges (18%) for dine-in orders above $50, delivery fees ($3.50) for delivery orders, no charges for takeout orders. 3) CORRECT FIELD SEPARATION: Orders have separate 'tax' and 'service_charges' fields with proper values. 4) PROPER TOTAL CALCULATION: Total = subtotal + dynamic_taxes + service_charges + tip. 5) ORDER PERSISTENCE: Saved orders include correct dynamic calculations, verified by retrieving from database after sending to kitchen. 6) ACTIVE ORDERS ENDPOINT: Returns orders with proper tax/charge breakdown. 7) ORDER TYPE SPECIFICITY: Dine-in, delivery, and takeout orders apply appropriate rates. 8) CREATE & UPDATE FUNCTIONS: Both create_order and update_order work with dynamic calculations. The critical bug has been fixed - frontend display was correct, but backend storage now matches frontend calculations."
 
   - task: "Menu Category Editing Fix"
     implemented: true
