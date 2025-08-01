@@ -2923,6 +2923,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     fetchCategories();
     fetchModifierData();
     fetchTables();
+    fetchTaxChargesData(); // Load tax and charges data for dynamic calculation
   }, [editingOrder, editingActiveOrder]);
 
   const fetchTables = async () => {
