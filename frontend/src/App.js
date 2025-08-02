@@ -3417,13 +3417,13 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     const activeServiceCharges = serviceCharges.filter(charge => {
       if (!charge.active) return false;
       
-      // If order_types is empty or doesn't exist, apply to all order types
-      if (!charge.order_types || charge.order_types.length === 0) {
+      // If applies_to_order_types is empty or doesn't exist, apply to all order types
+      if (!charge.applies_to_order_types || charge.applies_to_order_types.length === 0) {
         return true;
       }
       
       // Otherwise, check if current order type is included
-      return charge.order_types.includes(orderType);
+      return charge.applies_to_order_types.includes(orderType);
     });
     
     const activeGratuityRules = gratuityRules.filter(gratuity => {
