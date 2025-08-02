@@ -4915,6 +4915,7 @@ const TaxChargesComponent = ({ onBack }) => {
     applies_to: 'subtotal', // subtotal, total
     jurisdiction: '', // city, state, federal
     tax_id: '',
+    applies_to_order_types: [], // NEW: which order types this tax applies to
     active: true,
     inclusive: false // tax included in price vs added
   });
