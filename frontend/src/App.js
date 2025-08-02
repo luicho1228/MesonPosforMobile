@@ -6203,6 +6203,74 @@ const TaxChargesComponent = ({ onBack }) => {
                 />
               </div>
 
+              {/* Order Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Apply Tax To</label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="tax-application"
+                      checked={taxForm.applies_to_order_types.length === 0}
+                      onChange={() => setTaxForm({...taxForm, applies_to_order_types: []})}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">All Order Types</span>
+                    <span className="text-xs text-gray-500 ml-2">(Dine-in, Takeout, Delivery, Phone Orders)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="tax-application"
+                      checked={taxForm.applies_to_order_types.length > 0}
+                      onChange={() => {
+                        if (taxForm.applies_to_order_types.length === 0) {
+                          setTaxForm({...taxForm, applies_to_order_types: ['dine_in']});
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Specific Order Types Only</span>
+                  </label>
+                </div>
+                
+                {/* Order Type Checkboxes - Only show when "Specific Order Types" is selected */}
+                {taxForm.applies_to_order_types.length > 0 && (
+                  <div className="mt-3 ml-6 space-y-2 bg-gray-50 p-3 rounded-md">
+                    <p className="text-sm font-medium text-gray-600 mb-2">Select which order types this tax applies to:</p>
+                    {orderTypes.map(type => (
+                      <label key={type} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={taxForm.applies_to_order_types.includes(type)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setTaxForm({
+                                ...taxForm, 
+                                applies_to_order_types: [...taxForm.applies_to_order_types, type]
+                              });
+                            } else {
+                              setTaxForm({
+                                ...taxForm, 
+                                applies_to_order_types: taxForm.applies_to_order_types.filter(t => t !== type)
+                              });
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 capitalize">
+                          {type.replace('_', '-')}
+                          {type === 'dine_in' && ' (Restaurant)'}
+                          {type === 'takeout' && ' (To-Go)'}
+                          {type === 'delivery' && ' (Delivery)'}
+                          {type === 'phone_order' && ' (Phone)'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex space-x-4">
                 <label className="flex items-center">
                   <input
