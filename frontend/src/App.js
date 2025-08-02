@@ -5593,6 +5593,11 @@ const TaxChargesComponent = ({ onBack }) => {
       type: 'percentage',
       amount: '',
       description: '',
+      applies_to: 'subtotal',
+      conditions: [],
+      minimum_amount: '',
+      party_size_threshold: '',
+      order_types: [],
       active: true,
       mandatory: false
     });
