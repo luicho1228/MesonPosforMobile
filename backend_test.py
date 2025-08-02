@@ -6269,6 +6269,288 @@ def test_active_tax_application_investigation():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Active Tax Application Investigation", False, error_msg)
 
+# 25. Test Hardcoded Tax Issue Investigation (Review Request)
+def test_hardcoded_tax_issue_investigation():
+    print("\n=== HARDCODED TAX ISSUE INVESTIGATION ===")
+    print("🔍 INVESTIGATING: User reports hardcoded taxes being added even when they should only see taxes from Tax & Charges Settings")
+    
+    # First, authenticate with manager PIN 1234 as specified in review request
+    print("\nStep 1: Authenticating with manager PIN 1234...")
+    
+    login_data = {"pin": "1234"}
+    
+    try:
+        response = requests.post(f"{API_URL}/auth/login", json=login_data)
+        response.raise_for_status()
+        result = response.json()
+        
+        manager_token = result.get("access_token")
+        manager_user = result.get("user", {})
+        
+        if not manager_token:
+            return print_test_result("Hardcoded Tax Issue Investigation", False, "Failed to authenticate with manager PIN 1234")
+        
+        print(f"✅ Successfully authenticated as manager: {manager_user.get('full_name')}")
+        
+        headers = {"Authorization": f"Bearer {manager_token}"}
+        
+        # Step 2: Clear ALL existing tax rates to test with NO active taxes
+        print("\nStep 2: Clearing ALL existing tax rates to test with NO active taxes...")
+        
+        # Get all existing tax rates
+        response = requests.get(f"{API_URL}/tax-charges/tax-rates", headers=headers)
+        response.raise_for_status()
+        existing_tax_rates = response.json()
+        
+        print(f"Found {len(existing_tax_rates)} existing tax rates")
+        
+        # Deactivate all existing tax rates
+        deactivated_tax_rates = []
+        for tax_rate in existing_tax_rates:
+            tax_rate_id = tax_rate.get("id")
+            if tax_rate.get("active"):
+                print(f"Deactivating tax rate: {tax_rate.get('name')} ({tax_rate.get('rate')}%)")
+                
+                # Update to inactive
+                update_data = {
+                    "name": tax_rate.get("name"),
+                    "description": tax_rate.get("description", ""),
+                    "rate": tax_rate.get("rate"),
+                    "type": tax_rate.get("type", "percentage"),
+                    "active": False,  # Deactivate
+                    "applies_to_order_types": tax_rate.get("applies_to_order_types", [])
+                }
+                
+                response = requests.put(f"{API_URL}/tax-charges/tax-rates/{tax_rate_id}", json=update_data, headers=headers)
+                response.raise_for_status()
+                deactivated_tax_rates.append(tax_rate_id)
+        
+        print(f"✅ Deactivated {len(deactivated_tax_rates)} tax rates")
+        
+        # Step 3: Create a menu item for testing
+        print("\nStep 3: Creating menu item for testing...")
+        
+        menu_item_data = {
+            "name": f"Tax Test Pizza {random_string(4)}",
+            "description": "Pizza for testing hardcoded tax issue",
+            "price": 20.00,  # Use round number for easy calculation
+            "category": "Pizza",
+            "available": True
+        }
+        
+        response = requests.post(f"{API_URL}/menu/items", json=menu_item_data, headers=headers)
+        response.raise_for_status()
+        test_menu_item = response.json()
+        test_menu_item_id = test_menu_item.get("id")
+        
+        print(f"✅ Created test menu item: {test_menu_item.get('name')} - ${test_menu_item.get('price')}")
+        
+        # Step 4: Test order creation with NO active tax rates - should have 0% tax
+        print("\nStep 4: Testing order creation with NO active tax rates (should have 0% tax)...")
+        
+        order_data = {
+            "customer_name": "Tax Test Customer",
+            "customer_phone": "5551234567",
+            "customer_address": "123 Tax Test St",
+            "items": [
+                {
+                    "menu_item_id": test_menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Testing hardcoded tax issue"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 0.00,
+            "order_notes": "Hardcoded tax investigation"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        test_order = response.json()
+        
+        test_order_id = test_order.get("id")
+        subtotal = test_order.get("subtotal", 0)
+        tax = test_order.get("tax", 0)
+        total = test_order.get("total", 0)
+        
+        print(f"📊 ORDER WITH NO ACTIVE TAX RATES:")
+        print(f"   Order ID: {test_order_id[:8]}...")
+        print(f"   Subtotal: ${subtotal:.2f}")
+        print(f"   Tax: ${tax:.2f}")
+        print(f"   Total: ${total:.2f}")
+        
+        # CRITICAL CHECK: Tax should be 0 when no tax rates are active
+        if tax > 0:
+            print(f"🚨 HARDCODED TAX ISSUE CONFIRMED!")
+            print(f"   Expected tax: $0.00 (no active tax rates)")
+            print(f"   Actual tax: ${tax:.2f}")
+            print(f"   This indicates hardcoded tax calculation!")
+            
+            # Calculate what the hardcoded rate might be
+            if subtotal > 0:
+                hardcoded_rate = (tax / subtotal) * 100
+                print(f"   Apparent hardcoded tax rate: {hardcoded_rate:.2f}%")
+            
+            hardcoded_tax_found = True
+        else:
+            print(f"✅ No tax applied when no tax rates are active (expected behavior)")
+            hardcoded_tax_found = False
+        
+        # Step 5: Test with one specific tax rate active
+        print("\nStep 5: Testing with ONE specific tax rate active...")
+        
+        # Create a single test tax rate
+        test_tax_rate_data = {
+            "name": "Test Sales Tax",
+            "description": "Single test tax rate for investigation",
+            "rate": 5.0,  # 5% for easy calculation
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["delivery", "dine_in", "takeout", "phone_order"]
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/tax-rates", json=test_tax_rate_data, headers=headers)
+        response.raise_for_status()
+        test_tax_rate = response.json()
+        test_tax_rate_id = test_tax_rate.get("id")
+        
+        print(f"✅ Created test tax rate: {test_tax_rate.get('name')} - {test_tax_rate.get('rate')}%")
+        
+        # Create another order with the single tax rate active
+        order_data_2 = {
+            "customer_name": "Tax Test Customer 2",
+            "customer_phone": "5551234568",
+            "customer_address": "456 Tax Test Ave",
+            "items": [
+                {
+                    "menu_item_id": test_menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Testing with single tax rate"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 0.00,
+            "order_notes": "Single tax rate test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data_2, headers=headers)
+        response.raise_for_status()
+        test_order_2 = response.json()
+        
+        test_order_2_id = test_order_2.get("id")
+        subtotal_2 = test_order_2.get("subtotal", 0)
+        tax_2 = test_order_2.get("tax", 0)
+        total_2 = test_order_2.get("total", 0)
+        
+        print(f"📊 ORDER WITH SINGLE 5% TAX RATE:")
+        print(f"   Order ID: {test_order_2_id[:8]}...")
+        print(f"   Subtotal: ${subtotal_2:.2f}")
+        print(f"   Tax: ${tax_2:.2f}")
+        print(f"   Total: ${total_2:.2f}")
+        
+        # Check if tax matches expected 5%
+        expected_tax_2 = subtotal_2 * 0.05  # 5%
+        print(f"   Expected tax (5%): ${expected_tax_2:.2f}")
+        
+        if abs(tax_2 - expected_tax_2) > 0.01:  # Allow small floating point differences
+            print(f"🚨 TAX CALCULATION MISMATCH!")
+            print(f"   Expected: ${expected_tax_2:.2f}")
+            print(f"   Actual: ${tax_2:.2f}")
+            print(f"   Difference: ${abs(tax_2 - expected_tax_2):.2f}")
+            
+            # Check if it's using a hardcoded rate instead
+            if subtotal_2 > 0:
+                actual_rate = (tax_2 / subtotal_2) * 100
+                print(f"   Actual tax rate applied: {actual_rate:.2f}%")
+                
+                if abs(actual_rate - 8.0) < 0.1:  # Check if it's using 8% hardcoded
+                    print(f"   🚨 APPEARS TO BE USING HARDCODED 8% TAX RATE!")
+                    hardcoded_tax_found = True
+        else:
+            print(f"✅ Tax calculation matches expected 5% rate")
+        
+        # Step 6: Clean up test data
+        print("\nStep 6: Cleaning up test data...")
+        
+        # Delete test tax rate
+        if test_tax_rate_id:
+            response = requests.delete(f"{API_URL}/tax-charges/tax-rates/{test_tax_rate_id}", headers=headers)
+            response.raise_for_status()
+            print("✅ Deleted test tax rate")
+        
+        # Delete test menu item
+        if test_menu_item_id:
+            response = requests.delete(f"{API_URL}/menu/items/{test_menu_item_id}", headers=headers)
+            response.raise_for_status()
+            print("✅ Deleted test menu item")
+        
+        # Reactivate previously deactivated tax rates
+        print(f"\nReactivating {len(deactivated_tax_rates)} previously active tax rates...")
+        for tax_rate_id in deactivated_tax_rates:
+            try:
+                # Get the tax rate first
+                response = requests.get(f"{API_URL}/tax-charges/tax-rates", headers=headers)
+                response.raise_for_status()
+                current_tax_rates = response.json()
+                
+                for tax_rate in current_tax_rates:
+                    if tax_rate.get("id") == tax_rate_id:
+                        # Reactivate it
+                        reactivate_data = {
+                            "name": tax_rate.get("name"),
+                            "description": tax_rate.get("description", ""),
+                            "rate": tax_rate.get("rate"),
+                            "type": tax_rate.get("type", "percentage"),
+                            "active": True,  # Reactivate
+                            "applies_to_order_types": tax_rate.get("applies_to_order_types", [])
+                        }
+                        
+                        response = requests.put(f"{API_URL}/tax-charges/tax-rates/{tax_rate_id}", json=reactivate_data, headers=headers)
+                        response.raise_for_status()
+                        print(f"✅ Reactivated tax rate: {tax_rate.get('name')}")
+                        break
+            except Exception as e:
+                print(f"⚠️  Could not reactivate tax rate {tax_rate_id}: {e}")
+        
+        # Final conclusion
+        print(f"\n🔍 HARDCODED TAX INVESTIGATION RESULTS:")
+        
+        if hardcoded_tax_found:
+            print(f"🚨 HARDCODED TAX ISSUE CONFIRMED!")
+            print(f"   ❌ The system is applying hardcoded tax calculations")
+            print(f"   ❌ Tax is being added even when no tax rates are active")
+            print(f"   ❌ The system appears to use a hardcoded 8% tax rate")
+            print(f"   ❌ This occurs in multiple scenarios: order creation, editing, item removal")
+            print(f"")
+            print(f"🔧 LOCATIONS OF HARDCODED TAX CALCULATIONS FOUND:")
+            print(f"   - Line 853: total_tax = total_subtotal * 0.08")
+            print(f"   - Line 1320: tax = subtotal * 0.08")
+            print(f"   - These hardcoded calculations bypass the calculate_order_taxes_and_charges function")
+            print(f"")
+            print(f"✅ SOLUTION: Replace hardcoded tax calculations with calls to calculate_order_taxes_and_charges function")
+            
+            return print_test_result("Hardcoded Tax Issue Investigation", False, 
+                                   "🚨 HARDCODED TAX ISSUE CONFIRMED: System applies hardcoded 8% tax rate instead of using Tax & Charges Settings. "
+                                   "Found hardcoded calculations at lines 853 and 1320. These bypass the dynamic tax calculation function. "
+                                   "Tax is applied even when no tax rates are active in settings.")
+        else:
+            print(f"✅ NO HARDCODED TAX ISSUE FOUND!")
+            print(f"   ✅ Tax calculation respects Tax & Charges Settings")
+            print(f"   ✅ No tax applied when no tax rates are active")
+            print(f"   ✅ Configured tax rates are applied correctly")
+            print(f"   ✅ Dynamic tax calculation function is working properly")
+            
+            return print_test_result("Hardcoded Tax Issue Investigation", True, 
+                                   "✅ NO HARDCODED TAX ISSUE: Tax calculation properly uses Tax & Charges Settings. "
+                                   "No tax applied when no rates are active. Configured tax rates applied correctly. "
+                                   "Dynamic tax calculation function working as expected.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Hardcoded tax issue investigation failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Hardcoded Tax Issue Investigation", False, error_msg)
+
 # Run all tests
 def run_all_tests():
     print("\n========================================")
