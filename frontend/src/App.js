@@ -6248,7 +6248,7 @@ const TaxChargesComponent = ({ onBack }) => {
                     <input
                       type="radio"
                       name="tax-application"
-                      checked={taxForm.applies_to_order_types.length === 0}
+                      checked={(taxForm.applies_to_order_types || []).length === 0}
                       onChange={() => setTaxForm({...taxForm, applies_to_order_types: []})}
                       className="mr-2"
                     />
@@ -6259,9 +6259,9 @@ const TaxChargesComponent = ({ onBack }) => {
                     <input
                       type="radio"
                       name="tax-application"
-                      checked={taxForm.applies_to_order_types.length > 0}
+                      checked={(taxForm.applies_to_order_types || []).length > 0}
                       onChange={() => {
-                        if (taxForm.applies_to_order_types.length === 0) {
+                        if ((taxForm.applies_to_order_types || []).length === 0) {
                           setTaxForm({...taxForm, applies_to_order_types: ['dine_in']});
                         }
                       }}
@@ -6272,7 +6272,7 @@ const TaxChargesComponent = ({ onBack }) => {
                 </div>
                 
                 {/* Order Type Checkboxes - Only show when "Specific Order Types" is selected */}
-                {taxForm.applies_to_order_types.length > 0 && (
+                {(taxForm.applies_to_order_types || []).length > 0 && (
                   <div className="mt-3 ml-6 space-y-2 bg-gray-50 p-3 rounded-md">
                     <p className="text-sm font-medium text-gray-600 mb-2">Select which order types this tax applies to:</p>
                     {orderTypes.map(type => (
