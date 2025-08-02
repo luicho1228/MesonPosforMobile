@@ -6426,26 +6426,64 @@ const TaxChargesComponent = ({ onBack }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Order Types</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {orderTypes.map(type => (
-                    <label key={type} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={chargeForm.order_types.includes(type)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setChargeForm({...chargeForm, order_types: [...chargeForm.order_types, type]});
-                          } else {
-                            setChargeForm({...chargeForm, order_types: chargeForm.order_types.filter(t => t !== type)});
-                          }
-                        }}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{type.replace('_', ' ')}</span>
-                    </label>
-                  ))}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Apply Service Charge To</label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="charge-application"
+                      checked={chargeForm.order_types.length === 0}
+                      onChange={() => setChargeForm({...chargeForm, order_types: []})}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">All Order Types</span>
+                    <span className="text-xs text-gray-500 ml-2">(Dine-in, Takeout, Delivery, Phone Orders)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="charge-application"
+                      checked={chargeForm.order_types.length > 0}
+                      onChange={() => {
+                        if (chargeForm.order_types.length === 0) {
+                          setChargeForm({...chargeForm, order_types: ['dine_in']});
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Specific Order Types Only</span>
+                  </label>
                 </div>
+                
+                {/* Order Type Checkboxes - Only show when "Specific Order Types" is selected */}
+                {chargeForm.order_types.length > 0 && (
+                  <div className="mt-3 ml-6 space-y-2 bg-gray-50 p-3 rounded-md">
+                    <p className="text-sm font-medium text-gray-600 mb-2">Select which order types this charge applies to:</p>
+                    {orderTypes.map(type => (
+                      <label key={type} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={chargeForm.order_types.includes(type)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setChargeForm({...chargeForm, order_types: [...chargeForm.order_types, type]});
+                            } else {
+                              setChargeForm({...chargeForm, order_types: chargeForm.order_types.filter(t => t !== type)});
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 capitalize">
+                          {type.replace('_', '-')}
+                          {type === 'dine_in' && ' (Restaurant)'}
+                          {type === 'takeout' && ' (To-Go)'}
+                          {type === 'delivery' && ' (Delivery)'}
+                          {type === 'phone_order' && ' (Phone)'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex space-x-4">
