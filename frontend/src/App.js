@@ -5577,7 +5577,13 @@ const TaxChargesComponent = ({ onBack }) => {
       type: 'percentage',
       rate: '',
       description: '',
-      active: true
+      category: 'sales',
+      applies_to: 'subtotal',
+      jurisdiction: '',
+      tax_id: '',
+      applies_to_order_types: [],
+      active: true,
+      inclusive: false
     });
   };
 
