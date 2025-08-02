@@ -6279,17 +6279,18 @@ const TaxChargesComponent = ({ onBack }) => {
                       <label key={type} className="flex items-center">
                         <input
                           type="checkbox"
-                          checked={taxForm.applies_to_order_types.includes(type)}
+                          checked={(taxForm.applies_to_order_types || []).includes(type)}
                           onChange={(e) => {
+                            const currentTypes = taxForm.applies_to_order_types || [];
                             if (e.target.checked) {
                               setTaxForm({
                                 ...taxForm, 
-                                applies_to_order_types: [...taxForm.applies_to_order_types, type]
+                                applies_to_order_types: [...currentTypes, type]
                               });
                             } else {
                               setTaxForm({
                                 ...taxForm, 
-                                applies_to_order_types: taxForm.applies_to_order_types.filter(t => t !== type)
+                                applies_to_order_types: currentTypes.filter(t => t !== type)
                               });
                             }
                           }}
