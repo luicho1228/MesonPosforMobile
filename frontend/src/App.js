@@ -3398,10 +3398,46 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   const calculateTotal = () => {
     const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
     
-    // Use actual active tax rates and service charges from state (loaded from backend API)
-    const activeTaxRates = taxRates.filter(tax => tax.active);
-    const activeServiceCharges = serviceCharges.filter(charge => charge.active);
-    const activeGratuityRules = gratuityRules.filter(gratuity => gratuity.active);
+    // Filter taxes and service charges based on order type
+    // Include items that either:
+    // 1. Have empty applies_to_order_types/order_types array (apply to all order types)
+    // 2. Have the current order_type in their applies_to_order_types/order_types array
+    const activeTaxRates = taxRates.filter(tax => {
+      if (!tax.active) return false;
+      
+      // If applies_to_order_types is empty or doesn't exist, apply to all order types
+      if (!tax.applies_to_order_types || tax.applies_to_order_types.length === 0) {
+        return true;
+      }
+      
+      // Otherwise, check if current order type is included
+      return tax.applies_to_order_types.includes(orderType);
+    });
+    
+    const activeServiceCharges = serviceCharges.filter(charge => {
+      if (!charge.active) return false;
+      
+      // If order_types is empty or doesn't exist, apply to all order types
+      if (!charge.order_types || charge.order_types.length === 0) {
+        return true;
+      }
+      
+      // Otherwise, check if current order type is included
+      return charge.order_types.includes(orderType);
+    });
+    
+    const activeGratuityRules = gratuityRules.filter(gratuity => {
+      if (!gratuity.active) return false;
+      
+      // If applies_to_order_types is empty or doesn't exist, apply to all order types
+      if (!gratuity.applies_to_order_types || gratuity.applies_to_order_types.length === 0) {
+        return true;
+      }
+      
+      // Otherwise, check if current order type is included
+      return gratuity.applies_to_order_types.includes(orderType);
+    });
+    
     const activeDiscountPolicies = discountPolicies.filter(discount => discount.active);
     
     // Calculate taxes
