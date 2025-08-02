@@ -5248,7 +5248,7 @@ const TaxChargesComponent = ({ onBack }) => {
       conditions: chargeForm.conditions,
       minimum_amount: parseFloat(chargeForm.minimum_amount) || 0,
       party_size_threshold: parseInt(chargeForm.party_size_threshold) || 0,
-      order_types: chargeForm.order_types,
+      applies_to_order_types: chargeForm.order_types || [], // FIX: Use correct backend field name
       active: chargeForm.active,
       mandatory: chargeForm.mandatory
     };
