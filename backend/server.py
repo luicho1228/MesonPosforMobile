@@ -548,14 +548,14 @@ async def calculate_order_taxes_and_charges(subtotal: float, order_type: str) ->
     
     # Get active service charges that apply to this order type
     # Include charges that either:
-    # 1. Have empty order_types array (apply to all order types)
-    # 2. Have the current order_type in their order_types array
+    # 1. Have empty applies_to_order_types array (apply to all order types)
+    # 2. Have the current order_type in their applies_to_order_types array
     service_charges = await db.service_charges.find({
         "active": True,
         "$or": [
-            {"order_types": {"$exists": False}},    # Field doesn't exist
-            {"order_types": {"$size": 0}},          # Empty array (apply to all)
-            {"order_types": {"$in": [order_type]}}  # Contains this order type
+            {"applies_to_order_types": {"$exists": False}},    # Field doesn't exist
+            {"applies_to_order_types": {"$size": 0}},          # Empty array (apply to all)
+            {"applies_to_order_types": {"$in": [order_type]}}  # Contains this order type
         ]
     }).to_list(1000)
     
