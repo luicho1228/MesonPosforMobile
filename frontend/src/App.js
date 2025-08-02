@@ -5391,6 +5391,7 @@ const TaxChargesComponent = ({ onBack }) => {
       applies_to: tax.applies_to,
       jurisdiction: tax.jurisdiction || '',
       tax_id: tax.tax_id || '',
+      applies_to_order_types: tax.applies_to_order_types || [], // Handle new field with default empty array
       active: tax.active,
       inclusive: tax.inclusive || false
     });
