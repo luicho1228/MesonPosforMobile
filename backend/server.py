@@ -528,9 +528,16 @@ async def calculate_order_taxes_and_charges(subtotal: float, order_type: str) ->
     total_service_charges = 0.0
     
     # Get active tax rates that apply to this order type
+    # Include taxes that either:
+    # 1. Have empty applies_to_order_types array (apply to all order types)
+    # 2. Have the current order_type in their applies_to_order_types array
     tax_rates = await db.tax_rates.find({
         "active": True,
-        "applies_to_order_types": {"$in": [order_type]}
+        "$or": [
+            {"applies_to_order_types": {"$exists": False}},  # Field doesn't exist
+            {"applies_to_order_types": {"$size": 0}},       # Empty array (apply to all)
+            {"applies_to_order_types": {"$in": [order_type]}} # Contains this order type
+        ]
     }).to_list(1000)
     
     for tax_rate in tax_rates:
@@ -540,19 +547,26 @@ async def calculate_order_taxes_and_charges(subtotal: float, order_type: str) ->
             total_tax += tax_rate["rate"]
     
     # Get active service charges that apply to this order type
+    # Include charges that either:
+    # 1. Have empty order_types array (apply to all order types)
+    # 2. Have the current order_type in their order_types array
     service_charges = await db.service_charges.find({
         "active": True,
-        "applies_to_order_types": {"$in": [order_type]},
-        "minimum_order_amount": {"$lte": subtotal}
+        "$or": [
+            {"order_types": {"$exists": False}},    # Field doesn't exist
+            {"order_types": {"$size": 0}},          # Empty array (apply to all)
+            {"order_types": {"$in": [order_type]}}  # Contains this order type
+        ]
     }).to_list(1000)
     
     for charge in service_charges:
+        # Check if charge meets minimum order requirements (if any)
+        minimum_amount = charge.get("minimum_amount", 0)
+        if subtotal < minimum_amount:
+            continue
+            
         if charge["type"] == "percentage":
-            if charge["applies_to_subtotal"]:
-                total_service_charges += subtotal * (charge["amount"] / 100)
-            else:
-                # Apply to subtotal + tax
-                total_service_charges += (subtotal + total_tax) * (charge["amount"] / 100)
+            total_service_charges += subtotal * (charge["amount"] / 100)
         else:  # fixed
             total_service_charges += charge["amount"]
     
