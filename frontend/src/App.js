@@ -5410,7 +5410,7 @@ const TaxChargesComponent = ({ onBack }) => {
       conditions: charge.conditions || [],
       minimum_amount: charge.minimum_amount || '',
       party_size_threshold: charge.party_size_threshold || '',
-      order_types: charge.order_types || [],
+      order_types: charge.applies_to_order_types || [], // FIX: Map from backend field name
       active: charge.active,
       mandatory: charge.mandatory || false
     });
