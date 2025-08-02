@@ -5198,6 +5198,7 @@ const TaxChargesComponent = ({ onBack }) => {
       applies_to: taxForm.applies_to,
       jurisdiction: taxForm.jurisdiction,
       tax_id: taxForm.tax_id,
+      applies_to_order_types: taxForm.applies_to_order_types || [], // FIX: Include order type selection
       active: taxForm.active,
       inclusive: taxForm.inclusive
     };
