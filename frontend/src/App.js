@@ -3653,9 +3653,50 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   useEffect(() => {
     if (cart.length > 0) {
       console.log('🔍 DEBUG: Updating totals for cart:', cart);
-      const totals = calculateTotal();
-      console.log('🔍 DEBUG: Calculated totals:', totals);
-      setOrderTotals(totals);
+      
+      // If we're editing an existing order, use the saved tax values instead of recalculating
+      if (currentOrder && (editingActiveOrder || editingOrder)) {
+        console.log('🔍 DEBUG: Using saved order tax values for existing order:', currentOrder);
+        const savedTotals = {
+          subtotal: currentOrder.subtotal || 0,
+          taxes: currentOrder.tax || 0,
+          serviceCharges: currentOrder.service_charges || 0,
+          gratuity: currentOrder.tip || 0,
+          discounts: 0, // No discounts field in current order model
+          total: currentOrder.total || 0,
+          breakdown: {
+            taxes: currentOrder.tax > 0 ? [{
+              name: "Saved Taxes",
+              type: 'tax',
+              amount: currentOrder.tax,
+              rate: ((currentOrder.tax / currentOrder.subtotal) * 100).toFixed(2),
+              taxType: 'percentage'
+            }] : [],
+            serviceCharges: currentOrder.service_charges > 0 ? [{
+              name: "Saved Service Charges",
+              type: 'service_charge', 
+              amount: currentOrder.service_charges,
+              rate: ((currentOrder.service_charges / currentOrder.subtotal) * 100).toFixed(2),
+              chargeType: 'percentage'
+            }] : [],
+            gratuity: currentOrder.tip > 0 ? [{
+              name: "Tip",
+              type: 'gratuity',
+              amount: currentOrder.tip,
+              rate: ((currentOrder.tip / currentOrder.subtotal) * 100).toFixed(2), 
+              gratuityType: 'percentage'
+            }] : [],
+            discounts: []
+          }
+        };
+        console.log('🔍 DEBUG: Using saved totals:', savedTotals);
+        setOrderTotals(savedTotals);
+      } else {
+        // For new orders, calculate taxes dynamically
+        const totals = calculateTotal();
+        console.log('🔍 DEBUG: Calculated totals for new order:', totals);
+        setOrderTotals(totals);
+      }
     } else {
       setOrderTotals({
         subtotal: 0,
@@ -3672,7 +3713,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         }
       });
     }
-  }, [cart]);
+  }, [cart, currentOrder, editingActiveOrder, editingOrder]);
 
   const filteredItems = selectedCategory === 'all' 
     ? menuItems 
