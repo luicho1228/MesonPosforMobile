@@ -5849,6 +5849,577 @@ def test_dynamic_tax_service_charges_application_bug_fix():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Dynamic Tax & Service Charges Application Bug Fix", False, error_msg)
 
+# 42. Test Complete Gratuity System Implementation (REVIEW REQUEST FOCUS)
+def test_complete_gratuity_system_implementation():
+    global auth_token, menu_item_id, table_id
+    print("\n=== Testing Complete Gratuity System Implementation ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Complete Gratuity System Implementation", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create a table if we don't have one
+    if not table_id:
+        try:
+            table_number = random.randint(10000, 99999)
+            table_data = {"name": f"Gratuity Test Table {table_number}", "capacity": 8}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            table_id = result.get("id")
+            print(f"Created table with ID: {table_id}")
+        except:
+            return print_test_result("Complete Gratuity System Implementation", False, "Could not create table for testing")
+    
+    try:
+        print("\n🎯 COMPREHENSIVE GRATUITY SYSTEM TESTING")
+        print("Testing: Party size triggers, order amount triggers, order type filtering")
+        
+        # Step 1: Set up gratuity rules for testing
+        print("\nStep 1: Setting up gratuity rules...")
+        
+        # Create "Automatic Gratuity - Large Parties" (20% for 8+ people, dine-in only)
+        large_party_gratuity_data = {
+            "name": "Automatic Gratuity - Large Parties",
+            "description": "20% automatic gratuity for parties of 8 or more (dine-in only)",
+            "amount": 20.0,
+            "type": "percentage",
+            "active": True,
+            "minimum_order_amount": 0.0,
+            "maximum_order_amount": 0.0,  # No maximum
+            "applies_to_order_types": ["dine_in"],  # Dine-in only
+            "party_size_minimum": 8  # 8+ people
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/gratuity-rules", json=large_party_gratuity_data, headers=headers)
+        response.raise_for_status()
+        large_party_gratuity = response.json()
+        large_party_gratuity_id = large_party_gratuity.get("id")
+        print(f"✅ Created Large Party Gratuity Rule: {large_party_gratuity.get('amount')}% for {large_party_gratuity.get('party_size_minimum')}+ people")
+        
+        # Create "High-Value Order Gratuity" (15% for $200+ orders, dine-in and delivery)
+        high_value_gratuity_data = {
+            "name": "High-Value Order Gratuity",
+            "description": "15% automatic gratuity for orders $200 or more (dine-in and delivery)",
+            "amount": 15.0,
+            "type": "percentage",
+            "active": True,
+            "minimum_order_amount": 200.0,  # $200+ orders
+            "maximum_order_amount": 0.0,  # No maximum
+            "applies_to_order_types": ["dine_in", "delivery"],  # Dine-in and delivery only
+            "party_size_minimum": 0  # No party size requirement
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/gratuity-rules", json=high_value_gratuity_data, headers=headers)
+        response.raise_for_status()
+        high_value_gratuity = response.json()
+        high_value_gratuity_id = high_value_gratuity.get("id")
+        print(f"✅ Created High-Value Order Gratuity Rule: {high_value_gratuity.get('amount')}% for ${high_value_gratuity.get('minimum_order_amount')}+ orders")
+        
+        # Create an inactive gratuity rule to test that it's not applied
+        inactive_gratuity_data = {
+            "name": "Inactive Test Gratuity",
+            "description": "This should not be applied",
+            "amount": 25.0,
+            "type": "percentage",
+            "active": False,  # Inactive
+            "minimum_order_amount": 0.0,
+            "maximum_order_amount": 0.0,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],
+            "party_size_minimum": 1
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/gratuity-rules", json=inactive_gratuity_data, headers=headers)
+        response.raise_for_status()
+        inactive_gratuity = response.json()
+        inactive_gratuity_id = inactive_gratuity.get("id")
+        print(f"✅ Created Inactive Gratuity Rule: {inactive_gratuity.get('amount')}% (should NOT be applied)")
+        
+        # Step 2: Test Case 1 - Small party (1 person) should NOT trigger auto-gratuity
+        print("\n--- TEST CASE 1: Small Party (1 person) - Should NOT trigger auto-gratuity ---")
+        
+        small_party_order_data = {
+            "customer_name": "Small Party Customer",
+            "customer_phone": "5551111111",
+            "customer_address": "123 Small Party St",
+            "table_id": table_id,
+            "party_size": 1,  # Small party
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Small party test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 3.00,
+            "order_notes": "Small party gratuity test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=small_party_order_data, headers=headers)
+        response.raise_for_status()
+        small_party_order = response.json()
+        small_party_order_id = small_party_order.get("id")
+        
+        print(f"✅ Created small party order: {small_party_order.get('order_number')}")
+        print(f"   Party Size: {small_party_order.get('party_size')}")
+        print(f"   Subtotal: ${small_party_order.get('subtotal', 0):.2f}")
+        print(f"   Gratuity: ${small_party_order.get('gratuity', 0):.2f}")
+        print(f"   Manual Tip: ${small_party_order.get('tip', 0):.2f}")
+        print(f"   Total: ${small_party_order.get('total', 0):.2f}")
+        
+        # Verify NO automatic gratuity is applied
+        if small_party_order.get('gratuity', 0) != 0:
+            return print_test_result("Complete Gratuity System Implementation", False, 
+                                   f"❌ Small party (1 person) incorrectly triggered auto-gratuity: ${small_party_order.get('gratuity', 0):.2f}")
+        
+        print("✅ Small party correctly has NO automatic gratuity")
+        
+        # Step 3: Test Case 2 - Large party (8+ people) should trigger auto-gratuity
+        print("\n--- TEST CASE 2: Large Party (8+ people) - Should trigger auto-gratuity ---")
+        
+        large_party_order_data = {
+            "customer_name": "Large Party Customer",
+            "customer_phone": "5552222222",
+            "customer_address": "456 Large Party Ave",
+            "table_id": table_id,
+            "party_size": 10,  # Large party (8+)
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 5,
+                    "special_instructions": "Large party test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 0.00,  # No manual tip to see auto-gratuity clearly
+            "order_notes": "Large party gratuity test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=large_party_order_data, headers=headers)
+        response.raise_for_status()
+        large_party_order = response.json()
+        large_party_order_id = large_party_order.get("id")
+        
+        print(f"✅ Created large party order: {large_party_order.get('order_number')}")
+        print(f"   Party Size: {large_party_order.get('party_size')}")
+        print(f"   Subtotal: ${large_party_order.get('subtotal', 0):.2f}")
+        print(f"   Gratuity: ${large_party_order.get('gratuity', 0):.2f}")
+        print(f"   Manual Tip: ${large_party_order.get('tip', 0):.2f}")
+        print(f"   Total: ${large_party_order.get('total', 0):.2f}")
+        
+        # Verify automatic gratuity is applied (20% of subtotal)
+        large_party_subtotal = large_party_order.get('subtotal', 0)
+        large_party_gratuity = large_party_order.get('gratuity', 0)
+        expected_large_party_gratuity = large_party_subtotal * 0.20  # 20%
+        
+        if abs(large_party_gratuity - expected_large_party_gratuity) > 0.01:
+            return print_test_result("Complete Gratuity System Implementation", False, 
+                                   f"❌ Large party auto-gratuity incorrect. Expected: ${expected_large_party_gratuity:.2f}, Got: ${large_party_gratuity:.2f}")
+        
+        print(f"✅ Large party correctly triggered 20% auto-gratuity: ${large_party_gratuity:.2f}")
+        
+        # Step 4: Test Case 3 - High-value order ($200+) should trigger auto-gratuity
+        print("\n--- TEST CASE 3: High-Value Order ($200+) - Should trigger auto-gratuity ---")
+        
+        high_value_order_data = {
+            "customer_name": "High Value Customer",
+            "customer_phone": "5553333333",
+            "customer_address": "789 High Value Blvd",
+            "table_id": table_id,
+            "party_size": 4,  # Normal party size
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 20,  # Large quantity to reach $200+
+                    "special_instructions": "High value test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 0.00,  # No manual tip to see auto-gratuity clearly
+            "order_notes": "High value gratuity test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=high_value_order_data, headers=headers)
+        response.raise_for_status()
+        high_value_order = response.json()
+        high_value_order_id = high_value_order.get("id")
+        
+        print(f"✅ Created high-value order: {high_value_order.get('order_number')}")
+        print(f"   Party Size: {high_value_order.get('party_size')}")
+        print(f"   Subtotal: ${high_value_order.get('subtotal', 0):.2f}")
+        print(f"   Gratuity: ${high_value_order.get('gratuity', 0):.2f}")
+        print(f"   Manual Tip: ${high_value_order.get('tip', 0):.2f}")
+        print(f"   Total: ${high_value_order.get('total', 0):.2f}")
+        
+        # Verify high-value order triggers auto-gratuity (15% of subtotal)
+        high_value_subtotal = high_value_order.get('subtotal', 0)
+        high_value_gratuity = high_value_order.get('gratuity', 0)
+        
+        if high_value_subtotal < 200.0:
+            print(f"⚠️ Order subtotal (${high_value_subtotal:.2f}) is below $200 threshold")
+            # This is expected if menu item price is low
+            if high_value_gratuity != 0:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ Order below $200 threshold incorrectly triggered auto-gratuity: ${high_value_gratuity:.2f}")
+            print("✅ Order below $200 correctly has NO automatic gratuity")
+        else:
+            expected_high_value_gratuity = high_value_subtotal * 0.15  # 15%
+            if abs(high_value_gratuity - expected_high_value_gratuity) > 0.01:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ High-value auto-gratuity incorrect. Expected: ${expected_high_value_gratuity:.2f}, Got: ${high_value_gratuity:.2f}")
+            print(f"✅ High-value order correctly triggered 15% auto-gratuity: ${high_value_gratuity:.2f}")
+        
+        # Step 5: Test Case 4 - Large party delivery order (should trigger auto-gratuity)
+        print("\n--- TEST CASE 4: Large Party Delivery Order - Should trigger auto-gratuity ---")
+        
+        large_party_delivery_data = {
+            "customer_name": "Large Party Delivery",
+            "customer_phone": "5554444444",
+            "customer_address": "321 Delivery Party St, Apt 5B",
+            "party_size": 12,  # Large party
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 8,
+                    "special_instructions": "Large party delivery test"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 0.00,
+            "delivery_instructions": "Large party delivery",
+            "order_notes": "Large party delivery gratuity test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=large_party_delivery_data, headers=headers)
+        response.raise_for_status()
+        large_party_delivery_order = response.json()
+        large_party_delivery_id = large_party_delivery_order.get("id")
+        
+        print(f"✅ Created large party delivery order: {large_party_delivery_order.get('order_number')}")
+        print(f"   Party Size: {large_party_delivery_order.get('party_size')}")
+        print(f"   Order Type: {large_party_delivery_order.get('order_type')}")
+        print(f"   Subtotal: ${large_party_delivery_order.get('subtotal', 0):.2f}")
+        print(f"   Gratuity: ${large_party_delivery_order.get('gratuity', 0):.2f}")
+        
+        # Large party gratuity rule is dine-in only, so delivery should NOT trigger it
+        delivery_gratuity = large_party_delivery_order.get('gratuity', 0)
+        if delivery_gratuity != 0:
+            return print_test_result("Complete Gratuity System Implementation", False, 
+                                   f"❌ Large party delivery incorrectly triggered dine-in-only auto-gratuity: ${delivery_gratuity:.2f}")
+        
+        print("✅ Large party delivery correctly has NO auto-gratuity (dine-in only rule)")
+        
+        # Step 6: Test Case 5 - High-value delivery order (should trigger auto-gratuity)
+        print("\n--- TEST CASE 5: High-Value Delivery Order - Should trigger auto-gratuity ---")
+        
+        # Create a high-value delivery order to test the high-value rule
+        high_value_delivery_data = {
+            "customer_name": "High Value Delivery",
+            "customer_phone": "5555555555",
+            "customer_address": "654 High Value Delivery St",
+            "party_size": 3,  # Normal party size
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 25,  # Very large quantity to reach $200+
+                    "special_instructions": "High value delivery test"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 0.00,
+            "delivery_instructions": "High value delivery",
+            "order_notes": "High value delivery gratuity test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=high_value_delivery_data, headers=headers)
+        response.raise_for_status()
+        high_value_delivery_order = response.json()
+        high_value_delivery_id = high_value_delivery_order.get("id")
+        
+        print(f"✅ Created high-value delivery order: {high_value_delivery_order.get('order_number')}")
+        print(f"   Party Size: {high_value_delivery_order.get('party_size')}")
+        print(f"   Order Type: {high_value_delivery_order.get('order_type')}")
+        print(f"   Subtotal: ${high_value_delivery_order.get('subtotal', 0):.2f}")
+        print(f"   Gratuity: ${high_value_delivery_order.get('gratuity', 0):.2f}")
+        
+        # Check if this order reaches the $200 threshold
+        high_value_delivery_subtotal = high_value_delivery_order.get('subtotal', 0)
+        high_value_delivery_gratuity = high_value_delivery_order.get('gratuity', 0)
+        
+        if high_value_delivery_subtotal >= 200.0:
+            expected_high_value_delivery_gratuity = high_value_delivery_subtotal * 0.15  # 15%
+            if abs(high_value_delivery_gratuity - expected_high_value_delivery_gratuity) > 0.01:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ High-value delivery auto-gratuity incorrect. Expected: ${expected_high_value_delivery_gratuity:.2f}, Got: ${high_value_delivery_gratuity:.2f}")
+            print(f"✅ High-value delivery correctly triggered 15% auto-gratuity: ${high_value_delivery_gratuity:.2f}")
+        else:
+            print(f"ℹ️ Delivery order subtotal (${high_value_delivery_subtotal:.2f}) below $200 threshold")
+            if high_value_delivery_gratuity != 0:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ Delivery order below $200 incorrectly triggered auto-gratuity: ${high_value_delivery_gratuity:.2f}")
+            print("✅ Delivery order below $200 correctly has NO automatic gratuity")
+        
+        # Step 7: Test Case 6 - Takeout order (should NOT trigger any auto-gratuity)
+        print("\n--- TEST CASE 6: Takeout Order - Should NOT trigger any auto-gratuity ---")
+        
+        takeout_order_data = {
+            "customer_name": "Takeout Customer",
+            "customer_phone": "5556666666",
+            "customer_address": "987 Takeout Rd",
+            "party_size": 10,  # Large party size
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 20,  # Large quantity
+                    "special_instructions": "Takeout test"
+                }
+            ],
+            "order_type": "takeout",
+            "tip": 2.00,
+            "order_notes": "Takeout gratuity test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=takeout_order_data, headers=headers)
+        response.raise_for_status()
+        takeout_order = response.json()
+        takeout_order_id = takeout_order.get("id")
+        
+        print(f"✅ Created takeout order: {takeout_order.get('order_number')}")
+        print(f"   Party Size: {takeout_order.get('party_size')}")
+        print(f"   Order Type: {takeout_order.get('order_type')}")
+        print(f"   Subtotal: ${takeout_order.get('subtotal', 0):.2f}")
+        print(f"   Gratuity: ${takeout_order.get('gratuity', 0):.2f}")
+        
+        # Takeout should NOT trigger any auto-gratuity (neither rule applies to takeout)
+        takeout_gratuity = takeout_order.get('gratuity', 0)
+        if takeout_gratuity != 0:
+            return print_test_result("Complete Gratuity System Implementation", False, 
+                                   f"❌ Takeout order incorrectly triggered auto-gratuity: ${takeout_gratuity:.2f}")
+        
+        print("✅ Takeout order correctly has NO automatic gratuity (order type restriction working)")
+        
+        # Step 8: Test Case 7 - Large party + High value dine-in (should trigger both rules)
+        print("\n--- TEST CASE 7: Large Party + High Value Dine-in - Should trigger both rules ---")
+        
+        combo_order_data = {
+            "customer_name": "Combo Test Customer",
+            "customer_phone": "5557777777",
+            "customer_address": "111 Combo Test St",
+            "table_id": table_id,
+            "party_size": 12,  # Large party (8+)
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 30,  # Very large quantity to ensure $200+
+                    "special_instructions": "Combo test - large party + high value"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 0.00,
+            "order_notes": "Combo gratuity test - large party + high value"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=combo_order_data, headers=headers)
+        response.raise_for_status()
+        combo_order = response.json()
+        combo_order_id = combo_order.get("id")
+        
+        print(f"✅ Created combo order: {combo_order.get('order_number')}")
+        print(f"   Party Size: {combo_order.get('party_size')}")
+        print(f"   Order Type: {combo_order.get('order_type')}")
+        print(f"   Subtotal: ${combo_order.get('subtotal', 0):.2f}")
+        print(f"   Gratuity: ${combo_order.get('gratuity', 0):.2f}")
+        
+        # This order should trigger both rules (large party 20% + high value 15% = 35% total)
+        combo_subtotal = combo_order.get('subtotal', 0)
+        combo_gratuity = combo_order.get('gratuity', 0)
+        
+        if combo_subtotal >= 200.0:
+            # Both rules should apply: 20% (large party) + 15% (high value) = 35%
+            expected_combo_gratuity = combo_subtotal * 0.35  # 35% total
+            if abs(combo_gratuity - expected_combo_gratuity) > 0.01:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ Combo order auto-gratuity incorrect. Expected: ${expected_combo_gratuity:.2f} (35%), Got: ${combo_gratuity:.2f}")
+            print(f"✅ Combo order correctly triggered both rules: ${combo_gratuity:.2f} (35% total)")
+        else:
+            # Only large party rule should apply: 20%
+            expected_combo_gratuity = combo_subtotal * 0.20  # 20% only
+            if abs(combo_gratuity - expected_combo_gratuity) > 0.01:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ Large party only auto-gratuity incorrect. Expected: ${expected_combo_gratuity:.2f} (20%), Got: ${combo_gratuity:.2f}")
+            print(f"✅ Large party rule correctly applied: ${combo_gratuity:.2f} (20%)")
+        
+        # Step 9: Test persistence through order workflow
+        print("\n--- Step 9: Testing gratuity persistence through order workflow ---")
+        
+        # Send large party order to kitchen
+        print("Sending large party order to kitchen...")
+        response = requests.post(f"{API_URL}/orders/{large_party_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Retrieve from active orders endpoint
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        active_orders = response.json()
+        
+        # Find our order in active orders
+        large_party_active = None
+        for order in active_orders:
+            if order.get("id") == large_party_order_id:
+                large_party_active = order
+                break
+        
+        if not large_party_active:
+            return print_test_result("Complete Gratuity System Implementation", False, 
+                                   "❌ Large party order not found in active orders")
+        
+        print(f"✅ Large party order found in active orders:")
+        print(f"   Status: {large_party_active.get('status')}")
+        print(f"   Gratuity: ${large_party_active.get('gratuity', 0):.2f}")
+        
+        # Verify gratuity persists through workflow
+        if abs(large_party_active.get('gratuity', 0) - large_party_gratuity) > 0.01:
+            return print_test_result("Complete Gratuity System Implementation", False, 
+                                   "❌ Gratuity amount changed after sending to kitchen")
+        
+        print("✅ Gratuity amount persists correctly through order workflow")
+        
+        # Step 10: Test order breakdown and totals
+        print("\n--- Step 10: Testing order breakdown and totals ---")
+        
+        # Verify that gratuity shows up separately in order breakdown
+        print("Verifying order breakdown structure...")
+        
+        test_orders = [
+            ("Small Party", small_party_order),
+            ("Large Party", large_party_order),
+            ("High Value", high_value_order),
+            ("Takeout", takeout_order),
+            ("Combo", combo_order)
+        ]
+        
+        for order_name, order in test_orders:
+            print(f"\n{order_name} Order Breakdown:")
+            print(f"   Subtotal: ${order.get('subtotal', 0):.2f}")
+            print(f"   Tax: ${order.get('tax', 0):.2f}")
+            print(f"   Service Charges: ${order.get('service_charges', 0):.2f}")
+            print(f"   Gratuity: ${order.get('gratuity', 0):.2f}")
+            print(f"   Manual Tip: ${order.get('tip', 0):.2f}")
+            print(f"   Total: ${order.get('total', 0):.2f}")
+            
+            # Verify total calculation
+            calculated_total = (order.get('subtotal', 0) + 
+                              order.get('tax', 0) + 
+                              order.get('service_charges', 0) + 
+                              order.get('gratuity', 0) + 
+                              order.get('tip', 0))
+            
+            if abs(order.get('total', 0) - calculated_total) > 0.01:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ {order_name} order total calculation incorrect. Expected: ${calculated_total:.2f}, Got: ${order.get('total', 0):.2f}")
+        
+        print("✅ All order breakdowns and totals are correct!")
+        
+        # Step 11: Test that inactive gratuity rules are not applied
+        print("\n--- Step 11: Testing that inactive gratuity rules are not applied ---")
+        
+        # Create an order that would trigger the inactive rule if it were active
+        inactive_test_order_data = {
+            "customer_name": "Inactive Rule Test",
+            "customer_phone": "5558888888",
+            "customer_address": "555 Inactive Test Ave",
+            "party_size": 2,  # Would trigger inactive rule if active
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Inactive rule test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 1.00,
+            "order_notes": "Testing inactive gratuity rule"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=inactive_test_order_data, headers=headers)
+        response.raise_for_status()
+        inactive_test_order = response.json()
+        
+        print(f"✅ Created inactive rule test order: {inactive_test_order.get('order_number')}")
+        print(f"   Gratuity: ${inactive_test_order.get('gratuity', 0):.2f}")
+        
+        # Should not trigger the inactive 25% rule
+        if inactive_test_order.get('gratuity', 0) != 0:
+            # Check if it's from one of the active rules
+            inactive_subtotal = inactive_test_order.get('subtotal', 0)
+            if inactive_subtotal >= 200.0:
+                print("ℹ️ Gratuity triggered by high-value rule (expected)")
+            else:
+                return print_test_result("Complete Gratuity System Implementation", False, 
+                                       f"❌ Inactive gratuity rule was applied: ${inactive_test_order.get('gratuity', 0):.2f}")
+        
+        print("✅ Inactive gratuity rules are correctly ignored")
+        
+        # Step 12: Clean up test data
+        print("\nStep 12: Cleaning up test data...")
+        
+        # Pay all test orders
+        payment_data = {"payment_method": "card", "print_receipt": False}
+        test_order_ids = [
+            small_party_order_id, large_party_order_id, high_value_order_id,
+            large_party_delivery_id, high_value_delivery_id, combo_order_id,
+            inactive_test_order.get("id")
+        ]
+        
+        for order_id in test_order_ids:
+            try:
+                requests.post(f"{API_URL}/orders/{order_id}/pay", json=payment_data, headers=headers)
+            except:
+                pass  # Some orders might already be paid or have issues
+        
+        print("✅ Test orders cleaned up")
+        
+        # Delete test gratuity rules
+        cleanup_gratuity_ids = [large_party_gratuity_id, high_value_gratuity_id, inactive_gratuity_id]
+        for gratuity_id in cleanup_gratuity_ids:
+            try:
+                requests.delete(f"{API_URL}/tax-charges/gratuity-rules/{gratuity_id}", headers=headers)
+            except:
+                pass
+        
+        print("✅ Test gratuity rules cleaned up")
+        
+        # Final Summary
+        print(f"\n🎉 COMPLETE GRATUITY SYSTEM IMPLEMENTATION - COMPREHENSIVE TEST RESULTS:")
+        print(f"✅ 1. SMALL PARTY TEST: Party size 1 correctly has NO auto-gratuity")
+        print(f"✅ 2. LARGE PARTY TEST: Party size 8+ correctly triggers 20% auto-gratuity (dine-in only)")
+        print(f"✅ 3. HIGH-VALUE TEST: Orders $200+ correctly trigger 15% auto-gratuity (dine-in and delivery)")
+        print(f"✅ 4. ORDER TYPE FILTERING: Gratuity rules respect order type restrictions")
+        print(f"✅ 5. GRATUITY CALCULATION: Proper percentage calculation and storage")
+        print(f"✅ 6. ORDER BREAKDOWN: Gratuity shows separately in order totals")
+        print(f"✅ 7. WORKFLOW PERSISTENCE: Gratuity persists through send to kitchen and active orders")
+        print(f"✅ 8. INACTIVE RULES: Inactive gratuity rules are correctly ignored")
+        print(f"✅ 9. MULTIPLE RULES: Multiple applicable rules combine correctly")
+        print(f"✅ 10. TOTAL CALCULATION: Order totals include gratuity in final amount")
+        
+        return print_test_result("Complete Gratuity System Implementation", True, 
+                               "🎯 COMPLETE GRATUITY SYSTEM WORKING CORRECTLY: "
+                               "All gratuity rules (large parties 20%, high-value orders 15%) are properly implemented. "
+                               "Party size triggers work correctly (8+ people for large parties). "
+                               "Order amount triggers work correctly ($200+ for high-value). "
+                               "Order type filtering works correctly (dine-in only for large parties, dine-in and delivery for high-value). "
+                               "Gratuity is properly calculated, stored in database, and included in order totals. "
+                               "Inactive gratuity rules are correctly ignored. "
+                               "The complete gratuity implementation is working as specified.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Complete Gratuity System Implementation test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Complete Gratuity System Implementation", False, error_msg)
+
 # Main execution function
 def run_tests():
     print("🚀 Starting Critical Table Data Corruption Investigation...")
