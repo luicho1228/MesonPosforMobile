@@ -2794,6 +2794,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     zip_code: ''
   });
   
+  // Add party size for gratuity calculations
+  const [partySize, setPartySize] = useState(1);
+  
   // Tax & Charges state - needed for calculateTotal function
   const [taxRates, setTaxRates] = useState([]);
   const [serviceCharges, setServiceCharges] = useState([]);
