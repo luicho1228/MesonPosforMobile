@@ -5908,6 +5908,317 @@ def run_tests():
     else:
         print("⚠️  Some tests failed. Check the details above.")
 
+# 46. Test Critical Table Assignment Bug - ORD-0328 Investigation
+def test_critical_table_assignment_bug():
+    global auth_token
+    print("\n=== CRITICAL TABLE ASSIGNMENT BUG INVESTIGATION - ORD-0328 ===")
+    
+    if not auth_token:
+        return print_test_result("Critical Table Assignment Bug", False, "No auth token available")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # Step 1: Look up order ORD-0328 in the database
+        print("\nStep 1: Looking up order ORD-0328 in database...")
+        
+        # Get all orders to find ORD-0328
+        response = requests.get(f"{API_URL}/orders", headers=headers)
+        response.raise_for_status()
+        all_orders = response.json()
+        
+        ord_0328_orders = []
+        for order in all_orders:
+            if order.get("order_number") == "ORD-0328":
+                ord_0328_orders.append(order)
+        
+        print(f"Found {len(ord_0328_orders)} orders with number ORD-0328")
+        
+        if len(ord_0328_orders) == 0:
+            print("❌ Order ORD-0328 not found in database")
+            return print_test_result("Critical Table Assignment Bug", False, "Order ORD-0328 not found in database")
+        
+        if len(ord_0328_orders) > 1:
+            print(f"❌ CRITICAL: Found {len(ord_0328_orders)} duplicate orders with number ORD-0328!")
+            for i, order in enumerate(ord_0328_orders):
+                print(f"  Order {i+1}: ID={order.get('id')}, Table ID={order.get('table_id')}, Table Name={order.get('table_name')}, Status={order.get('status')}")
+            return print_test_result("Critical Table Assignment Bug", False, f"DUPLICATE ORDERS: Found {len(ord_0328_orders)} orders with same order number ORD-0328")
+        
+        # Examine the single ORD-0328 order
+        ord_0328 = ord_0328_orders[0]
+        print(f"\n✅ Found single order ORD-0328:")
+        print(f"  Order ID: {ord_0328.get('id')}")
+        print(f"  Table ID: {ord_0328.get('table_id')}")
+        print(f"  Table Name: {ord_0328.get('table_name')}")
+        print(f"  Status: {ord_0328.get('status')}")
+        print(f"  Order Type: {ord_0328.get('order_type')}")
+        print(f"  Customer: {ord_0328.get('customer_name')}")
+        print(f"  Created At: {ord_0328.get('created_at')}")
+        
+        # Step 2: Check tables to see which ones reference this order
+        print("\nStep 2: Checking which tables reference order ORD-0328...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        all_tables = response.json()
+        
+        tables_with_ord_0328 = []
+        for table in all_tables:
+            if table.get("current_order_id") == ord_0328.get("id"):
+                tables_with_ord_0328.append(table)
+        
+        print(f"Found {len(tables_with_ord_0328)} tables referencing order ORD-0328:")
+        for table in tables_with_ord_0328:
+            print(f"  Table: {table.get('name')} (ID: {table.get('id')}) - Status: {table.get('status')}")
+        
+        if len(tables_with_ord_0328) > 1:
+            print(f"❌ CRITICAL BUG CONFIRMED: Order ORD-0328 is assigned to {len(tables_with_ord_0328)} tables simultaneously!")
+            table_names = [table.get('name') for table in tables_with_ord_0328]
+            return print_test_result("Critical Table Assignment Bug", False, f"CONFIRMED: Order ORD-0328 assigned to multiple tables: {', '.join(table_names)}")
+        
+        elif len(tables_with_ord_0328) == 1:
+            print(f"✅ Order ORD-0328 is correctly assigned to only one table: {tables_with_ord_0328[0].get('name')}")
+        
+        elif len(tables_with_ord_0328) == 0:
+            print(f"⚠️ Order ORD-0328 is not assigned to any table (table_id: {ord_0328.get('table_id')})")
+        
+        # Step 3: Test table assignment logic with a new order
+        print("\nStep 3: Testing table assignment logic to reproduce the bug...")
+        
+        # Get two available tables
+        available_tables = [table for table in all_tables if table.get("status") == "available"]
+        
+        if len(available_tables) < 2:
+            # Create additional tables if needed
+            for i in range(2 - len(available_tables)):
+                table_number = random.randint(10000, 99999)
+                table_data = {"name": f"Test Table {table_number}", "capacity": 4}
+                response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+                response.raise_for_status()
+                new_table = response.json()
+                available_tables.append(new_table)
+        
+        table1 = available_tables[0]
+        table2 = available_tables[1]
+        
+        print(f"Using tables: {table1.get('name')} and {table2.get('name')}")
+        
+        # Create order and assign to first table
+        print(f"\nStep 4: Creating order and assigning to {table1.get('name')}...")
+        test_order_data = {
+            "customer_name": "Table Assignment Test",
+            "customer_phone": "5557777777",
+            "customer_address": "123 Assignment St",
+            "table_id": table1.get("id"),
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Table assignment test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 2.00,
+            "order_notes": "Table assignment test"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=test_order_data, headers=headers)
+        response.raise_for_status()
+        test_order = response.json()
+        test_order_id = test_order.get("id")
+        
+        print(f"Test order created: {test_order.get('order_number')} (ID: {test_order_id})")
+        print(f"Assigned to table: {test_order.get('table_name')} (ID: {test_order.get('table_id')})")
+        
+        # Send to kitchen to make it active
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Verify table 1 is occupied
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        updated_tables = response.json()
+        
+        table1_occupied = False
+        for table in updated_tables:
+            if table.get("id") == table1.get("id"):
+                if table.get("status") == "occupied" and table.get("current_order_id") == test_order_id:
+                    table1_occupied = True
+                    print(f"✅ {table1.get('name')} is correctly occupied by order {test_order.get('order_number')}")
+                break
+        
+        if not table1_occupied:
+            return print_test_result("Critical Table Assignment Bug", False, f"Table {table1.get('name')} not properly occupied after sending order to kitchen")
+        
+        # Step 5: Change table assignment to second table
+        print(f"\nStep 5: Changing table assignment to {table2.get('name')}...")
+        
+        # Update order to assign to second table
+        updated_order_data = {
+            "customer_name": "Table Assignment Test",
+            "customer_phone": "5557777777",
+            "customer_address": "123 Assignment St",
+            "table_id": table2.get("id"),  # Change to second table
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Table assignment test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 2.00,
+            "order_notes": "Table assignment test - moved to different table"
+        }
+        
+        response = requests.put(f"{API_URL}/orders/{test_order_id}", json=updated_order_data, headers=headers)
+        response.raise_for_status()
+        updated_order = response.json()
+        
+        print(f"Order updated - new table assignment: {updated_order.get('table_name')} (ID: {updated_order.get('table_id')})")
+        
+        # Step 6: Check if old table assignment was properly removed
+        print("\nStep 6: Checking if old table assignment was properly removed...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        final_tables = response.json()
+        
+        table1_status = None
+        table2_status = None
+        table1_order_id = None
+        table2_order_id = None
+        
+        for table in final_tables:
+            if table.get("id") == table1.get("id"):
+                table1_status = table.get("status")
+                table1_order_id = table.get("current_order_id")
+            elif table.get("id") == table2.get("id"):
+                table2_status = table.get("status")
+                table2_order_id = table.get("current_order_id")
+        
+        print(f"Table 1 ({table1.get('name')}): Status={table1_status}, Order ID={table1_order_id}")
+        print(f"Table 2 ({table2.get('name')}): Status={table2_status}, Order ID={table2_order_id}")
+        
+        # Check for the critical bug: order assigned to multiple tables
+        tables_with_test_order = 0
+        if table1_order_id == test_order_id:
+            tables_with_test_order += 1
+        if table2_order_id == test_order_id:
+            tables_with_test_order += 1
+        
+        if tables_with_test_order > 1:
+            print(f"❌ CRITICAL BUG REPRODUCED: Order {test_order.get('order_number')} is assigned to {tables_with_test_order} tables!")
+            return print_test_result("Critical Table Assignment Bug", False, f"BUG REPRODUCED: Order assigned to multiple tables - Table 1 and Table 2 both reference the same order")
+        
+        elif tables_with_test_order == 0:
+            print(f"❌ BUG: Order {test_order.get('order_number')} is not assigned to any table after update")
+            return print_test_result("Critical Table Assignment Bug", False, "Order not assigned to any table after update")
+        
+        elif table2_order_id == test_order_id and table1_status == "available" and table1_order_id is None:
+            print(f"✅ Table assignment working correctly: Order moved from {table1.get('name')} to {table2.get('name')}")
+            print(f"✅ Old table ({table1.get('name')}) properly freed: Status={table1_status}, Order ID={table1_order_id}")
+            print(f"✅ New table ({table2.get('name')}) properly occupied: Status={table2_status}, Order ID={table2_order_id}")
+        
+        # Step 7: Test using the table assignment endpoint specifically
+        print("\nStep 7: Testing dedicated table assignment endpoint...")
+        
+        # Get another available table
+        available_table_for_assignment = None
+        for table in final_tables:
+            if table.get("status") == "available" and table.get("id") not in [table1.get("id"), table2.get("id")]:
+                available_table_for_assignment = table
+                break
+        
+        if not available_table_for_assignment:
+            # Create a new table
+            table_number = random.randint(10000, 99999)
+            table_data = {"name": f"Assignment Test Table {table_number}", "capacity": 4}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            available_table_for_assignment = response.json()
+        
+        table3_id = available_table_for_assignment.get("id")
+        print(f"Using table assignment endpoint to move to: {available_table_for_assignment.get('name')}")
+        
+        # Use the dedicated table assignment endpoint
+        assignment_data = {"table_id": table3_id}
+        response = requests.put(f"{API_URL}/orders/{test_order_id}/table", json=assignment_data, headers=headers)
+        response.raise_for_status()
+        assignment_result = response.json()
+        
+        print(f"Table assignment result: Order now assigned to {assignment_result.get('table_name')}")
+        
+        # Verify the assignment worked correctly
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        assignment_tables = response.json()
+        
+        table2_final_status = None
+        table3_final_status = None
+        table2_final_order = None
+        table3_final_order = None
+        
+        for table in assignment_tables:
+            if table.get("id") == table2.get("id"):
+                table2_final_status = table.get("status")
+                table2_final_order = table.get("current_order_id")
+            elif table.get("id") == table3_id:
+                table3_final_status = table.get("status")
+                table3_final_order = table.get("current_order_id")
+        
+        print(f"After assignment endpoint:")
+        print(f"  Table 2 ({table2.get('name')}): Status={table2_final_status}, Order ID={table2_final_order}")
+        print(f"  Table 3 ({available_table_for_assignment.get('name')}): Status={table3_final_status}, Order ID={table3_final_order}")
+        
+        # Check for multiple table assignments again
+        tables_with_order_after_assignment = 0
+        if table2_final_order == test_order_id:
+            tables_with_order_after_assignment += 1
+        if table3_final_order == test_order_id:
+            tables_with_order_after_assignment += 1
+        
+        if tables_with_order_after_assignment > 1:
+            print(f"❌ CRITICAL BUG CONFIRMED: After using assignment endpoint, order is still assigned to {tables_with_order_after_assignment} tables!")
+            return print_test_result("Critical Table Assignment Bug", False, "BUG CONFIRMED: Table assignment endpoint creates multiple table assignments")
+        
+        elif tables_with_order_after_assignment == 1 and table3_final_order == test_order_id:
+            print(f"✅ Table assignment endpoint working correctly: Order properly moved to new table")
+        
+        # Clean up - pay the order
+        print("\nCleaning up - paying test order...")
+        payment_data = {
+            "payment_method": "card",
+            "print_receipt": True
+        }
+        
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/pay", json=payment_data, headers=headers)
+        response.raise_for_status()
+        
+        # Final verification: Check if ORD-0328 has the reported issue
+        if len(ord_0328_orders) == 1:
+            ord_0328_table_id = ord_0328.get("table_id")
+            if ord_0328_table_id:
+                # Count how many tables reference this order
+                tables_referencing_ord_0328 = 0
+                table_names_with_ord_0328 = []
+                
+                for table in all_tables:
+                    if table.get("current_order_id") == ord_0328.get("id"):
+                        tables_referencing_ord_0328 += 1
+                        table_names_with_ord_0328.append(table.get("name"))
+                
+                if tables_referencing_ord_0328 > 1:
+                    return print_test_result("Critical Table Assignment Bug", False, f"CONFIRMED BUG: ORD-0328 is assigned to {tables_referencing_ord_0328} tables: {', '.join(table_names_with_ord_0328)}")
+                else:
+                    return print_test_result("Critical Table Assignment Bug", True, f"ORD-0328 investigation complete - currently assigned to single table correctly. Table assignment logic tested and working properly.")
+        
+        return print_test_result("Critical Table Assignment Bug", True, "Table assignment investigation complete - no duplicate assignments found in current test")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Critical table assignment bug test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Critical Table Assignment Bug", False, error_msg)
+
 if __name__ == "__main__":
     # First, try to authenticate with PIN 1234 (manager)
     print("🔐 Authenticating with PIN 1234 (manager)...")
