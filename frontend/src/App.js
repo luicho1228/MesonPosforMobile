@@ -3645,6 +3645,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         customer_phone: customerInfo.phone,
         customer_address: customerInfo.address,
         table_id: selectedTable?.id || currentOrder.table_id,
+        party_size: partySize,
         items: cart.map(item => ({
           menu_item_id: item.menu_item_id,
           quantity: item.quantity,
