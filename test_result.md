@@ -395,6 +395,18 @@ metadata:
         agent: "testing"
         comment: "Successfully tested the comprehensive Menu Management functionality. Verified that: 1) The Menu Management section is accessible from the Settings page, 2) The Menu Items tab displays existing menu items with proper details (name, description, price, category, availability status), 3) Search functionality works correctly for filtering items by name, 4) Category filtering dropdown works properly to filter items by category, 5) Add Item button opens a modal with all required form fields (Name, Description, Price, Category, Image URL, Modifier Groups, Available toggle), 6) Edit functionality works correctly - successfully edited a menu item's name and price, 7) Categories tab displays all existing categories with item counts, 8) Modifiers tab shows existing modifier groups and their modifiers, 9) Add Group and Add Modifier functionality works correctly in the Modifiers tab, 10) Navigation between tabs (Menu Items, Categories, Modifiers) works properly, 11) Back to Settings button correctly returns to the Settings page. All Menu Management functionality is working as expected with no critical issues found."
 
+  - task: "Order Type Switching Bug"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "COMPREHENSIVE ORDER TYPE SWITCHING BUG TESTING COMPLETED: Successfully tested the specific order type switching scenario reported by user. RESULTS: ✅ CORE FUNCTIONALITY WORKING: 1) Created delivery order and sent to kitchen (becomes active order) ✓, 2) Successfully changed order type from delivery to dine-in with table assignment ✓, 3) Database order record properly updated with new order_type ('dine_in' not 'delivery') ✓, 4) Tax and service charges correctly recalculated for dine-in (service charges increased from $3.50 to $8.26) ✓, 5) Active orders endpoint returns updated order type correctly ✓, 6) Table assignment data properly stored in order record ✓. ⚠️ MINOR ISSUE IDENTIFIED: Order update endpoint (PUT /orders/{order_id}) doesn't automatically update table status to 'occupied' when assigning table to active order - requires manual table assignment via PUT /orders/{order_id}/table endpoint. However, this doesn't affect the core order type switching functionality which is working correctly."
+
 test_plan:
   current_focus:
     - "Apartment Information Persistence Fix"
