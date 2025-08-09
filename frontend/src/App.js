@@ -3480,10 +3480,49 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       totalServiceCharges += chargeAmount;
     }
 
-    // Calculate gratuity (for now, just add to breakdown but don't auto-apply)
+    // Calculate gratuity based on rules
+    let totalGratuity = 0;
     const gratuityBreakdown = [];
-    // Note: Gratuity rules could be applied based on party size, order amount, etc.
-    // For now, we'll just prepare the breakdown structure
+    for (const gratuity of activeGratuityRules) {
+      // Check minimum order amount
+      if (gratuity.minimum_order_amount > 0 && subtotal < gratuity.minimum_order_amount) {
+        continue;
+      }
+      
+      // Check maximum order amount
+      if (gratuity.maximum_order_amount > 0 && subtotal > gratuity.maximum_order_amount) {
+        continue;
+      }
+      
+      // Check party size (we'll need to add party size to the order)
+      // For now, assume party size of 1 if not specified
+      const partySize = 1; // TODO: Get actual party size from order form
+      if (gratuity.party_size_minimum > 0 && partySize < gratuity.party_size_minimum) {
+        continue;
+      }
+      
+      // Calculate gratuity amount
+      let gratuityAmount = 0;
+      if (gratuity.type === 'percentage') {
+        gratuityAmount = subtotal * (gratuity.amount / 100);
+      } else if (gratuity.type === 'fixed') {
+        gratuityAmount = gratuity.amount;
+      }
+      
+      gratuityBreakdown.push({
+        name: gratuity.name,
+        type: 'gratuity',
+        amount: gratuityAmount,
+        rate: gratuity.amount,
+        gratuityType: gratuity.type,
+        conditions: {
+          minimum_order: gratuity.minimum_order_amount,
+          maximum_order: gratuity.maximum_order_amount,
+          party_size_min: gratuity.party_size_minimum
+        }
+      });
+      totalGratuity += gratuityAmount;
+    }
 
     // Calculate discounts (for now, just add to breakdown but don't auto-apply)
     const discountBreakdown = [];
