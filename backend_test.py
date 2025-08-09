@@ -5850,18 +5850,18 @@ def test_dynamic_tax_service_charges_application_bug_fix():
 
 # Main execution function
 def run_tests():
-    print("🚀 Starting Backend API Testing...")
+    print("🚀 Starting Critical Table Data Corruption Investigation...")
     print(f"Backend URL: {BACKEND_URL}")
     print(f"API URL: {API_URL}")
     
     # Set up required test data first
     global menu_item_id, table_id
     
-    # Create a menu item for testing
+    # Create a menu item for testing if needed
     headers = {"Authorization": f"Bearer {auth_token}"}
     menu_item_data = {
         "name": f"Test Pizza {random_string(4)}",
-        "description": "Test pizza for dynamic tax testing",
+        "description": "Test pizza for corruption investigation",
         "price": 12.99,
         "category": "Pizza",
         "available": True,
@@ -5876,24 +5876,24 @@ def run_tests():
         print(f"✅ Created test menu item: {menu_item_id}")
     except Exception as e:
         print(f"❌ Failed to create test menu item: {e}")
-        return
+        # Continue anyway, we might not need it for the investigation
     
-    # Test the Dynamic Tax & Service Charges Application Bug Fix as requested
-    success, details = test_dynamic_tax_service_charges_application_bug_fix()
-    test_results["Dynamic Tax & Service Charges Application Bug Fix"]["success"] = success
-    test_results["Dynamic Tax & Service Charges Application Bug Fix"]["details"] = details
+    # Run the Critical Table Data Corruption Investigation
+    success, details = test_critical_table_data_corruption()
+    test_results["Critical Table Data Corruption Investigation"]["success"] = success
+    test_results["Critical Table Data Corruption Investigation"]["details"] = details
     
     # Print summary
     print("\n" + "="*80)
-    print("📊 TEST SUMMARY")
+    print("📊 CRITICAL TABLE DATA CORRUPTION INVESTIGATION SUMMARY")
     print("="*80)
     
     passed = 0
     failed = 0
     
     for test_name, result in test_results.items():
-        if test_name == "Dynamic Tax & Service Charges Application Bug Fix":  # Only show the requested test
-            status = "✅ PASSED" if result["success"] else "❌ FAILED"
+        if test_name == "Critical Table Data Corruption Investigation":
+            status = "✅ RESOLVED" if result["success"] else "❌ CRITICAL ISSUE"
             print(f"{test_name}: {status}")
             if result["details"]:
                 print(f"  Details: {result['details']}")
@@ -5903,12 +5903,12 @@ def run_tests():
             else:
                 failed += 1
     
-    print(f"\n📈 Results: {passed} passed, {failed} failed")
+    print(f"\n📈 Investigation Results: {passed} resolved, {failed} critical issues")
     
     if failed == 0:
-        print("🎉 All tests passed!")
+        print("🎉 Critical table data corruption has been resolved!")
     else:
-        print("⚠️  Some tests failed. Check the details above.")
+        print("🚨 CRITICAL ISSUES REMAIN - Manual intervention may be required.")
 
 # 46. Test Critical Table Assignment Bug - ORD-0328 Investigation
 def test_critical_table_assignment_bug():
