@@ -322,6 +322,7 @@ class OrderCreate(BaseModel):
     customer_state: str = ""
     customer_zip_code: str = ""
     table_id: Optional[str] = None
+    party_size: int = 1  # Number of people in the party
     items: List[Dict]  # Will be processed to OrderItem
     order_type: OrderType
     tip: float = 0.0
