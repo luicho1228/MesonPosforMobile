@@ -285,11 +285,13 @@ class Order(BaseModel):
     customer_zip_code: str = ""
     table_id: Optional[str] = None
     table_name: Optional[str] = None  # Changed from table_number to table_name
+    party_size: int = 1  # Number of people in the party (for gratuity calculations)
     items: List[OrderItem]
     removed_items: List[Dict] = []  # Track removed items with reasons
     subtotal: float
     tax: float
     service_charges: float = 0.0  # Track service charges separately
+    gratuity: float = 0.0  # Track automatic gratuity separately
     tip: float = 0.0
     total: float
     order_type: OrderType
