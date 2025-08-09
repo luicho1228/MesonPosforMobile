@@ -6988,6 +6988,10 @@ def run_all_tests():
         order_type_switching_success, order_type_switching_details = test_order_type_switching_bug()
         test_results["Order Type Switching Bug"]["success"] = order_type_switching_success
         test_results["Order Type Switching Bug"]["details"] = order_type_switching_details
+        
+        # Test Critical Table Assignment Bug - ORD-0328 Investigation (URGENT)
+        critical_table_bug_success, critical_table_bug_details = test_critical_table_assignment_bug()
+        test_results["Critical Table Assignment Bug"] = {"success": critical_table_bug_success, "details": critical_table_bug_details}
     
     # Print summary
     print("\n========================================")
