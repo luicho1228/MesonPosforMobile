@@ -525,10 +525,11 @@ async def verify_user_pin(pin: str) -> Optional[Dict]:
             return user
     return None
 
-async def calculate_order_taxes_and_charges(subtotal: float, order_type: str) -> tuple[float, float]:
-    """Calculate dynamic taxes and service charges for an order"""
+async def calculate_order_taxes_and_charges(subtotal: float, order_type: str, party_size: int = 1) -> tuple[float, float, float]:
+    """Calculate dynamic taxes, service charges, and gratuity for an order"""
     total_tax = 0.0
     total_service_charges = 0.0
+    total_gratuity = 0.0
     
     # Get active tax rates that apply to this order type
     # Include taxes that either:
