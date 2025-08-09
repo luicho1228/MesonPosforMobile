@@ -7166,7 +7166,61 @@ if __name__ == "__main__":
             print(f"✅ Authentication successful")
             print(f"User: {result.get('user', {}).get('full_name')}")
             print(f"Role: {result.get('user', {}).get('role')}")
-            run_tests()
+            
+            # Run Complete Gratuity System Implementation test
+            print("🚀 Starting Complete Gratuity System Implementation Testing...")
+            print(f"Backend URL: {BACKEND_URL}")
+            print(f"API URL: {API_URL}")
+            
+            # Test authentication first
+            success, details = test_authentication()
+            test_results["Authentication System"]["success"] = success
+            test_results["Authentication System"]["details"] = details
+            
+            if not success:
+                print("❌ Authentication failed, cannot proceed with testing")
+                exit(1)
+            
+            # Create test menu item
+            success, details = test_menu_management()
+            test_results["Menu Management API"]["success"] = success
+            test_results["Menu Management API"]["details"] = details
+            
+            if not success:
+                print("❌ Menu management failed, cannot proceed with gratuity testing")
+                exit(1)
+            
+            # Run the Complete Gratuity System Implementation test
+            success, details = test_complete_gratuity_system_implementation()
+            test_results["Complete Gratuity System Implementation"]["success"] = success
+            test_results["Complete Gratuity System Implementation"]["details"] = details
+            
+            # Print summary
+            print("\n" + "="*80)
+            print("📊 COMPLETE GRATUITY SYSTEM IMPLEMENTATION TEST SUMMARY")
+            print("="*80)
+            
+            passed = 0
+            failed = 0
+            
+            for test_name, result in test_results.items():
+                if test_name in ["Authentication System", "Menu Management API", "Complete Gratuity System Implementation"]:
+                    status = "✅ PASSED" if result["success"] else "❌ FAILED"
+                    print(f"{test_name}: {status}")
+                    if result["details"]:
+                        print(f"  Details: {result['details']}")
+                    
+                    if result["success"]:
+                        passed += 1
+                    else:
+                        failed += 1
+            
+            print(f"\n📈 Test Results: {passed} passed, {failed} failed")
+            
+            if failed == 0:
+                print("🎉 Complete Gratuity System Implementation is working correctly!")
+            else:
+                print("🚨 ISSUES FOUND - See details above for specific failures.")
         else:
             print("❌ Authentication failed - no token received")
     except Exception as e:
@@ -7191,7 +7245,7 @@ if __name__ == "__main__":
             
             if auth_token:
                 print(f"✅ Manager account created and authenticated")
-                run_tests()
+                # Run tests here too
             else:
                 print("❌ Failed to create manager account")
         except Exception as e2:
