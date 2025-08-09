@@ -5309,12 +5309,10 @@ const TaxChargesComponent = ({ onBack }) => {
       description: gratuityForm.description,
       amount: amount,
       type: gratuityForm.type,
-      trigger_condition: gratuityForm.trigger_condition,
-      party_size_min: parseInt(gratuityForm.party_size_min) || 0,
-      order_amount_min: parseFloat(gratuityForm.order_amount_min) || 0,
-      applies_to_order_types: gratuityForm.applies_to_order_types,
-      auto_apply: gratuityForm.auto_apply,
-      customer_can_modify: gratuityForm.customer_can_modify,
+      minimum_order_amount: parseFloat(gratuityForm.order_amount_min) || 0,
+      maximum_order_amount: 0, // Currently not exposed in UI
+      party_size_minimum: parseInt(gratuityForm.party_size_min) || 0,
+      applies_to_order_types: gratuityForm.applies_to_order_types || [],
       active: gratuityForm.active
     };
 
