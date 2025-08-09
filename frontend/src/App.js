@@ -523,7 +523,7 @@ const CustomerManagement = ({ onBack }) => {
       <div className="p-6">
         {/* Search and Stats */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
               <input
