@@ -5622,6 +5622,12 @@ const TaxChargesComponent = ({ onBack }) => {
       type: 'percentage',
       amount: '',
       description: '',
+      trigger_condition: 'party_size',
+      party_size_min: '8',
+      order_amount_min: '',
+      applies_to_order_types: [],
+      auto_apply: true,
+      customer_can_modify: true,
       active: true
     });
   };
