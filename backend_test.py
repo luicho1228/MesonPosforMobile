@@ -43,7 +43,8 @@ test_results = {
     "Active Tax Application Investigation": {"success": False, "details": ""},
     "Hardcoded Tax Issue Investigation": {"success": False, "details": ""},
     "Order Type Switching Bug": {"success": False, "details": ""},
-    "Critical Table Assignment Bug": {"success": False, "details": ""}
+    "Critical Table Assignment Bug": {"success": False, "details": ""},
+    "Critical Table Data Corruption Investigation": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
