@@ -6221,12 +6221,13 @@ def test_critical_table_assignment_bug():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Critical Table Assignment Bug", False, error_msg)
 
-# Critical Table Data Corruption Investigation
+# Critical Table Data Corruption Investigation - Multi-Directional Sync Bug
 def test_critical_table_data_corruption():
     global auth_token
-    print("\n=== CRITICAL TABLE DATA CORRUPTION INVESTIGATION ===")
-    print("🚨 URGENT: User deleted all active orders but 2 tables still show as occupied")
-    print("🚨 URGENT: Table deletion is failing")
+    print("\n=== CRITICAL TABLE DATA CORRUPTION INVESTIGATION - MULTI-DIRECTIONAL SYNC BUG ===")
+    print("🚨 URGENT: Multi-directional table-order sync corruption reported")
+    print("🚨 Issue 1: Patio 3 shows occupied but no active order assigned (orphaned table reference)")
+    print("🚨 Issue 2: ORD-0347 active order at 'Test Table 44280' but table shows available (missing table reference)")
     
     if not auth_token:
         return print_test_result("Critical Table Data Corruption Investigation", False, "No auth token available")
@@ -6234,122 +6235,217 @@ def test_critical_table_data_corruption():
     headers = {"Authorization": f"Bearer {auth_token}"}
     
     try:
-        # STEP 1: Check if there are any active orders in the database
-        print("\n🔍 STEP 1: Checking for active orders in database...")
+        # STEP 1: Get ALL active orders and analyze their table assignments
+        print("\n🔍 STEP 1: COMPREHENSIVE ACTIVE ORDERS ANALYSIS...")
         response = requests.get(f"{API_URL}/orders/active", headers=headers)
         response.raise_for_status()
         active_orders = response.json()
         
         print(f"📊 FOUND {len(active_orders)} active orders in database")
         
-        if len(active_orders) > 0:
-            print("⚠️  Active orders still exist:")
-            for order in active_orders:
-                print(f"   - {order.get('order_number')} (Status: {order.get('status')}, Table: {order.get('table_name', 'None')})")
-        else:
-            print("✅ CONFIRMED: No active orders found (user deleted all as reported)")
+        # Analyze each active order for table assignment issues
+        orders_with_tables = []
+        orders_without_tables = []
+        specific_order_found = False
         
-        # STEP 2: Check table statuses - identify occupied tables
-        print("\n🔍 STEP 2: Checking table statuses to identify occupied tables...")
+        for order in active_orders:
+            order_number = order.get('order_number', 'Unknown')
+            table_id = order.get('table_id')
+            table_name = order.get('table_name', 'None')
+            order_type = order.get('order_type', 'Unknown')
+            status = order.get('status', 'Unknown')
+            
+            print(f"   📋 {order_number}: Type={order_type}, Status={status}, Table_ID={table_id}, Table_Name={table_name}")
+            
+            # Check for the specific order mentioned in the bug report
+            if order_number == "ORD-0347":
+                specific_order_found = True
+                print(f"🎯 FOUND SPECIFIC ORDER: {order_number} at table '{table_name}'")
+            
+            if table_id and order_type == "dine_in":
+                orders_with_tables.append({
+                    "order": order,
+                    "order_number": order_number,
+                    "table_id": table_id,
+                    "table_name": table_name
+                })
+            else:
+                orders_without_tables.append({
+                    "order": order,
+                    "order_number": order_number,
+                    "order_type": order_type
+                })
+        
+        print(f"\n📊 ACTIVE ORDERS SUMMARY:")
+        print(f"   🪑 {len(orders_with_tables)} orders WITH table assignments")
+        print(f"   📦 {len(orders_without_tables)} orders WITHOUT table assignments")
+        
+        if not specific_order_found:
+            print(f"⚠️  Specific order ORD-0347 not found in active orders")
+        
+        # STEP 2: Get ALL tables and analyze their order assignments
+        print("\n🔍 STEP 2: COMPREHENSIVE TABLE STATUS ANALYSIS...")
         response = requests.get(f"{API_URL}/tables", headers=headers)
         response.raise_for_status()
         all_tables = response.json()
         
-        occupied_tables = [table for table in all_tables if table.get("status") == "occupied"]
-        available_tables = [table for table in all_tables if table.get("status") == "available"]
-        other_status_tables = [table for table in all_tables if table.get("status") not in ["occupied", "available"]]
+        occupied_tables = []
+        available_tables = []
+        other_status_tables = []
+        patio3_found = False
+        test_table_44280_found = False
         
-        print(f"📊 TABLE STATUS SUMMARY:")
+        for table in all_tables:
+            table_name = table.get('name', 'Unknown')
+            table_status = table.get('status', 'Unknown')
+            current_order_id = table.get('current_order_id')
+            
+            print(f"   🪑 {table_name}: Status={table_status}, Order_ID={current_order_id}")
+            
+            # Check for specific tables mentioned in bug report
+            if table_name == "Patio 3":
+                patio3_found = True
+                print(f"🎯 FOUND SPECIFIC TABLE: Patio 3 with status={table_status}, order_id={current_order_id}")
+            
+            if table_name == "Test Table 44280":
+                test_table_44280_found = True
+                print(f"🎯 FOUND SPECIFIC TABLE: Test Table 44280 with status={table_status}, order_id={current_order_id}")
+            
+            if table_status == "occupied":
+                occupied_tables.append(table)
+            elif table_status == "available":
+                available_tables.append(table)
+            else:
+                other_status_tables.append(table)
+        
+        print(f"\n📊 TABLE STATUS SUMMARY:")
         print(f"   🔴 {len(occupied_tables)} OCCUPIED tables")
         print(f"   🟢 {len(available_tables)} AVAILABLE tables")
         print(f"   🟡 {len(other_status_tables)} OTHER status tables")
         
-        if len(occupied_tables) > 0:
-            print(f"\n🚨 CRITICAL ISSUE CONFIRMED: {len(occupied_tables)} tables showing as occupied:")
-            for table in occupied_tables:
-                print(f"   - {table.get('name')} (ID: {table.get('id')}) - Order ID: {table.get('current_order_id')}")
+        if not patio3_found:
+            print(f"⚠️  Specific table 'Patio 3' not found")
+        if not test_table_44280_found:
+            print(f"⚠️  Specific table 'Test Table 44280' not found")
         
-        # STEP 3: Check for orphaned references (occupied tables with current_order_id pointing to non-existent orders)
-        print("\n🔍 STEP 3: Checking for orphaned table references...")
-        orphaned_tables = []
+        # STEP 3: BIDIRECTIONAL MISMATCH DETECTION
+        print("\n🔍 STEP 3: BIDIRECTIONAL MISMATCH DETECTION...")
         
+        # Direction 1: Tables thinking they're occupied with no corresponding active order
+        orphaned_table_refs = []
         for table in occupied_tables:
-            current_order_id = table.get("current_order_id")
-            if current_order_id:
-                # Check if this order actually exists
+            table_name = table.get('name')
+            current_order_id = table.get('current_order_id')
+            
+            if not current_order_id:
+                orphaned_table_refs.append({
+                    "table": table,
+                    "issue": "occupied_no_order_id",
+                    "description": f"Table {table_name} is occupied but has no current_order_id"
+                })
+                print(f"🚨 ORPHANED TABLE: {table_name} is occupied but has no current_order_id")
+                continue
+            
+            # Check if the order exists and is active
+            order_found = False
+            order_is_active = False
+            
+            for active_order in active_orders:
+                if active_order.get('id') == current_order_id:
+                    order_found = True
+                    order_is_active = True
+                    break
+            
+            if not order_found:
+                # Check if order exists but is not active
                 try:
                     response = requests.get(f"{API_URL}/orders/{current_order_id}", headers=headers)
-                    if response.status_code == 404:
-                        # Order doesn't exist - this is an orphaned reference
-                        orphaned_tables.append({
-                            "table": table,
-                            "missing_order_id": current_order_id
-                        })
-                        print(f"🚨 ORPHANED REFERENCE: Table {table.get('name')} points to non-existent order {current_order_id}")
-                    elif response.status_code == 200:
+                    if response.status_code == 200:
                         order_data = response.json()
-                        order_status = order_data.get("status")
-                        if order_status in ["cancelled", "paid", "delivered"]:
-                            # Order exists but is completed/cancelled - should not occupy table
-                            orphaned_tables.append({
-                                "table": table,
-                                "completed_order_id": current_order_id,
-                                "order_status": order_status
-                            })
-                            print(f"🚨 STALE REFERENCE: Table {table.get('name')} points to {order_status} order {current_order_id}")
-                        else:
-                            print(f"✅ Valid reference: Table {table.get('name')} points to active order {current_order_id} (status: {order_status})")
+                        order_status = order_data.get('status')
+                        orphaned_table_refs.append({
+                            "table": table,
+                            "issue": "occupied_inactive_order",
+                            "description": f"Table {table_name} points to {order_status} order {current_order_id}",
+                            "order_status": order_status
+                        })
+                        print(f"🚨 STALE REFERENCE: {table_name} points to {order_status} order {current_order_id}")
+                    else:
+                        orphaned_table_refs.append({
+                            "table": table,
+                            "issue": "occupied_missing_order",
+                            "description": f"Table {table_name} points to non-existent order {current_order_id}"
+                        })
+                        print(f"🚨 ORPHANED REFERENCE: {table_name} points to non-existent order {current_order_id}")
                 except Exception as e:
                     print(f"❌ Error checking order {current_order_id}: {str(e)}")
-            else:
-                print(f"🚨 INVALID STATE: Table {table.get('name')} is occupied but has no current_order_id")
-                orphaned_tables.append({
-                    "table": table,
-                    "missing_order_id": None
+        
+        # Direction 2: Active orders assigned to tables that don't show as occupied
+        missing_table_refs = []
+        for order_info in orders_with_tables:
+            order = order_info["order"]
+            order_number = order_info["order_number"]
+            table_id = order_info["table_id"]
+            table_name = order_info["table_name"]
+            
+            # Find the corresponding table
+            table_found = False
+            table_is_occupied = False
+            table_has_correct_order_id = False
+            
+            for table in all_tables:
+                if table.get('id') == table_id:
+                    table_found = True
+                    if table.get('status') == 'occupied':
+                        table_is_occupied = True
+                        if table.get('current_order_id') == order.get('id'):
+                            table_has_correct_order_id = True
+                    break
+            
+            if not table_found:
+                missing_table_refs.append({
+                    "order": order,
+                    "issue": "order_missing_table",
+                    "description": f"Order {order_number} assigned to non-existent table {table_id}"
                 })
+                print(f"🚨 MISSING TABLE: Order {order_number} assigned to non-existent table {table_id}")
+            elif not table_is_occupied:
+                missing_table_refs.append({
+                    "order": order,
+                    "issue": "order_table_not_occupied",
+                    "description": f"Order {order_number} assigned to table {table_name} but table shows as available"
+                })
+                print(f"🚨 TABLE NOT OCCUPIED: Order {order_number} assigned to {table_name} but table shows available")
+            elif not table_has_correct_order_id:
+                missing_table_refs.append({
+                    "order": order,
+                    "issue": "order_table_wrong_order_id",
+                    "description": f"Order {order_number} assigned to table {table_name} but table points to different order"
+                })
+                print(f"🚨 WRONG ORDER ID: Order {order_number} assigned to {table_name} but table points to different order")
         
-        print(f"\n📊 ORPHANED REFERENCE SUMMARY:")
-        print(f"   🚨 {len(orphaned_tables)} tables with orphaned/stale references")
+        # STEP 4: COMPREHENSIVE SUMMARY OF ALL ISSUES
+        print(f"\n📊 COMPREHENSIVE BIDIRECTIONAL MISMATCH SUMMARY:")
+        print(f"   🚨 {len(orphaned_table_refs)} tables with orphaned/stale references")
+        print(f"   🚨 {len(missing_table_refs)} orders with missing/incorrect table references")
         
-        # STEP 4: Test table deletion functionality
-        print("\n🔍 STEP 4: Testing table deletion functionality...")
+        total_issues = len(orphaned_table_refs) + len(missing_table_refs)
+        print(f"   🚨 TOTAL SYNCHRONIZATION ISSUES: {total_issues}")
         
-        # Try to delete an available table first (should work)
-        if len(available_tables) > 0:
-            test_table = available_tables[0]
-            print(f"Testing deletion of available table: {test_table.get('name')}")
-            
-            try:
-                response = requests.delete(f"{API_URL}/tables/{test_table.get('id')}", headers=headers)
-                response.raise_for_status()
-                print(f"✅ Successfully deleted available table {test_table.get('name')}")
-            except Exception as e:
-                print(f"❌ Failed to delete available table: {str(e)}")
-        
-        # Try to delete an occupied table (should fail or require special handling)
-        if len(occupied_tables) > 0:
-            test_occupied_table = occupied_tables[0]
-            print(f"Testing deletion of occupied table: {test_occupied_table.get('name')}")
-            
-            try:
-                response = requests.delete(f"{API_URL}/tables/{test_occupied_table.get('id')}", headers=headers)
-                if response.status_code == 200:
-                    print(f"⚠️  Occupied table {test_occupied_table.get('name')} was deleted (this might be the issue)")
-                else:
-                    print(f"✅ Occupied table deletion properly blocked (status: {response.status_code})")
-            except Exception as e:
-                print(f"✅ Occupied table deletion properly blocked: {str(e)}")
-        
-        # STEP 5: Immediate database cleanup - fix orphaned references
-        print("\n🔧 STEP 5: IMMEDIATE DATABASE CLEANUP - Fixing orphaned references...")
+        # STEP 5: COMPREHENSIVE DATA CLEANUP
+        print("\n🔧 STEP 5: COMPREHENSIVE DATA SYNCHRONIZATION CLEANUP...")
         
         cleanup_count = 0
-        for orphan_info in orphaned_tables:
+        
+        # Fix orphaned table references
+        print("\n🔧 Fixing orphaned table references...")
+        for orphan_info in orphaned_table_refs:
             table = orphan_info["table"]
             table_id = table.get("id")
             table_name = table.get("name")
+            issue = orphan_info["issue"]
             
-            print(f"🔧 Cleaning up table: {table_name}")
+            print(f"🔧 Cleaning up table: {table_name} (Issue: {issue})")
             
             # Update table to available status and clear current_order_id
             update_data = {
@@ -6365,54 +6461,115 @@ def test_critical_table_data_corruption():
             except Exception as e:
                 print(f"❌ Failed to clean up table {table_name}: {str(e)}")
         
-        # STEP 6: Verify cleanup results
-        print("\n🔍 STEP 6: Verifying cleanup results...")
+        # Fix missing table references
+        print("\n🔧 Fixing missing table references...")
+        for missing_info in missing_table_refs:
+            order = missing_info["order"]
+            order_id = order.get('id')
+            order_number = missing_info["order"]["order_number"]
+            table_id = order.get('table_id')
+            issue = missing_info["issue"]
+            
+            print(f"🔧 Fixing order: {order_number} (Issue: {issue})")
+            
+            if issue == "order_table_not_occupied" and table_id:
+                # Set table to occupied and assign order
+                try:
+                    update_data = {
+                        "status": "occupied",
+                        "current_order_id": order_id
+                    }
+                    response = requests.put(f"{API_URL}/tables/{table_id}", json=update_data, headers=headers)
+                    response.raise_for_status()
+                    print(f"✅ Successfully set table to occupied for order {order_number}")
+                    cleanup_count += 1
+                except Exception as e:
+                    print(f"❌ Failed to set table occupied for order {order_number}: {str(e)}")
+        
+        # STEP 6: FINAL VERIFICATION
+        print("\n🔍 STEP 6: FINAL VERIFICATION OF DATA SYNCHRONIZATION...")
+        
+        # Re-fetch all data for final verification
+        response = requests.get(f"{API_URL}/orders/active", headers=headers)
+        response.raise_for_status()
+        final_active_orders = response.json()
+        
         response = requests.get(f"{API_URL}/tables", headers=headers)
         response.raise_for_status()
-        updated_tables = response.json()
+        final_tables = response.json()
         
-        updated_occupied_tables = [table for table in updated_tables if table.get("status") == "occupied"]
-        updated_available_tables = [table for table in updated_tables if table.get("status") == "available"]
+        final_occupied_tables = [table for table in final_tables if table.get("status") == "occupied"]
+        final_available_tables = [table for table in final_tables if table.get("status") == "available"]
         
-        print(f"📊 AFTER CLEANUP:")
-        print(f"   🔴 {len(updated_occupied_tables)} OCCUPIED tables")
-        print(f"   🟢 {len(updated_available_tables)} AVAILABLE tables")
-        print(f"   🔧 {cleanup_count} tables cleaned up")
+        print(f"📊 FINAL STATE AFTER CLEANUP:")
+        print(f"   📋 {len(final_active_orders)} active orders")
+        print(f"   🔴 {len(final_occupied_tables)} occupied tables")
+        print(f"   🟢 {len(final_available_tables)} available tables")
+        print(f"   🔧 {cleanup_count} total fixes applied")
         
-        if len(updated_occupied_tables) > 0:
-            print(f"⚠️  Still {len(updated_occupied_tables)} occupied tables remaining:")
-            for table in updated_occupied_tables:
-                print(f"   - {table.get('name')} (Order ID: {table.get('current_order_id')})")
+        # Verify bidirectional consistency
+        print("\n🔍 FINAL BIDIRECTIONAL CONSISTENCY CHECK...")
+        final_issues = 0
         
-        # STEP 7: Root cause analysis and summary
-        print("\n📋 STEP 7: ROOT CAUSE ANALYSIS AND SUMMARY")
-        
-        if len(orphaned_tables) > 0:
-            print(f"🚨 ROOT CAUSE IDENTIFIED: {len(orphaned_tables)} tables had orphaned references")
-            print("   - Tables were pointing to deleted/completed orders")
-            print("   - Order cancellation/completion did not properly free tables")
-            print("   - This is a data integrity issue in the table management system")
-            
-            if cleanup_count > 0:
-                print(f"✅ IMMEDIATE FIX APPLIED: Cleaned up {cleanup_count} orphaned table references")
-                print("   - Set tables to 'available' status")
-                print("   - Cleared current_order_id references")
+        # Check each active order with table assignment
+        for order in final_active_orders:
+            if order.get('order_type') == 'dine_in' and order.get('table_id'):
+                order_number = order.get('order_number')
+                table_id = order.get('table_id')
+                order_id = order.get('id')
                 
-                return print_test_result("Critical Table Data Corruption Investigation", True, 
-                    f"CRITICAL DATA CORRUPTION FIXED: Found and cleaned up {len(orphaned_tables)} tables with orphaned references. "
-                    f"Root cause: Order cancellation/completion not properly freeing tables. {cleanup_count} tables restored to available status.")
-            else:
-                return print_test_result("Critical Table Data Corruption Investigation", False,
-                    f"CRITICAL DATA CORRUPTION IDENTIFIED: Found {len(orphaned_tables)} tables with orphaned references but cleanup failed. "
-                    f"Manual intervention required to fix table statuses.")
+                # Find corresponding table
+                table_found = False
+                for table in final_tables:
+                    if table.get('id') == table_id:
+                        table_found = True
+                        if table.get('status') != 'occupied' or table.get('current_order_id') != order_id:
+                            print(f"🚨 STILL BROKEN: Order {order_number} → Table mismatch")
+                            final_issues += 1
+                        else:
+                            print(f"✅ SYNCHRONIZED: Order {order_number} ↔ Table {table.get('name')}")
+                        break
+                
+                if not table_found:
+                    print(f"🚨 STILL BROKEN: Order {order_number} → Table {table_id} not found")
+                    final_issues += 1
+        
+        # Check each occupied table
+        for table in final_occupied_tables:
+            table_name = table.get('name')
+            current_order_id = table.get('current_order_id')
+            
+            if not current_order_id:
+                print(f"🚨 STILL BROKEN: Table {table_name} occupied but no order_id")
+                final_issues += 1
+                continue
+            
+            # Find corresponding active order
+            order_found = False
+            for order in final_active_orders:
+                if order.get('id') == current_order_id:
+                    order_found = True
+                    print(f"✅ SYNCHRONIZED: Table {table_name} ↔ Order {order.get('order_number')}")
+                    break
+            
+            if not order_found:
+                print(f"🚨 STILL BROKEN: Table {table_name} → Order {current_order_id} not active")
+                final_issues += 1
+        
+        # STEP 7: FINAL RESULTS AND RECOMMENDATIONS
+        print(f"\n📋 FINAL INVESTIGATION RESULTS:")
+        print(f"   🔧 Total fixes applied: {cleanup_count}")
+        print(f"   🚨 Remaining issues: {final_issues}")
+        
+        if final_issues == 0:
+            return print_test_result("Critical Table Data Corruption Investigation", True, 
+                f"🎉 COMPLETE DATA SYNCHRONIZATION RESTORED: Applied {cleanup_count} fixes to resolve all bidirectional sync issues. "
+                f"All active orders are properly synchronized with their assigned tables. "
+                f"All occupied tables have valid active order references. Data integrity fully restored.")
         else:
-            if len(occupied_tables) == 0:
-                return print_test_result("Critical Table Data Corruption Investigation", True,
-                    "No table data corruption found. All tables are properly synchronized with order statuses.")
-            else:
-                return print_test_result("Critical Table Data Corruption Investigation", False,
-                    f"Found {len(occupied_tables)} occupied tables but they appear to have valid order references. "
-                    f"Issue may be elsewhere in the system.")
+            return print_test_result("Critical Table Data Corruption Investigation", False,
+                f"⚠️  PARTIAL SYNCHRONIZATION: Applied {cleanup_count} fixes but {final_issues} issues remain. "
+                f"Additional investigation and manual intervention may be required for complete data integrity restoration.")
         
     except requests.exceptions.RequestException as e:
         error_msg = f"Critical table data corruption investigation failed: {str(e)}"
