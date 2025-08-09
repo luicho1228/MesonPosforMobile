@@ -409,7 +409,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Apartment Information Persistence Fix"
+    - "Critical Table Data Corruption Investigation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
