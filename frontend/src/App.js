@@ -3710,7 +3710,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         }
       });
     }
-  }, [cart, currentOrder, editingActiveOrder, editingOrder, taxRates, serviceCharges, gratuityRules, discountPolicies]);
+  }, [cart, currentOrder, editingActiveOrder, editingOrder, taxRates, serviceCharges, gratuityRules, discountPolicies, orderType]);
 
   const filteredItems = selectedCategory === 'all' 
     ? menuItems 
