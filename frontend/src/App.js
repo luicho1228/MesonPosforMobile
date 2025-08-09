@@ -5439,12 +5439,12 @@ const TaxChargesComponent = ({ onBack }) => {
       type: gratuity.type,
       amount: gratuity.amount.toString(),
       description: gratuity.description || '',
-      trigger_condition: gratuity.trigger_condition,
-      party_size_min: gratuity.party_size_min || '6',
-      order_amount_min: gratuity.order_amount_min || '',
+      trigger_condition: gratuity.trigger_condition || 'party_size',
+      party_size_min: gratuity.party_size_minimum ? gratuity.party_size_minimum.toString() : '8',
+      order_amount_min: gratuity.minimum_order_amount ? gratuity.minimum_order_amount.toString() : '',
       applies_to_order_types: gratuity.applies_to_order_types || [],
-      auto_apply: gratuity.auto_apply,
-      customer_can_modify: gratuity.customer_can_modify,
+      auto_apply: gratuity.auto_apply || true,
+      customer_can_modify: gratuity.customer_can_modify || true,
       active: gratuity.active
     });
     setEditingItem(gratuity);
