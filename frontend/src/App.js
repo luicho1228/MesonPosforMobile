@@ -3497,9 +3497,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         continue;
       }
       
-      // Check party size (we'll need to add party size to the order)
-      // For now, assume party size of 1 if not specified
-      const partySize = 1; // TODO: Get actual party size from order form
+      // Check party size
       if (gratuity.party_size_minimum > 0 && partySize < gratuity.party_size_minimum) {
         continue;
       }
