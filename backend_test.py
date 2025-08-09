@@ -6672,6 +6672,11 @@ def run_all_tests():
         tax_investigation_success, tax_investigation_details = test_active_tax_application_investigation()
         test_results["Active Tax Application Investigation"]["success"] = tax_investigation_success
         test_results["Active Tax Application Investigation"]["details"] = tax_investigation_details
+        
+        # Test Order Type Switching Bug (Review Request Focus)
+        order_type_switching_success, order_type_switching_details = test_order_type_switching_bug()
+        test_results["Order Type Switching Bug"]["success"] = order_type_switching_success
+        test_results["Order Type Switching Bug"]["details"] = order_type_switching_details
     
     # Print summary
     print("\n========================================")
