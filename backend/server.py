@@ -574,7 +574,35 @@ async def calculate_order_taxes_and_charges(subtotal: float, order_type: str, pa
         else:  # fixed
             total_service_charges += charge["amount"]
     
-    return total_tax, total_service_charges
+    # Get active gratuity rules that apply to this order type and party size
+    gratuity_rules = await db.gratuity_rules.find({
+        "active": True,
+        "$or": [
+            {"applies_to_order_types": {"$exists": False}},    # Field doesn't exist
+            {"applies_to_order_types": {"$size": 0}},          # Empty array (apply to all)
+            {"applies_to_order_types": {"$in": [order_type]}}  # Contains this order type
+        ]
+    }).to_list(1000)
+    
+    for gratuity in gratuity_rules:
+        # Check minimum order amount
+        if gratuity.get("minimum_order_amount", 0) > 0 and subtotal < gratuity["minimum_order_amount"]:
+            continue
+            
+        # Check maximum order amount
+        if gratuity.get("maximum_order_amount", 0) > 0 and subtotal > gratuity["maximum_order_amount"]:
+            continue
+            
+        # Check party size requirement
+        if gratuity.get("party_size_minimum", 0) > 0 and party_size < gratuity["party_size_minimum"]:
+            continue
+            
+        if gratuity["type"] == "percentage":
+            total_gratuity += subtotal * (gratuity["amount"] / 100)
+        else:  # fixed
+            total_gratuity += gratuity["amount"]
+    
+    return total_tax, total_service_charges, total_gratuity
 
 # Routes
 
