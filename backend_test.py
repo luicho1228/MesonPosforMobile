@@ -42,7 +42,8 @@ test_results = {
     "Dynamic Tax & Service Charges Application Bug Fix": {"success": False, "details": ""},
     "Active Tax Application Investigation": {"success": False, "details": ""},
     "Hardcoded Tax Issue Investigation": {"success": False, "details": ""},
-    "Order Type Switching Bug": {"success": False, "details": ""}
+    "Order Type Switching Bug": {"success": False, "details": ""},
+    "Critical Table Assignment Bug": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
