@@ -3533,9 +3533,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       subtotal,
       taxes: totalTaxes,
       serviceCharges: totalServiceCharges,
-      gratuity: 0, // Manual gratuity can still be added separately
+      gratuity: totalGratuity,
       discounts: 0, // Manual discounts can still be added separately
-      total: subtotal + totalTaxes + totalServiceCharges,
+      total: subtotal + totalTaxes + totalServiceCharges + totalGratuity,
       breakdown: {
         taxes: taxBreakdown,
         serviceCharges: serviceChargeBreakdown,
