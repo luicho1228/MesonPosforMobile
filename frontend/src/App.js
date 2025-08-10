@@ -3590,6 +3590,17 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     };
   };
 
+  // Discount management functions
+  const applyDiscountToOrder = (discountId) => {
+    if (!appliedDiscountIds.includes(discountId)) {
+      setAppliedDiscountIds(prev => [...prev, discountId]);
+    }
+  };
+
+  const removeDiscountFromOrder = (discountId) => {
+    setAppliedDiscountIds(prev => prev.filter(id => id !== discountId));
+  };
+
   const createOrUpdateOrder = async () => {
     if (cart.length === 0) {
       alert('Please add items to your order');
