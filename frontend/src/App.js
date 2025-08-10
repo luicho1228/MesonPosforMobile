@@ -4992,6 +4992,18 @@ const OrderDetailModal = ({ order, onClose }) => {
               <span>Tax:</span>
               <span>${order.tax.toFixed(2)}</span>
             </div>
+            {order.service_charges > 0 && (
+              <div className="flex justify-between text-sm text-blue-600">
+                <span>Service Charges:</span>
+                <span>${order.service_charges.toFixed(2)}</span>
+              </div>
+            )}
+            {order.discounts > 0 && (
+              <div className="flex justify-between text-sm text-red-600">
+                <span>Discounts:</span>
+                <span>-${order.discounts.toFixed(2)}</span>
+              </div>
+            )}
             {order.tip > 0 && (
               <div className="flex justify-between text-sm">
                 <span>Tip:</span>
