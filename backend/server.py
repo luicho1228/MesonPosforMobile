@@ -1511,13 +1511,14 @@ async def update_order(order_id: str, order_data: OrderCreate, user_id: str = De
         processed_items.append(order_item)
         subtotal += item_total
     
-    # Calculate dynamic taxes, service charges, and gratuity
-    tax, service_charges_total, gratuity_total = await calculate_order_taxes_and_charges(
+    # Calculate dynamic taxes, service charges, gratuity, and discounts
+    tax, service_charges_total, gratuity_total, discounts_total = await calculate_order_taxes_and_charges(
         subtotal, 
         order_data.order_type, 
-        order_data.party_size
+        order_data.party_size,
+        order_data.applied_discount_ids
     )
-    total = subtotal + tax + service_charges_total + gratuity_total + order_data.tip
+    total = subtotal + tax + service_charges_total + gratuity_total - discounts_total + order_data.tip
     
     # Create customer if provided
     customer_id = existing_order.get("customer_id")
