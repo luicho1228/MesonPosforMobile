@@ -3525,18 +3525,55 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       totalGratuity += gratuityAmount;
     }
 
-    // Calculate discounts (for now, just add to breakdown but don't auto-apply)
+    // Calculate discounts from applied discount policies
+    let totalDiscounts = 0;
     const discountBreakdown = [];
-    // Note: Discount policies could be applied based on conditions, codes, etc.
-    // For now, we'll just prepare the breakdown structure
+    
+    if (appliedDiscountIds && appliedDiscountIds.length > 0) {
+      for (const discountId of appliedDiscountIds) {
+        const discount = discountPolicies.find(d => d.id === discountId);
+        if (discount && discount.active) {
+          // Check if discount applies to this order
+          let discountApplies = true;
+          
+          // Check minimum order requirement
+          if (discount.minimum_order_amount > 0 && subtotal < discount.minimum_order_amount) {
+            discountApplies = false;
+          }
+          
+          // Check order type requirement
+          if (discount.applies_to_order_types && discount.applies_to_order_types.length > 0 && 
+              !discount.applies_to_order_types.includes(orderType)) {
+            discountApplies = false;
+          }
+          
+          if (discountApplies) {
+            let discountAmount = 0;
+            if (discount.type === 'percentage') {
+              discountAmount = subtotal * (discount.amount / 100);
+            } else {
+              discountAmount = discount.amount;
+            }
+            
+            totalDiscounts += discountAmount;
+            discountBreakdown.push({
+              name: discount.name,
+              type: discount.type,
+              rate: discount.amount,
+              amount: discountAmount
+            });
+          }
+        }
+      }
+    }
 
     return {
       subtotal,
       taxes: totalTaxes,
       serviceCharges: totalServiceCharges,
       gratuity: totalGratuity,
-      discounts: 0, // Manual discounts can still be added separately
-      total: subtotal + totalTaxes + totalServiceCharges + totalGratuity,
+      discounts: totalDiscounts,
+      total: subtotal + totalTaxes + totalServiceCharges + totalGratuity - totalDiscounts,
       breakdown: {
         taxes: taxBreakdown,
         serviceCharges: serviceChargeBreakdown,
