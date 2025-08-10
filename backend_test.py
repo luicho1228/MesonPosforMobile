@@ -45,7 +45,8 @@ test_results = {
     "Order Type Switching Bug": {"success": False, "details": ""},
     "Critical Table Assignment Bug": {"success": False, "details": ""},
     "Critical Table Data Corruption Investigation": {"success": False, "details": ""},
-    "Complete Gratuity System Implementation": {"success": False, "details": ""}
+    "Complete Gratuity System Implementation": {"success": False, "details": ""},
+    "Service Charge Order Cost Functionality": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
