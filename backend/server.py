@@ -415,6 +415,7 @@ class ServiceCharge(BaseModel):
     applies_to_subtotal: bool = True  # If false, applies to total
     applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
     minimum_order_amount: float = 0.0
+    maximum_order_amount: float = 0.0  # 0 means no maximum limit
     created_at: datetime = Field(default_factory=get_current_time)
     updated_at: datetime = Field(default_factory=get_current_time)
 
