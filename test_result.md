@@ -345,6 +345,21 @@ backend:
       - working: true
         agent: "testing"
         comment: "🎉 CRITICAL MULTI-DIRECTIONAL DATA SYNCHRONIZATION BUG RESOLVED: Conducted comprehensive bidirectional investigation and successfully restored complete data integrity. ✅ IDENTIFIED SPECIFIC ISSUES: 1) Patio 3 occupied by paid order ORD-0366 (orphaned reference), 2) ORD-0365 assigned to Test Table 34039 but table showed available (missing reference), 3) ORD-0347 properly synchronized with Test Table 44280. ✅ COMPREHENSIVE CLEANUP EXECUTED: Applied 2 targeted synchronization fixes - cleaned up Patio 3 (set to available, cleared order reference) and set Test Table 34039 to occupied for ORD-0365. ✅ BIDIRECTIONAL VERIFICATION: Final consistency check confirmed all active dine-in orders are properly synchronized with their assigned tables, and all occupied tables have valid active order references. ✅ COMPLETE DATA INTEGRITY RESTORED: 4 active orders, 2 occupied tables, 18 available tables - all properly synchronized with 0 remaining synchronization issues. The multi-directional table-order sync corruption has been completely resolved."
+
+  - task: "Service Charge Order Cost Functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Service charge order cost functionality demonstrated successfully. Created test scenarios showing: 1) Service charges with minimum order amounts only (e.g., Service Fee for orders ≥$25), 2) Service charges with maximum order amounts only (e.g., Small Order Fee for orders ≤$19.99), 3) Service charges with both min and max ranges (e.g., Large Order Handling Fee for $75-$150 orders), 4) Proper boundary condition handling (inclusive limits), 5) Order type filtering integration, 6) Dynamic calculation during order processing."
+      - working: true
+        agent: "testing"
+        comment: "✅ SERVICE CHARGE ORDER COST FUNCTIONALITY FULLY TESTED AND WORKING: Conducted comprehensive testing of the service charge order cost conditions feature. VERIFIED: 1) Service charge API endpoints (GET /api/tax-charges/service-charges, POST, PUT, DELETE) work correctly ✓ 2) Service charges with minimum_order_amount and maximum_order_amount fields function properly ✓ 3) Order cost calculation applies service charges based on order amount conditions correctly ✓ 4) Boundary conditions (orders at exactly minimum/maximum amounts) work correctly - tested $19.99, $25.00, $75.00, $150.00 thresholds ✓ 5) Order type filtering integration works properly - dine-in, takeout, delivery charges apply to correct order types ✓ 6) Service charges are correctly calculated and saved in order records ✓ 7) Multiple service charges can apply simultaneously based on different conditions ✓ 8) Percentage and fixed amount service charges both work correctly ✓ The 'Apply based on order total cost' feature for service charges is fully functional and meets all requirements from the review request."
         
 frontend:
   - task: "Authentication UI"
