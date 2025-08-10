@@ -8417,6 +8417,11 @@ def run_all_tests():
         # Test Critical Table Assignment Bug - ORD-0328 Investigation (URGENT)
         critical_table_bug_success, critical_table_bug_details = test_critical_table_assignment_bug()
         test_results["Critical Table Assignment Bug"] = {"success": critical_table_bug_success, "details": critical_table_bug_details}
+        
+        # Test Enhanced Discount System (Review Request Focus)
+        discount_system_success, discount_system_details = test_enhanced_discount_system()
+        test_results["Enhanced Discount System"]["success"] = discount_system_success
+        test_results["Enhanced Discount System"]["details"] = discount_system_details
     
     # Print summary
     print("\n========================================")
