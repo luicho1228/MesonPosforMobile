@@ -7658,7 +7658,7 @@ if __name__ == "__main__":
             print(f"\n📈 Test Results: {passed} passed, {failed} failed")
             
             if failed == 0:
-                print("🎉 Complete Gratuity System Implementation is working correctly!")
+                print("🎉 Service Charge Order Cost Functionality and Complete Gratuity System Implementation are working correctly!")
             else:
                 print("🚨 ISSUES FOUND - See details above for specific failures.")
         else:
