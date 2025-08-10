@@ -6833,7 +6833,7 @@ def test_service_charge_order_cost_functionality():
         print("\nCleaning up - deleting created service charges...")
         for service_charge in service_charges_created:
             try:
-                response = requests.delete(f"{API_URL}/service-charges/{service_charge.get('id')}", headers=headers)
+                response = requests.delete(f"{API_URL}/tax-charges/service-charges/{service_charge.get('id')}", headers=headers)
                 response.raise_for_status()
                 print(f"✅ Deleted service charge: {service_charge.get('name')}")
             except Exception as e:
