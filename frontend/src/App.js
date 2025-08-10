@@ -3039,6 +3039,9 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     setCustomerInfo(customerInfoData);
     setOrderType(order.order_type);
     
+    // Set applied discount IDs
+    setAppliedDiscountIds(order.applied_discount_ids || []);
+    
     // Show customer info section if this is a delivery/takeout order with customer data
     if ((order.order_type === 'delivery' || order.order_type === 'takeout' || order.order_type === 'phone_order') && 
         (order.customer_name || order.customer_phone || order.customer_address)) {
