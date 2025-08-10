@@ -2040,6 +2040,181 @@ async def calculate_taxes_and_charges(order_data: Dict[str, Any], user_id: str =
         "suggested_gratuity": suggested_gratuity
     }
 
+# Order Charge Management Endpoints
+@api_router.post("/orders/{order_id}/apply-discount")
+async def apply_discount_to_order(order_id: str, discount_data: Dict[str, Any], user_id: str = Depends(verify_token)):
+    """Apply a discount to an existing order"""
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    discount_id = discount_data.get("discount_id")
+    if not discount_id:
+        raise HTTPException(status_code=400, detail="Discount ID is required")
+    
+    # Check if discount policy exists and is active
+    discount_policy = await db.discount_policies.find_one({"id": discount_id, "active": True})
+    if not discount_policy:
+        raise HTTPException(status_code=404, detail="Discount policy not found or inactive")
+    
+    # Check if discount is already applied
+    applied_discount_ids = order.get("applied_discount_ids", [])
+    if discount_id in applied_discount_ids:
+        raise HTTPException(status_code=400, detail="Discount is already applied to this order")
+    
+    # Add discount to the order
+    applied_discount_ids.append(discount_id)
+    
+    # Recalculate order totals with the new discount
+    tax, service_charges_total, gratuity_total, discounts_total = await calculate_order_taxes_and_charges(
+        order["subtotal"], 
+        order["order_type"], 
+        order.get("party_size", 1),
+        applied_discount_ids
+    )
+    
+    new_total = order["subtotal"] + tax + service_charges_total + gratuity_total - discounts_total + order.get("tip", 0)
+    
+    # Update the order
+    update_data = {
+        "tax": tax,
+        "service_charges": service_charges_total,
+        "gratuity": gratuity_total,
+        "discounts": discounts_total,
+        "applied_discount_ids": applied_discount_ids,
+        "total": new_total,
+        "updated_at": get_current_time()
+    }
+    
+    await db.orders.update_one({"id": order_id}, {"$set": update_data})
+    
+    updated_order = await db.orders.find_one({"id": order_id})
+    return Order(**updated_order)
+
+@api_router.post("/orders/{order_id}/remove-discount")
+async def remove_discount_from_order(order_id: str, discount_data: Dict[str, Any], user_id: str = Depends(verify_token)):
+    """Remove a discount from an existing order"""
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    discount_id = discount_data.get("discount_id")
+    if not discount_id:
+        raise HTTPException(status_code=400, detail="Discount ID is required")
+    
+    # Check if discount is applied
+    applied_discount_ids = order.get("applied_discount_ids", [])
+    if discount_id not in applied_discount_ids:
+        raise HTTPException(status_code=400, detail="Discount is not applied to this order")
+    
+    # Remove discount from the order
+    applied_discount_ids.remove(discount_id)
+    
+    # Recalculate order totals without the discount
+    tax, service_charges_total, gratuity_total, discounts_total = await calculate_order_taxes_and_charges(
+        order["subtotal"], 
+        order["order_type"], 
+        order.get("party_size", 1),
+        applied_discount_ids
+    )
+    
+    new_total = order["subtotal"] + tax + service_charges_total + gratuity_total - discounts_total + order.get("tip", 0)
+    
+    # Update the order
+    update_data = {
+        "tax": tax,
+        "service_charges": service_charges_total,
+        "gratuity": gratuity_total,
+        "discounts": discounts_total,
+        "applied_discount_ids": applied_discount_ids,
+        "total": new_total,
+        "updated_at": get_current_time()
+    }
+    
+    await db.orders.update_one({"id": order_id}, {"$set": update_data})
+    
+    updated_order = await db.orders.find_one({"id": order_id})
+    return Order(**updated_order)
+
+@api_router.get("/orders/{order_id}/available-discounts")
+async def get_available_discounts_for_order(order_id: str, user_id: str = Depends(verify_token)):
+    """Get available discount policies for an order"""
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Get all active discount policies
+    discount_policies = await db.discount_policies.find({"active": True}).to_list(1000)
+    
+    available_discounts = []
+    applied_discount_ids = order.get("applied_discount_ids", [])
+    
+    for policy in discount_policies:
+        # Skip already applied discounts
+        if policy["id"] in applied_discount_ids:
+            continue
+            
+        # Check minimum order requirement
+        if policy.get("minimum_order_amount", 0) > 0 and order["subtotal"] < policy["minimum_order_amount"]:
+            continue
+            
+        # Check order type requirement
+        policy_order_types = policy.get("applies_to_order_types", [])
+        if policy_order_types and order["order_type"] not in policy_order_types:
+            continue
+            
+        available_discounts.append({
+            "id": policy["id"],
+            "name": policy["name"],
+            "description": policy.get("description", ""),
+            "amount": policy["amount"],
+            "type": policy["type"],
+            "category": policy.get("category", "general")
+        })
+    
+    return available_discounts
+
+@api_router.get("/orders/{order_id}/available-service-charges")
+async def get_available_service_charges_for_order(order_id: str, user_id: str = Depends(verify_token)):
+    """Get available service charges that can be manually applied to an order"""
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Get service charges that are not mandatory (can be manually applied/removed)
+    service_charges = await db.service_charges.find({
+        "active": True,
+        "mandatory": False  # Only non-mandatory charges can be manually managed
+    }).to_list(1000)
+    
+    available_charges = []
+    
+    for charge in service_charges:
+        # Check minimum/maximum order requirements
+        minimum_amount = charge.get("minimum_order_amount", 0)
+        if minimum_amount > 0 and order["subtotal"] < minimum_amount:
+            continue
+            
+        maximum_amount = charge.get("maximum_order_amount", 0)
+        if maximum_amount > 0 and order["subtotal"] > maximum_amount:
+            continue
+        
+        # Check order type requirement
+        charge_order_types = charge.get("applies_to_order_types", [])
+        if charge_order_types and order["order_type"] not in charge_order_types:
+            continue
+            
+        available_charges.append({
+            "id": charge["id"],
+            "name": charge["name"],
+            "description": charge.get("description", ""),
+            "amount": charge["amount"],
+            "type": charge["type"],
+            "applies_to_subtotal": charge.get("applies_to_subtotal", True)
+        })
+    
+    return available_charges
+
 # Include the router in the main app
 app.include_router(api_router)
 
