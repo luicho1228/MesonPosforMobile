@@ -4979,6 +4979,7 @@ const TaxChargesComponent = ({ onBack }) => {
     applies_to: 'subtotal', // subtotal, total_with_tax
     conditions: [], // minimum_order, party_size, order_type
     minimum_amount: '',
+    maximum_amount: '', // New field for maximum order amount
     party_size_threshold: '',
     order_types: [],
     active: true,
