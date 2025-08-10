@@ -330,6 +330,7 @@ class OrderCreate(BaseModel):
     tip: float = 0.0
     delivery_instructions: str = ""
     order_notes: str = ""  # Notes/comments for the order
+    applied_discount_ids: List[str] = []  # Discount policies to apply
 
 class PaymentRequest(BaseModel):
     payment_method: PaymentMethod
