@@ -3399,7 +3399,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
   };
 
-  const calculateTotal = () => {
+  const calculateTotal = (currentAppliedDiscountIds = appliedDiscountIds) => {
     const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
     
     // Filter taxes and service charges based on order type
