@@ -3590,6 +3590,19 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     };
   };
 
+  const openChargeManagement = async () => {
+    if (!currentOrder) {
+      alert('Please save the order first before managing charges');
+      return;
+    }
+    
+    // Fetch available discounts and service charges
+    await fetchAvailableDiscounts();
+    await fetchAvailableServiceCharges();
+    
+    setShowChargeManagementModal(true);
+  };
+
   const createOrUpdateOrder = async () => {
     if (cart.length === 0) {
       alert('Please add items to your order');
