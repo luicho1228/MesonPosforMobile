@@ -6469,7 +6469,7 @@ const TaxChargesComponent = ({ onBack }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Conditions</label>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
@@ -6486,14 +6486,62 @@ const TaxChargesComponent = ({ onBack }) => {
                     <span className="text-sm">Apply based on party size</span>
                   </label>
                   {chargeForm.conditions.includes('party_size') && (
+                    <div className="ml-6">
+                      <label className="block text-xs text-gray-500 mb-1">Minimum party size</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={chargeForm.party_size_threshold}
+                        onChange={(e) => setChargeForm({...chargeForm, party_size_threshold: e.target.value})}
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                        placeholder="6"
+                      />
+                    </div>
+                  )}
+                  
+                  <label className="flex items-center">
                     <input
-                      type="number"
-                      min="1"
-                      value={chargeForm.party_size_threshold}
-                      onChange={(e) => setChargeForm({...chargeForm, party_size_threshold: e.target.value})}
-                      className="ml-6 w-24 px-2 py-1 border border-gray-300 rounded text-sm"
-                      placeholder="6"
+                      type="checkbox"
+                      checked={chargeForm.conditions.includes('order_cost')}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setChargeForm({...chargeForm, conditions: [...chargeForm.conditions, 'order_cost']});
+                        } else {
+                          setChargeForm({...chargeForm, conditions: chargeForm.conditions.filter(c => c !== 'order_cost')});
+                        }
+                      }}
+                      className="mr-2"
                     />
+                    <span className="text-sm">Apply based on order total cost</span>
+                  </label>
+                  {chargeForm.conditions.includes('order_cost') && (
+                    <div className="ml-6 space-y-2">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Minimum order amount ($)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={chargeForm.minimum_amount}
+                          onChange={(e) => setChargeForm({...chargeForm, minimum_amount: e.target.value})}
+                          className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="25.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Maximum order amount ($) - optional</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={chargeForm.maximum_amount}
+                          onChange={(e) => setChargeForm({...chargeForm, maximum_amount: e.target.value})}
+                          className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                          placeholder="100.00"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Leave empty for no maximum</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
