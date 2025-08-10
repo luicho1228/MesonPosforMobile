@@ -6502,7 +6502,7 @@ def test_service_charge_order_cost_functionality():
             "maximum_order_amount": 150.00
         }
         
-        response = requests.post(f"{API_URL}/service-charges", json=service_charge_3_data, headers=headers)
+        response = requests.post(f"{API_URL}/tax-charges/service-charges", json=service_charge_3_data, headers=headers)
         response.raise_for_status()
         service_charge_3 = response.json()
         service_charges_created.append(service_charge_3)
