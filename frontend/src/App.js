@@ -4278,7 +4278,7 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
             {/* Discount Breakdown */}
             {breakdown.discounts.map((discount, index) => (
               <div key={index} className="flex justify-between text-sm text-red-600">
-                <span>{discount.name} ({discount.discountType === 'percentage' ? `${discount.rate}%` : `$${discount.rate}`}):</span>
+                <span>{discount.name} ({discount.type === 'percentage' ? `${discount.rate}%` : `$${discount.rate}`}):</span>
                 <span>-${discount.amount.toFixed(2)}</span>
               </div>
             ))}
