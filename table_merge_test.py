@@ -15,7 +15,7 @@ requests_session.request = lambda method, url, **kwargs: requests.Session.reques
 )
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://5019ac90-f84b-41e4-b986-f776bd62b398.preview.emergentagent.com"
+BACKEND_URL = "https://5c6211d0-c981-4aa6-b05c-67ca512180a7.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 # Helper function to generate random string
