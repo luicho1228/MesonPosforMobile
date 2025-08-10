@@ -5422,7 +5422,8 @@ const TaxChargesComponent = ({ onBack }) => {
       description: charge.description || '',
       applies_to: charge.applies_to,
       conditions: charge.conditions || [],
-      minimum_amount: charge.minimum_amount || '',
+      minimum_amount: charge.minimum_order_amount ? charge.minimum_order_amount.toString() : '',
+      maximum_amount: charge.maximum_order_amount ? charge.maximum_order_amount.toString() : '',
       party_size_threshold: charge.party_size_threshold || '',
       order_types: charge.applies_to_order_types || [], // FIX: Map from backend field name
       active: charge.active,
