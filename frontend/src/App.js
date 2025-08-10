@@ -3530,8 +3530,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     let totalDiscounts = 0;
     const discountBreakdown = [];
     
-    if (appliedDiscountIds && appliedDiscountIds.length > 0) {
-      for (const discountId of appliedDiscountIds) {
+    if (currentAppliedDiscountIds && currentAppliedDiscountIds.length > 0) {
+      for (const discountId of currentAppliedDiscountIds) {
         const discount = discountPolicies.find(d => d.id === discountId);
         if (discount && discount.active) {
           // Check if discount applies to this order
