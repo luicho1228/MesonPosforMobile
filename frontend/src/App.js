@@ -3632,7 +3632,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
         order_type: orderType,
         tip: 0,
         delivery_instructions: '',
-        order_notes: orderNotes
+        order_notes: orderNotes,
+        applied_discount_ids: appliedDiscountIds
       };
 
       const response = await axios.post(`${API}/orders`, orderData);
