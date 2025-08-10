@@ -6515,7 +6515,7 @@ def test_service_charge_order_cost_functionality():
         # Step 2: Test GET /api/service-charges endpoint
         print("\nStep 2: Testing GET /api/service-charges endpoint...")
         
-        response = requests.get(f"{API_URL}/service-charges", headers=headers)
+        response = requests.get(f"{API_URL}/tax-charges/service-charges", headers=headers)
         response.raise_for_status()
         all_service_charges = response.json()
         
