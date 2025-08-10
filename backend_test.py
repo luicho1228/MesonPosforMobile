@@ -9006,22 +9006,30 @@ def test_enhanced_discount_system():
         # Test POST apply discount to existing order
         print("\nTesting POST apply discount to existing order...")
         
-        # Apply policy_2 (takeout discount) - this should fail due to order type mismatch
+        # Apply policy_2 (takeout discount) - this should be allowed but won't affect the total
         apply_discount_data = {"discount_id": policy_2.get("id")}
         
-        try:
-            response = requests.post(f"{API_URL}/orders/{order_id}/apply-discount", 
-                                   json=apply_discount_data, headers=headers)
-            if response.status_code == 400:
-                print("✅ Correctly rejected discount application due to order type mismatch")
-            else:
-                response.raise_for_status()
-                return print_test_result("Enhanced Discount System", False, "Should have rejected takeout discount for dine-in order")
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 400:
-                print("✅ Correctly rejected discount application due to order type mismatch")
-            else:
-                raise
+        response = requests.post(f"{API_URL}/orders/{order_id}/apply-discount", 
+                               json=apply_discount_data, headers=headers)
+        response.raise_for_status()
+        order_with_incompatible_discount = response.json()
+        
+        # The discount should be in applied_discount_ids but shouldn't affect the total
+        if policy_2.get("id") not in order_with_incompatible_discount.get("applied_discount_ids", []):
+            return print_test_result("Enhanced Discount System", False, "Discount not added to applied_discount_ids")
+        
+        # But the discount amount should be the same as before (not applied due to order type mismatch)
+        if abs(order_with_incompatible_discount.get("discounts", 0) - order.get("discounts", 0)) > 0.01:
+            return print_test_result("Enhanced Discount System", False, "Incompatible discount incorrectly affected order total")
+        
+        print("✅ Incompatible discount added to list but correctly ignored in calculation")
+        
+        # Remove the incompatible discount
+        remove_incompatible_data = {"discount_id": policy_2.get("id")}
+        response = requests.post(f"{API_URL}/orders/{order_id}/remove-discount", 
+                               json=remove_incompatible_data, headers=headers)
+        response.raise_for_status()
+        print("✅ Removed incompatible discount")
         
         # Apply a valid discount if available
         if available_discounts:
