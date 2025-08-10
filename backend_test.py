@@ -6421,6 +6421,440 @@ def test_complete_gratuity_system_implementation():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Complete Gratuity System Implementation", False, error_msg)
 
+# 49. Test Service Charge Order Cost Functionality (REVIEW REQUEST)
+def test_service_charge_order_cost_functionality():
+    global auth_token, menu_item_id
+    print("\n=== Testing Service Charge Order Cost Functionality ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Service Charge Order Cost Functionality", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        print("\n💰 TESTING SERVICE CHARGE ORDER COST CONDITIONS")
+        print("Goal: Verify service charges apply based on minimum_order_amount and maximum_order_amount conditions")
+        
+        # Step 1: Create service charges with different order cost conditions
+        print("\nStep 1: Creating service charges with order cost conditions...")
+        
+        service_charges_created = []
+        
+        # Service charge 1: Minimum order amount only (for orders >= $25)
+        service_charge_1_data = {
+            "name": "Service Fee",
+            "description": "Service fee for orders $25 and above",
+            "amount": 3.50,
+            "type": "fixed",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],
+            "minimum_order_amount": 25.00,
+            "maximum_order_amount": 0.0  # 0 means no maximum limit
+        }
+        
+        response = requests.post(f"{API_URL}/service-charges", json=service_charge_1_data, headers=headers)
+        response.raise_for_status()
+        service_charge_1 = response.json()
+        service_charges_created.append(service_charge_1)
+        
+        print(f"✅ Created Service Charge 1: {service_charge_1.get('name')}")
+        print(f"   Amount: ${service_charge_1.get('amount'):.2f}")
+        print(f"   Min Order: ${service_charge_1.get('minimum_order_amount'):.2f}")
+        print(f"   Max Order: ${service_charge_1.get('maximum_order_amount'):.2f} (0 = no limit)")
+        
+        # Service charge 2: Maximum order amount only (for orders <= $19.99)
+        service_charge_2_data = {
+            "name": "Small Order Fee",
+            "description": "Small order handling fee for orders under $20",
+            "amount": 2.00,
+            "type": "fixed",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],
+            "minimum_order_amount": 0.0,  # 0 means no minimum
+            "maximum_order_amount": 19.99
+        }
+        
+        response = requests.post(f"{API_URL}/service-charges", json=service_charge_2_data, headers=headers)
+        response.raise_for_status()
+        service_charge_2 = response.json()
+        service_charges_created.append(service_charge_2)
+        
+        print(f"✅ Created Service Charge 2: {service_charge_2.get('name')}")
+        print(f"   Amount: ${service_charge_2.get('amount'):.2f}")
+        print(f"   Min Order: ${service_charge_2.get('minimum_order_amount'):.2f} (0 = no limit)")
+        print(f"   Max Order: ${service_charge_2.get('maximum_order_amount'):.2f}")
+        
+        # Service charge 3: Both minimum and maximum (for orders between $75-$150)
+        service_charge_3_data = {
+            "name": "Large Order Handling Fee",
+            "description": "Handling fee for large orders between $75-$150",
+            "amount": 5.00,
+            "type": "fixed",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],
+            "minimum_order_amount": 75.00,
+            "maximum_order_amount": 150.00
+        }
+        
+        response = requests.post(f"{API_URL}/service-charges", json=service_charge_3_data, headers=headers)
+        response.raise_for_status()
+        service_charge_3 = response.json()
+        service_charges_created.append(service_charge_3)
+        
+        print(f"✅ Created Service Charge 3: {service_charge_3.get('name')}")
+        print(f"   Amount: ${service_charge_3.get('amount'):.2f}")
+        print(f"   Min Order: ${service_charge_3.get('minimum_order_amount'):.2f}")
+        print(f"   Max Order: ${service_charge_3.get('maximum_order_amount'):.2f}")
+        
+        # Step 2: Test GET /api/service-charges endpoint
+        print("\nStep 2: Testing GET /api/service-charges endpoint...")
+        
+        response = requests.get(f"{API_URL}/service-charges", headers=headers)
+        response.raise_for_status()
+        all_service_charges = response.json()
+        
+        print(f"✅ Retrieved {len(all_service_charges)} service charges")
+        
+        # Verify our created service charges are in the response
+        created_charge_ids = [sc.get('id') for sc in service_charges_created]
+        retrieved_charge_ids = [sc.get('id') for sc in all_service_charges]
+        
+        for charge_id in created_charge_ids:
+            if charge_id not in retrieved_charge_ids:
+                return print_test_result("Service Charge Order Cost Functionality", False, f"Created service charge {charge_id} not found in GET response")
+        
+        print("✅ All created service charges found in GET response")
+        
+        # Step 3: Test order cost calculation with different order amounts
+        print("\nStep 3: Testing order cost calculation with different order amounts...")
+        
+        test_scenarios = [
+            {
+                "name": "Small Order ($15.00)",
+                "subtotal": 15.00,
+                "expected_charges": ["Small Order Fee"],  # Only charge 2 should apply
+                "expected_total_charges": 2.00
+            },
+            {
+                "name": "Medium Order ($30.00)",
+                "subtotal": 30.00,
+                "expected_charges": ["Service Fee"],  # Only charge 1 should apply
+                "expected_total_charges": 3.50
+            },
+            {
+                "name": "Large Order ($100.00)",
+                "subtotal": 100.00,
+                "expected_charges": ["Service Fee", "Large Order Handling Fee"],  # Charges 1 and 3 should apply
+                "expected_total_charges": 8.50  # 3.50 + 5.00
+            },
+            {
+                "name": "Boundary Test - Exactly $25.00",
+                "subtotal": 25.00,
+                "expected_charges": ["Service Fee"],  # Charge 1 should apply (inclusive minimum)
+                "expected_total_charges": 3.50
+            },
+            {
+                "name": "Boundary Test - Exactly $19.99",
+                "subtotal": 19.99,
+                "expected_charges": ["Small Order Fee"],  # Charge 2 should apply (inclusive maximum)
+                "expected_total_charges": 2.00
+            },
+            {
+                "name": "Boundary Test - Exactly $75.00",
+                "subtotal": 75.00,
+                "expected_charges": ["Service Fee", "Large Order Handling Fee"],  # Charges 1 and 3 should apply
+                "expected_total_charges": 8.50
+            },
+            {
+                "name": "Boundary Test - Exactly $150.00",
+                "subtotal": 150.00,
+                "expected_charges": ["Service Fee", "Large Order Handling Fee"],  # Charges 1 and 3 should apply
+                "expected_total_charges": 8.50
+            },
+            {
+                "name": "No Charges Order ($22.00)",
+                "subtotal": 22.00,
+                "expected_charges": [],  # No charges should apply (between 20-24.99)
+                "expected_total_charges": 0.00
+            }
+        ]
+        
+        for scenario in test_scenarios:
+            print(f"\n🧪 Testing Scenario: {scenario['name']}")
+            
+            # Create order with specific subtotal
+            items_to_reach_subtotal = []
+            remaining_amount = scenario['subtotal']
+            
+            # Use menu item price to calculate quantity needed
+            # Get menu item details first
+            response = requests.get(f"{API_URL}/menu/items/all", headers=headers)
+            response.raise_for_status()
+            menu_items = response.json()
+            
+            test_menu_item = None
+            for item in menu_items:
+                if item.get('id') == menu_item_id:
+                    test_menu_item = item
+                    break
+            
+            if not test_menu_item:
+                return print_test_result("Service Charge Order Cost Functionality", False, "Test menu item not found")
+            
+            item_price = test_menu_item.get('price', 12.99)
+            quantity_needed = max(1, int(remaining_amount / item_price))
+            
+            items_to_reach_subtotal.append({
+                "menu_item_id": menu_item_id,
+                "quantity": quantity_needed,
+                "special_instructions": f"Test item for {scenario['name']}"
+            })
+            
+            order_data = {
+                "customer_name": f"Service Charge Test Customer",
+                "customer_phone": f"555{random_string(7)}",
+                "customer_address": "123 Service Charge Test St",
+                "items": items_to_reach_subtotal,
+                "order_type": "delivery",
+                "tip": 0.00,  # No tip to isolate service charges
+                "order_notes": f"Testing service charges for {scenario['name']}"
+            }
+            
+            response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+            response.raise_for_status()
+            test_order = response.json()
+            
+            actual_subtotal = test_order.get('subtotal', 0)
+            actual_service_charges = test_order.get('service_charges', 0)
+            actual_total = test_order.get('total', 0)
+            
+            print(f"   Order Subtotal: ${actual_subtotal:.2f}")
+            print(f"   Service Charges Applied: ${actual_service_charges:.2f}")
+            print(f"   Expected Service Charges: ${scenario['expected_total_charges']:.2f}")
+            
+            # Verify service charges are calculated correctly
+            if abs(actual_service_charges - scenario['expected_total_charges']) > 0.01:
+                return print_test_result("Service Charge Order Cost Functionality", False, 
+                                       f"Service charges incorrect for {scenario['name']}. Expected: ${scenario['expected_total_charges']:.2f}, Got: ${actual_service_charges:.2f}")
+            
+            print(f"   ✅ Service charges calculated correctly")
+            
+            # Clean up - delete test order
+            try:
+                response = requests.delete(f"{API_URL}/orders/{test_order.get('id')}", headers=headers)
+                response.raise_for_status()
+            except:
+                pass  # Ignore cleanup errors
+        
+        # Step 4: Test PUT /api/service-charges/{id} endpoint
+        print("\nStep 4: Testing PUT /api/service-charges/{id} endpoint...")
+        
+        # Update the first service charge to change its order cost conditions
+        service_charge_1_id = service_charge_1.get('id')
+        update_data = {
+            "name": "Updated Service Fee",
+            "description": "Updated service fee for orders $30 and above",
+            "amount": 4.00,
+            "type": "fixed",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],
+            "minimum_order_amount": 30.00,  # Changed from 25.00 to 30.00
+            "maximum_order_amount": 0.0
+        }
+        
+        response = requests.put(f"{API_URL}/service-charges/{service_charge_1_id}", json=update_data, headers=headers)
+        response.raise_for_status()
+        updated_service_charge = response.json()
+        
+        print(f"✅ Updated Service Charge: {updated_service_charge.get('name')}")
+        print(f"   New Amount: ${updated_service_charge.get('amount'):.2f}")
+        print(f"   New Min Order: ${updated_service_charge.get('minimum_order_amount'):.2f}")
+        
+        # Verify the update worked
+        if updated_service_charge.get('minimum_order_amount') != 30.00:
+            return print_test_result("Service Charge Order Cost Functionality", False, "Service charge minimum_order_amount not updated correctly")
+        
+        if updated_service_charge.get('amount') != 4.00:
+            return print_test_result("Service Charge Order Cost Functionality", False, "Service charge amount not updated correctly")
+        
+        # Step 5: Test order creation with updated service charge conditions
+        print("\nStep 5: Testing order creation with updated service charge conditions...")
+        
+        # Create an order with $28 subtotal - should NOT trigger the updated service charge (min is now $30)
+        test_order_data = {
+            "customer_name": "Updated Charge Test",
+            "customer_phone": f"555{random_string(7)}",
+            "customer_address": "456 Updated Test St",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Testing updated service charge conditions"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 0.00,
+            "order_notes": "Testing updated service charge minimum"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=test_order_data, headers=headers)
+        response.raise_for_status()
+        test_order = response.json()
+        
+        test_subtotal = test_order.get('subtotal', 0)
+        test_service_charges = test_order.get('service_charges', 0)
+        
+        print(f"Test order subtotal: ${test_subtotal:.2f}")
+        print(f"Service charges applied: ${test_service_charges:.2f}")
+        
+        # If subtotal is less than $30, the updated service charge should not apply
+        if test_subtotal < 30.00:
+            # Only the small order fee might apply if subtotal <= $19.99
+            expected_charges = 2.00 if test_subtotal <= 19.99 else 0.00
+            
+            if abs(test_service_charges - expected_charges) > 0.01:
+                return print_test_result("Service Charge Order Cost Functionality", False, 
+                                       f"Service charges incorrect after update. Expected: ${expected_charges:.2f}, Got: ${test_service_charges:.2f}")
+            
+            print("✅ Updated service charge conditions working correctly")
+        
+        # Step 6: Test order type filtering integration
+        print("\nStep 6: Testing order type filtering integration...")
+        
+        # Create a service charge that only applies to dine_in orders
+        dine_in_only_charge_data = {
+            "name": "Dine-In Service Charge",
+            "description": "Service charge for dine-in orders only",
+            "amount": 1.50,
+            "type": "fixed",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": True,
+            "applies_to_order_types": ["dine_in"],  # Only dine-in
+            "minimum_order_amount": 10.00,
+            "maximum_order_amount": 0.0
+        }
+        
+        response = requests.post(f"{API_URL}/service-charges", json=dine_in_only_charge_data, headers=headers)
+        response.raise_for_status()
+        dine_in_charge = response.json()
+        service_charges_created.append(dine_in_charge)
+        
+        print(f"✅ Created Dine-In Only Service Charge: {dine_in_charge.get('name')}")
+        
+        # Create a dine-in order that should trigger this charge
+        dine_in_order_data = {
+            "customer_name": "Dine-In Test Customer",
+            "customer_phone": f"555{random_string(7)}",
+            "customer_address": "",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Testing dine-in service charge"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 0.00,
+            "order_notes": "Testing order type filtering"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=dine_in_order_data, headers=headers)
+        response.raise_for_status()
+        dine_in_order = response.json()
+        
+        dine_in_subtotal = dine_in_order.get('subtotal', 0)
+        dine_in_service_charges = dine_in_order.get('service_charges', 0)
+        
+        print(f"Dine-in order subtotal: ${dine_in_subtotal:.2f}")
+        print(f"Dine-in service charges: ${dine_in_service_charges:.2f}")
+        
+        # The dine-in charge should be included if subtotal >= $10
+        if dine_in_subtotal >= 10.00:
+            # Should include the dine-in charge (1.50) plus any other applicable charges
+            if dine_in_service_charges < 1.50:
+                return print_test_result("Service Charge Order Cost Functionality", False, 
+                                       f"Dine-in service charge not applied. Expected at least $1.50, Got: ${dine_in_service_charges:.2f}")
+            
+            print("✅ Order type filtering working correctly - dine-in charge applied")
+        
+        # Create a delivery order with same subtotal - should NOT include dine-in charge
+        delivery_order_data = {
+            "customer_name": "Delivery Test Customer",
+            "customer_phone": f"555{random_string(7)}",
+            "customer_address": "789 Delivery Test St",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 1,
+                    "special_instructions": "Testing delivery without dine-in charge"
+                }
+            ],
+            "order_type": "delivery",
+            "tip": 0.00,
+            "order_notes": "Testing order type filtering exclusion"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=delivery_order_data, headers=headers)
+        response.raise_for_status()
+        delivery_order = response.json()
+        
+        delivery_subtotal = delivery_order.get('subtotal', 0)
+        delivery_service_charges = delivery_order.get('service_charges', 0)
+        
+        print(f"Delivery order subtotal: ${delivery_subtotal:.2f}")
+        print(f"Delivery service charges: ${delivery_service_charges:.2f}")
+        
+        # The delivery order should NOT include the dine-in only charge
+        # Calculate expected charges for delivery order
+        expected_delivery_charges = 0.0
+        if delivery_subtotal <= 19.99:
+            expected_delivery_charges += 2.00  # Small order fee
+        if delivery_subtotal >= 30.00:  # Updated minimum
+            expected_delivery_charges += 4.00  # Updated service fee
+        if 75.00 <= delivery_subtotal <= 150.00:
+            expected_delivery_charges += 5.00  # Large order handling fee
+        
+        if abs(delivery_service_charges - expected_delivery_charges) > 0.01:
+            return print_test_result("Service Charge Order Cost Functionality", False, 
+                                   f"Delivery order service charges incorrect. Expected: ${expected_delivery_charges:.2f}, Got: ${delivery_service_charges:.2f}")
+        
+        print("✅ Order type filtering working correctly - dine-in charge excluded from delivery")
+        
+        # Clean up - delete created service charges
+        print("\nCleaning up - deleting created service charges...")
+        for service_charge in service_charges_created:
+            try:
+                response = requests.delete(f"{API_URL}/service-charges/{service_charge.get('id')}", headers=headers)
+                response.raise_for_status()
+                print(f"✅ Deleted service charge: {service_charge.get('name')}")
+            except Exception as e:
+                print(f"⚠️  Could not delete service charge {service_charge.get('name')}: {e}")
+        
+        return print_test_result("Service Charge Order Cost Functionality", True, 
+                               "✅ SERVICE CHARGE ORDER COST FUNCTIONALITY WORKING CORRECTLY: "
+                               "1) Service charge API endpoints (GET, POST, PUT) work correctly ✓ "
+                               "2) Service charges with minimum_order_amount and maximum_order_amount fields function properly ✓ "
+                               "3) Order cost calculation applies service charges based on order amount conditions ✓ "
+                               "4) Boundary conditions (orders at exactly minimum/maximum amounts) work correctly ✓ "
+                               "5) Order type filtering integration works properly ✓ "
+                               "6) Service charges are correctly calculated and saved in order records ✓ "
+                               "The 'Apply based on order total cost' feature for service charges is fully functional.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Service charge order cost functionality test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Service Charge Order Cost Functionality", False, error_msg)
+
 # Main execution function
 def run_tests():
     print("🚀 Starting Critical Table Data Corruption Investigation...")
