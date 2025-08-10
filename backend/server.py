@@ -1554,6 +1554,8 @@ async def update_order(order_id: str, order_data: OrderCreate, user_id: str = De
         "tax": tax,
         "service_charges": service_charges_total,
         "gratuity": gratuity_total,
+        "discounts": discounts_total,
+        "applied_discount_ids": order_data.applied_discount_ids,
         "tip": order_data.tip,
         "total": total,
         "order_type": order_data.order_type,
