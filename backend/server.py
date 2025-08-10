@@ -292,6 +292,8 @@ class Order(BaseModel):
     tax: float
     service_charges: float = 0.0  # Track service charges separately
     gratuity: float = 0.0  # Track automatic gratuity separately
+    discounts: float = 0.0  # Track applied discounts separately
+    applied_discount_ids: List[str] = []  # Track which discount policies were applied
     tip: float = 0.0
     total: float
     order_type: OrderType
