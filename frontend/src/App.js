@@ -4304,6 +4304,16 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            {/* Charge Management Button - only show when editing an existing order */}
+            {(editingActiveOrder || editingOrder) && (
+              <button
+                onClick={openChargeManagement}
+                className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 font-semibold"
+              >
+                Manage Discounts & Charges
+              </button>
+            )}
+            
             <button
               onClick={initiateCheckout}
               className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 text-lg font-semibold"
