@@ -4762,6 +4762,131 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           </div>
         </div>
       )}
+
+      {/* Charge Management Modal */}
+      {showChargeManagementModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-96 overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Manage Order Discounts & Charges</h3>
+              <button
+                onClick={() => setShowChargeManagementModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Applied Discounts Section */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Applied Discounts</h4>
+                <div className="space-y-2 mb-4">
+                  {appliedDiscountIds.length > 0 ? (
+                    appliedDiscountIds.map(discountId => {
+                      const discount = discountPolicies.find(d => d.id === discountId);
+                      return discount ? (
+                        <div key={discountId} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-medium text-green-800">{discount.name}</div>
+                              <div className="text-sm text-green-600">
+                                {discount.type === 'percentage' ? `${discount.amount}%` : `$${discount.amount.toFixed(2)}`}
+                                {discount.description && ` - ${discount.description}`}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => removeDiscountFromOrder(discountId)}
+                              className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : null;
+                    })
+                  ) : (
+                    <p className="text-gray-500 text-sm">No discounts applied</p>
+                  )}
+                </div>
+
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Available Discounts</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {availableDiscounts.length > 0 ? (
+                    availableDiscounts.map(discount => (
+                      <div key={discount.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium text-gray-800">{discount.name}</div>
+                            <div className="text-sm text-gray-600">
+                              {discount.type === 'percentage' ? `${discount.amount}%` : `$${discount.amount.toFixed(2)}`}
+                              {discount.description && ` - ${discount.description}`}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => applyDiscountToOrder(discount.id)}
+                            className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No available discounts for this order</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Available Service Charges Section */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Available Service Charges</h4>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {availableServiceCharges.length > 0 ? (
+                    availableServiceCharges.map(charge => (
+                      <div key={charge.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium text-blue-800">{charge.name}</div>
+                            <div className="text-sm text-blue-600">
+                              {charge.type === 'percentage' ? `${charge.amount}%` : `$${charge.amount.toFixed(2)}`}
+                              {charge.description && ` - ${charge.description}`}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Applies to: {charge.applies_to_subtotal ? 'Subtotal' : 'Total with Tax'}
+                            </div>
+                          </div>
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                            Auto-Applied
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No additional service charges available</p>
+                  )}
+                </div>
+
+                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Note:</strong> Service charges are automatically applied based on order conditions. 
+                    Only non-mandatory service charges can be manually managed here. Taxes cannot be modified.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowChargeManagementModal(false)}
+                className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
