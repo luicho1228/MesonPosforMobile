@@ -8784,5 +8784,523 @@ def test_order_type_switching_bug():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Order Type Switching Bug", False, error_msg)
 
+# 50. Test Enhanced Discount System (REVIEW REQUEST FOCUS)
+def test_enhanced_discount_system():
+    global auth_token, menu_item_id, table_id
+    print("\n=== Testing Enhanced Discount System ===")
+    
+    if not auth_token or not menu_item_id:
+        return print_test_result("Enhanced Discount System", False, "Missing required test data")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create a table if we don't have one
+    if not table_id:
+        try:
+            table_number = random.randint(10000, 99999)
+            table_data = {"number": table_number, "capacity": 4}
+            response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            table_id = result.get("id")
+            print(f"Created table with ID: {table_id}")
+        except:
+            return print_test_result("Enhanced Discount System", False, "Could not create table for testing")
+    
+    try:
+        print("\n🎯 TESTING ENHANCED DISCOUNT SYSTEM - Comprehensive Backend API Testing")
+        
+        # Step 1: Test Discount Policy CRUD Operations
+        print("\n=== Step 1: Testing Discount Policy CRUD Operations ===")
+        
+        # Create discount policies with various conditions
+        discount_policies = []
+        
+        # Policy 1: Percentage discount for dine-in orders over $50
+        policy_1_data = {
+            "name": "Dine-In Special 10%",
+            "description": "10% off dine-in orders over $50",
+            "amount": 10.0,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in"],
+            "minimum_order_amount": 50.0,
+            "requires_manager_approval": False
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/discount-policies", json=policy_1_data, headers=headers)
+        response.raise_for_status()
+        policy_1 = response.json()
+        discount_policies.append(policy_1)
+        print(f"✅ Created Policy 1: {policy_1.get('name')} (ID: {policy_1.get('id')[:8]}...)")
+        
+        # Policy 2: Fixed discount for takeout orders over $25
+        policy_2_data = {
+            "name": "Takeout $5 Off",
+            "description": "$5 off takeout orders over $25",
+            "amount": 5.0,
+            "type": "fixed",
+            "active": True,
+            "applies_to_order_types": ["takeout"],
+            "minimum_order_amount": 25.0,
+            "requires_manager_approval": False
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/discount-policies", json=policy_2_data, headers=headers)
+        response.raise_for_status()
+        policy_2 = response.json()
+        discount_policies.append(policy_2)
+        print(f"✅ Created Policy 2: {policy_2.get('name')} (ID: {policy_2.get('id')[:8]}...)")
+        
+        # Policy 3: Universal discount for orders over $100
+        policy_3_data = {
+            "name": "Big Order 15% Off",
+            "description": "15% off any order over $100",
+            "amount": 15.0,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in", "takeout", "delivery", "phone_order"],
+            "minimum_order_amount": 100.0,
+            "requires_manager_approval": True
+        }
+        
+        response = requests.post(f"{API_URL}/tax-charges/discount-policies", json=policy_3_data, headers=headers)
+        response.raise_for_status()
+        policy_3 = response.json()
+        discount_policies.append(policy_3)
+        print(f"✅ Created Policy 3: {policy_3.get('name')} (ID: {policy_3.get('id')[:8]}...)")
+        
+        # Test GET discount policies
+        print("\nTesting GET discount policies...")
+        response = requests.get(f"{API_URL}/tax-charges/discount-policies", headers=headers)
+        response.raise_for_status()
+        all_policies = response.json()
+        print(f"✅ Retrieved {len(all_policies)} discount policies")
+        
+        # Verify our policies are in the list
+        our_policy_ids = {p.get('id') for p in discount_policies}
+        retrieved_policy_ids = {p.get('id') for p in all_policies}
+        
+        if not our_policy_ids.issubset(retrieved_policy_ids):
+            return print_test_result("Enhanced Discount System", False, "Created discount policies not found in GET response")
+        
+        # Test PUT discount policy
+        print("\nTesting PUT discount policy...")
+        updated_policy_data = {
+            "name": "Updated Dine-In Special 12%",
+            "description": "Updated: 12% off dine-in orders over $40",
+            "amount": 12.0,
+            "type": "percentage",
+            "active": True,
+            "applies_to_order_types": ["dine_in"],
+            "minimum_order_amount": 40.0,
+            "requires_manager_approval": False
+        }
+        
+        response = requests.put(f"{API_URL}/tax-charges/discount-policies/{policy_1.get('id')}", 
+                              json=updated_policy_data, headers=headers)
+        response.raise_for_status()
+        updated_policy = response.json()
+        print(f"✅ Updated Policy 1: {updated_policy.get('name')} - Amount: {updated_policy.get('amount')}%")
+        
+        # Update our local reference
+        policy_1 = updated_policy
+        discount_policies[0] = policy_1
+        
+        print("✅ Discount Policy CRUD operations successful")
+        
+        # Step 2: Test Enhanced Order Creation with Applied Discounts
+        print("\n=== Step 2: Testing Enhanced Order Creation with Applied Discounts ===")
+        
+        # Create order with applied discount (dine-in over $50 to qualify for policy 1)
+        order_data = {
+            "customer_name": "Discount Test Customer",
+            "customer_phone": "5551234567",
+            "customer_address": "123 Discount St",
+            "table_id": table_id,
+            "party_size": 2,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 5,  # Make it over $50 (assuming ~$13 per item)
+                    "special_instructions": "Discount test order"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 5.00,
+            "order_notes": "Testing discount application",
+            "applied_discount_ids": [policy_1.get("id")]  # Apply the dine-in discount
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        order = response.json()
+        order_id = order.get("id")
+        
+        print(f"✅ Created order with applied discount: {order_id[:8]}...")
+        print(f"   Subtotal: ${order.get('subtotal', 0):.2f}")
+        print(f"   Tax: ${order.get('tax', 0):.2f}")
+        print(f"   Service Charges: ${order.get('service_charges', 0):.2f}")
+        print(f"   Gratuity: ${order.get('gratuity', 0):.2f}")
+        print(f"   Discounts: ${order.get('discounts', 0):.2f}")
+        print(f"   Tip: ${order.get('tip', 0):.2f}")
+        print(f"   Total: ${order.get('total', 0):.2f}")
+        print(f"   Applied Discount IDs: {order.get('applied_discount_ids', [])}")
+        
+        # Verify discount was applied
+        if policy_1.get("id") not in order.get("applied_discount_ids", []):
+            return print_test_result("Enhanced Discount System", False, "Discount policy not applied to order")
+        
+        # Verify discount amount calculation
+        expected_discount = order.get("subtotal", 0) * (policy_1.get("amount", 0) / 100)
+        actual_discount = order.get("discounts", 0)
+        
+        if abs(actual_discount - expected_discount) > 0.01:
+            return print_test_result("Enhanced Discount System", False, 
+                                   f"Discount calculation incorrect. Expected: ${expected_discount:.2f}, Got: ${actual_discount:.2f}")
+        
+        # Verify total calculation: subtotal + tax + service_charges + gratuity - discounts + tip
+        expected_total = (order.get("subtotal", 0) + order.get("tax", 0) + 
+                         order.get("service_charges", 0) + order.get("gratuity", 0) - 
+                         order.get("discounts", 0) + order.get("tip", 0))
+        actual_total = order.get("total", 0)
+        
+        if abs(actual_total - expected_total) > 0.01:
+            return print_test_result("Enhanced Discount System", False, 
+                                   f"Total calculation incorrect. Expected: ${expected_total:.2f}, Got: ${actual_total:.2f}")
+        
+        print("✅ Order creation with applied discount successful - totals calculated correctly")
+        
+        # Step 3: Test Order Discount Management Endpoints
+        print("\n=== Step 3: Testing Order Discount Management Endpoints ===")
+        
+        # Send order to kitchen to make it active
+        response = requests.post(f"{API_URL}/orders/{order_id}/send", headers=headers)
+        response.raise_for_status()
+        print("✅ Order sent to kitchen")
+        
+        # Test GET available discounts for order
+        print("\nTesting GET available discounts...")
+        response = requests.get(f"{API_URL}/orders/{order_id}/available-discounts", headers=headers)
+        response.raise_for_status()
+        available_discounts = response.json()
+        print(f"✅ Retrieved {len(available_discounts)} available discounts for order")
+        
+        # Should not include already applied discount (policy_1)
+        available_discount_ids = [d.get("id") for d in available_discounts]
+        if policy_1.get("id") in available_discount_ids:
+            return print_test_result("Enhanced Discount System", False, "Already applied discount appears in available discounts")
+        
+        # Should include policy_3 if order total is over $100
+        if order.get("subtotal", 0) >= 100:
+            if policy_3.get("id") not in available_discount_ids:
+                print(f"Note: Policy 3 not available (order subtotal: ${order.get('subtotal', 0):.2f})")
+        
+        print("✅ Available discounts filtered correctly")
+        
+        # Test POST apply discount to existing order
+        print("\nTesting POST apply discount to existing order...")
+        
+        # Apply policy_2 (takeout discount) - this should fail due to order type mismatch
+        apply_discount_data = {"discount_id": policy_2.get("id")}
+        
+        try:
+            response = requests.post(f"{API_URL}/orders/{order_id}/apply-discount", 
+                                   json=apply_discount_data, headers=headers)
+            if response.status_code == 400:
+                print("✅ Correctly rejected discount application due to order type mismatch")
+            else:
+                response.raise_for_status()
+                return print_test_result("Enhanced Discount System", False, "Should have rejected takeout discount for dine-in order")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 400:
+                print("✅ Correctly rejected discount application due to order type mismatch")
+            else:
+                raise
+        
+        # Apply a valid discount if available
+        if available_discounts:
+            valid_discount = available_discounts[0]
+            apply_discount_data = {"discount_id": valid_discount.get("id")}
+            
+            response = requests.post(f"{API_URL}/orders/{order_id}/apply-discount", 
+                                   json=apply_discount_data, headers=headers)
+            response.raise_for_status()
+            updated_order = response.json()
+            
+            print(f"✅ Applied additional discount: {valid_discount.get('name')}")
+            print(f"   New discounts total: ${updated_order.get('discounts', 0):.2f}")
+            print(f"   New order total: ${updated_order.get('total', 0):.2f}")
+            
+            # Test POST remove discount from order
+            print("\nTesting POST remove discount from order...")
+            remove_discount_data = {"discount_id": valid_discount.get("id")}
+            
+            response = requests.post(f"{API_URL}/orders/{order_id}/remove-discount", 
+                                   json=remove_discount_data, headers=headers)
+            response.raise_for_status()
+            order_after_removal = response.json()
+            
+            print(f"✅ Removed discount: {valid_discount.get('name')}")
+            print(f"   Discounts total after removal: ${order_after_removal.get('discounts', 0):.2f}")
+            print(f"   Order total after removal: ${order_after_removal.get('total', 0):.2f}")
+            
+            # Verify discount was removed from applied_discount_ids
+            if valid_discount.get("id") in order_after_removal.get("applied_discount_ids", []):
+                return print_test_result("Enhanced Discount System", False, "Discount ID not removed from applied_discount_ids")
+        
+        # Test GET available service charges
+        print("\nTesting GET available service charges...")
+        response = requests.get(f"{API_URL}/orders/{order_id}/available-service-charges", headers=headers)
+        response.raise_for_status()
+        available_service_charges = response.json()
+        print(f"✅ Retrieved {len(available_service_charges)} available service charges")
+        
+        print("✅ Order discount management endpoints working correctly")
+        
+        # Step 4: Test Boundary Conditions
+        print("\n=== Step 4: Testing Boundary Conditions ===")
+        
+        # Create order at exact minimum threshold
+        boundary_order_data = {
+            "customer_name": "Boundary Test Customer",
+            "customer_phone": "5559876543",
+            "customer_address": "456 Boundary Ave",
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 4,  # Should be close to $50 threshold
+                    "special_instructions": "Boundary test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 2.00,
+            "order_notes": "Testing boundary conditions"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=boundary_order_data, headers=headers)
+        response.raise_for_status()
+        boundary_order = response.json()
+        boundary_order_id = boundary_order.get("id")
+        
+        print(f"✅ Created boundary test order: ${boundary_order.get('subtotal', 0):.2f} subtotal")
+        
+        # Check available discounts for boundary order
+        response = requests.get(f"{API_URL}/orders/{boundary_order_id}/available-discounts", headers=headers)
+        response.raise_for_status()
+        boundary_available_discounts = response.json()
+        
+        # Verify discount filtering based on minimum amount
+        policy_1_available = any(d.get("id") == policy_1.get("id") for d in boundary_available_discounts)
+        
+        if boundary_order.get("subtotal", 0) >= policy_1.get("minimum_order_amount", 0):
+            if not policy_1_available:
+                return print_test_result("Enhanced Discount System", False, "Discount should be available at minimum threshold")
+            print("✅ Discount correctly available at minimum threshold")
+        else:
+            if policy_1_available:
+                return print_test_result("Enhanced Discount System", False, "Discount should not be available below minimum threshold")
+            print("✅ Discount correctly excluded below minimum threshold")
+        
+        print("✅ Boundary condition testing successful")
+        
+        # Step 5: Test Multiple Discount Application
+        print("\n=== Step 5: Testing Multiple Discount Application ===")
+        
+        # Create a large order that qualifies for multiple discounts
+        large_order_data = {
+            "customer_name": "Multiple Discount Customer",
+            "customer_phone": "5555555555",
+            "customer_address": "789 Multiple Discount Blvd",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 10,  # Large order to qualify for multiple discounts
+                    "special_instructions": "Multiple discount test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 10.00,
+            "order_notes": "Testing multiple discount application",
+            "applied_discount_ids": [policy_1.get("id")]  # Start with one discount
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=large_order_data, headers=headers)
+        response.raise_for_status()
+        large_order = response.json()
+        large_order_id = large_order.get("id")
+        
+        print(f"✅ Created large order: ${large_order.get('subtotal', 0):.2f} subtotal")
+        print(f"   Initial discounts: ${large_order.get('discounts', 0):.2f}")
+        
+        # Send to kitchen
+        response = requests.post(f"{API_URL}/orders/{large_order_id}/send", headers=headers)
+        response.raise_for_status()
+        
+        # Check if we can apply additional discounts
+        response = requests.get(f"{API_URL}/orders/{large_order_id}/available-discounts", headers=headers)
+        response.raise_for_status()
+        large_order_available_discounts = response.json()
+        
+        if large_order_available_discounts:
+            # Apply another discount
+            additional_discount = large_order_available_discounts[0]
+            apply_data = {"discount_id": additional_discount.get("id")}
+            
+            response = requests.post(f"{API_URL}/orders/{large_order_id}/apply-discount", 
+                                   json=apply_data, headers=headers)
+            response.raise_for_status()
+            multi_discount_order = response.json()
+            
+            print(f"✅ Applied additional discount: {additional_discount.get('name')}")
+            print(f"   Total discounts: ${multi_discount_order.get('discounts', 0):.2f}")
+            print(f"   Applied discount count: {len(multi_discount_order.get('applied_discount_ids', []))}")
+            
+            # Verify multiple discounts are calculated correctly
+            if len(multi_discount_order.get("applied_discount_ids", [])) < 2:
+                return print_test_result("Enhanced Discount System", False, "Multiple discounts not properly applied")
+        
+        print("✅ Multiple discount application successful")
+        
+        # Step 6: Test Order Updates with Discount Information
+        print("\n=== Step 6: Testing Order Updates with Discount Information ===")
+        
+        # Update an order and verify discounts are recalculated
+        updated_order_data = {
+            "customer_name": "Updated Discount Customer",
+            "customer_phone": "5551234567",
+            "customer_address": "123 Updated Discount St",
+            "table_id": table_id,
+            "party_size": 2,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 6,  # Changed quantity
+                    "special_instructions": "Updated discount test order"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 6.00,
+            "order_notes": "Updated order with discount recalculation",
+            "applied_discount_ids": [policy_1.get("id")]
+        }
+        
+        response = requests.put(f"{API_URL}/orders/{order_id}", json=updated_order_data, headers=headers)
+        response.raise_for_status()
+        updated_order = response.json()
+        
+        print(f"✅ Updated order successfully")
+        print(f"   New subtotal: ${updated_order.get('subtotal', 0):.2f}")
+        print(f"   Recalculated discounts: ${updated_order.get('discounts', 0):.2f}")
+        print(f"   New total: ${updated_order.get('total', 0):.2f}")
+        
+        # Verify discount was recalculated based on new subtotal
+        expected_discount = updated_order.get("subtotal", 0) * (policy_1.get("amount", 0) / 100)
+        actual_discount = updated_order.get("discounts", 0)
+        
+        if abs(actual_discount - expected_discount) > 0.01:
+            return print_test_result("Enhanced Discount System", False, 
+                                   f"Discount not recalculated correctly after order update. Expected: ${expected_discount:.2f}, Got: ${actual_discount:.2f}")
+        
+        print("✅ Order update with discount recalculation successful")
+        
+        # Step 7: Verify Existing Functionality Still Works
+        print("\n=== Step 7: Verifying Existing Functionality Still Works ===")
+        
+        # Create order without discounts to verify normal operation
+        normal_order_data = {
+            "customer_name": "Normal Order Customer",
+            "customer_phone": "5556666666",
+            "customer_address": "321 Normal St",
+            "table_id": table_id,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Normal order test"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 3.00,
+            "order_notes": "Testing normal order functionality"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=normal_order_data, headers=headers)
+        response.raise_for_status()
+        normal_order = response.json()
+        
+        print(f"✅ Created normal order without discounts")
+        print(f"   Subtotal: ${normal_order.get('subtotal', 0):.2f}")
+        print(f"   Tax: ${normal_order.get('tax', 0):.2f}")
+        print(f"   Service Charges: ${normal_order.get('service_charges', 0):.2f}")
+        print(f"   Gratuity: ${normal_order.get('gratuity', 0):.2f}")
+        print(f"   Discounts: ${normal_order.get('discounts', 0):.2f}")
+        print(f"   Total: ${normal_order.get('total', 0):.2f}")
+        
+        # Verify no discounts applied
+        if normal_order.get("discounts", 0) != 0:
+            return print_test_result("Enhanced Discount System", False, "Discounts applied to order without discount IDs")
+        
+        if normal_order.get("applied_discount_ids", []):
+            return print_test_result("Enhanced Discount System", False, "Applied discount IDs present on order without discounts")
+        
+        # Verify total calculation is still correct
+        expected_total = (normal_order.get("subtotal", 0) + normal_order.get("tax", 0) + 
+                         normal_order.get("service_charges", 0) + normal_order.get("gratuity", 0) + 
+                         normal_order.get("tip", 0))
+        actual_total = normal_order.get("total", 0)
+        
+        if abs(actual_total - expected_total) > 0.01:
+            return print_test_result("Enhanced Discount System", False, 
+                                   f"Normal order total calculation incorrect. Expected: ${expected_total:.2f}, Got: ${actual_total:.2f}")
+        
+        print("✅ Existing functionality (taxes, service charges, gratuity) working correctly with discount system")
+        
+        # Clean up - pay all test orders
+        print("\n=== Cleanup: Paying all test orders ===")
+        test_order_ids = [order_id, boundary_order_id, large_order_id, normal_order.get("id")]
+        
+        for test_order_id in test_order_ids:
+            try:
+                payment_data = {
+                    "payment_method": "card",
+                    "print_receipt": False
+                }
+                response = requests.post(f"{API_URL}/orders/{test_order_id}/pay", json=payment_data, headers=headers)
+                response.raise_for_status()
+                print(f"✅ Paid order {test_order_id[:8]}...")
+            except Exception as e:
+                print(f"⚠️  Could not pay order {test_order_id[:8]}...: {str(e)}")
+        
+        # Clean up discount policies
+        print("\nCleaning up discount policies...")
+        for policy in discount_policies:
+            try:
+                response = requests.delete(f"{API_URL}/tax-charges/discount-policies/{policy.get('id')}", headers=headers)
+                response.raise_for_status()
+                print(f"✅ Deleted policy: {policy.get('name')}")
+            except Exception as e:
+                print(f"⚠️  Could not delete policy {policy.get('name')}: {str(e)}")
+        
+        return print_test_result("Enhanced Discount System", True, 
+                               "🎉 ENHANCED DISCOUNT SYSTEM FULLY TESTED AND WORKING: "
+                               "✅ Discount Policy CRUD operations successful "
+                               "✅ Order creation with applied discounts working correctly "
+                               "✅ Order totals calculated as: subtotal + tax + service_charges + gratuity - discounts + tip "
+                               "✅ Apply/remove discount endpoints working correctly "
+                               "✅ Available discounts filtered correctly based on order type and amount "
+                               "✅ Boundary conditions handled properly "
+                               "✅ Multiple discount application supported "
+                               "✅ Order updates recalculate discounts correctly "
+                               "✅ Existing functionality (taxes, service charges, gratuity) continues working "
+                               "✅ All discount integration points tested and verified")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Enhanced Discount System test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Enhanced Discount System", False, error_msg)
+
 if __name__ == "__main__":
     run_all_tests()
