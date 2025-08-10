@@ -3756,6 +3756,75 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     }
   };
 
+  // Discount and charge management functions
+  const fetchAvailableDiscounts = async () => {
+    if (!currentOrder) return;
+    
+    try {
+      const response = await axios.get(`${API}/orders/${currentOrder.id}/available-discounts`);
+      setAvailableDiscounts(response.data);
+    } catch (error) {
+      console.error('Error fetching available discounts:', error);
+    }
+  };
+
+  const fetchAvailableServiceCharges = async () => {
+    if (!currentOrder) return;
+    
+    try {
+      const response = await axios.get(`${API}/orders/${currentOrder.id}/available-service-charges`);
+      setAvailableServiceCharges(response.data);
+    } catch (error) {
+      console.error('Error fetching available service charges:', error);
+    }
+  };
+
+  const applyDiscountToOrder = async (discountId) => {
+    try {
+      const response = await axios.post(`${API}/orders/${currentOrder.id}/apply-discount`, {
+        discount_id: discountId
+      });
+      
+      // Update the current order with new totals
+      setCurrentOrder(response.data);
+      setAppliedDiscountIds(response.data.applied_discount_ids || []);
+      
+      // Refresh available discounts
+      await fetchAvailableDiscounts();
+      
+      alert('Discount applied successfully!');
+    } catch (error) {
+      console.error('Error applying discount:', error);
+      alert('Failed to apply discount: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const removeDiscountFromOrder = async (discountId) => {
+    try {
+      const response = await axios.post(`${API}/orders/${currentOrder.id}/remove-discount`, {
+        discount_id: discountId
+      });
+      
+      // Update the current order with new totals
+      setCurrentOrder(response.data);
+      setAppliedDiscountIds(response.data.applied_discount_ids || []);
+      
+      // Refresh available discounts
+      await fetchAvailableDiscounts();
+      
+      alert('Discount removed successfully!');
+    } catch (error) {
+      console.error('Error removing discount:', error);
+      alert('Failed to remove discount: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const openChargeManagement = async () => {
+    await fetchAvailableDiscounts();
+    await fetchAvailableServiceCharges();
+    setShowChargeManagementModal(true);
+  };
+
 
   const [orderTotals, setOrderTotals] = useState({
     subtotal: 0,
