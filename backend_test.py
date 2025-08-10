@@ -7630,6 +7630,11 @@ if __name__ == "__main__":
             test_results["Complete Gratuity System Implementation"]["success"] = success
             test_results["Complete Gratuity System Implementation"]["details"] = details
             
+            # Run the Service Charge Order Cost Functionality test
+            success, details = test_service_charge_order_cost_functionality()
+            test_results["Service Charge Order Cost Functionality"]["success"] = success
+            test_results["Service Charge Order Cost Functionality"]["details"] = details
+            
             # Print summary
             print("\n" + "="*80)
             print("📊 COMPLETE GRATUITY SYSTEM IMPLEMENTATION TEST SUMMARY")
