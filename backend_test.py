@@ -6670,7 +6670,7 @@ def test_service_charge_order_cost_functionality():
             "maximum_order_amount": 0.0
         }
         
-        response = requests.put(f"{API_URL}/service-charges/{service_charge_1_id}", json=update_data, headers=headers)
+        response = requests.put(f"{API_URL}/tax-charges/service-charges/{service_charge_1_id}", json=update_data, headers=headers)
         response.raise_for_status()
         updated_service_charge = response.json()
         
