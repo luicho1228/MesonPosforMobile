@@ -469,6 +469,7 @@ class ServiceChargeCreate(BaseModel):
     applies_to_subtotal: bool = True
     applies_to_order_types: List[str] = ["dine_in", "takeout", "delivery", "phone_order"]
     minimum_order_amount: float = 0.0
+    maximum_order_amount: float = 0.0  # 0 means no maximum limit
 
 class GratuityRuleCreate(BaseModel):
     name: str
