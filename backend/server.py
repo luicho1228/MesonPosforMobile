@@ -1151,13 +1151,14 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(verify_to
         processed_items.append(order_item)
         subtotal += item_total
     
-    # Calculate dynamic taxes, service charges, and gratuity
-    tax, service_charges_total, gratuity_total = await calculate_order_taxes_and_charges(
+    # Calculate dynamic taxes, service charges, gratuity, and discounts
+    tax, service_charges_total, gratuity_total, discounts_total = await calculate_order_taxes_and_charges(
         subtotal, 
         order_data.order_type, 
-        order_data.party_size
+        order_data.party_size,
+        order_data.applied_discount_ids
     )
-    total = subtotal + tax + service_charges_total + gratuity_total + order_data.tip
+    total = subtotal + tax + service_charges_total + gratuity_total - discounts_total + order_data.tip
     
     # Generate order number
     order_count = await db.orders.count_documents({})
