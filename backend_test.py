@@ -7644,7 +7644,7 @@ if __name__ == "__main__":
             failed = 0
             
             for test_name, result in test_results.items():
-                if test_name in ["Authentication System", "Menu Management API", "Complete Gratuity System Implementation"]:
+                if test_name in ["Authentication System", "Menu Management API", "Complete Gratuity System Implementation", "Service Charge Order Cost Functionality"]:
                     status = "✅ PASSED" if result["success"] else "❌ FAILED"
                     print(f"{test_name}: {status}")
                     if result["details"]:
