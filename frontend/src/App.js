@@ -1611,6 +1611,12 @@ const ActiveOrders = ({ onOrderClick, refreshTrigger }) => {
                       <span>${order.service_charges.toFixed(2)}</span>
                     </div>
                   )}
+                  {order.discounts > 0 && (
+                    <div className="flex justify-between text-red-600">
+                      <span>Discounts:</span>
+                      <span>-${order.discounts.toFixed(2)}</span>
+                    </div>
+                  )}
                   {order.tip > 0 && (
                     <div className="flex justify-between text-purple-600">
                       <span>Tip:</span>
