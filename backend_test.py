@@ -8803,7 +8803,7 @@ def test_enhanced_discount_system():
     if not table_id:
         try:
             table_number = random.randint(10000, 99999)
-            table_data = {"number": table_number, "capacity": 4}
+            table_data = {"name": f"Table {table_number}", "capacity": 4}
             response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
             response.raise_for_status()
             result = response.json()
