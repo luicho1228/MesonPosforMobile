@@ -527,11 +527,16 @@ async def verify_user_pin(pin: str) -> Optional[Dict]:
             return user
     return None
 
-async def calculate_order_taxes_and_charges(subtotal: float, order_type: str, party_size: int = 1) -> tuple[float, float, float]:
-    """Calculate dynamic taxes, service charges, and gratuity for an order"""
+async def calculate_order_taxes_and_charges(subtotal: float, order_type: str, party_size: int = 1, 
+                                           applied_discounts: List[str] = None) -> tuple[float, float, float, float]:
+    """Calculate dynamic taxes, service charges, gratuity, and discounts for an order"""
+    if applied_discounts is None:
+        applied_discounts = []
+    
     total_tax = 0.0
     total_service_charges = 0.0
     total_gratuity = 0.0
+    total_discounts = 0.0
     
     # Get active tax rates that apply to this order type
     # Include taxes that either:
@@ -609,7 +614,31 @@ async def calculate_order_taxes_and_charges(subtotal: float, order_type: str, pa
         else:  # fixed
             total_gratuity += gratuity["amount"]
     
-    return total_tax, total_service_charges, total_gratuity
+    # Calculate applied discounts
+    if applied_discounts:
+        discount_policies = await db.discount_policies.find({
+            "id": {"$in": applied_discounts},
+            "active": True
+        }).to_list(1000)
+        
+        for discount in discount_policies:
+            # Check minimum order requirement
+            if discount.get("minimum_order_amount", 0) > 0 and subtotal < discount["minimum_order_amount"]:
+                continue
+                
+            # Check order type if specified
+            discount_order_types = discount.get("applies_to_order_types", [])
+            if discount_order_types and order_type not in discount_order_types:
+                continue
+                
+            if discount["type"] == "percentage":
+                discount_amount = subtotal * (discount["amount"] / 100)
+            else:  # fixed
+                discount_amount = discount["amount"]
+                
+            total_discounts += discount_amount
+    
+    return total_tax, total_service_charges, total_gratuity, total_discounts
 
 # Routes
 
