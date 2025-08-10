@@ -566,9 +566,14 @@ async def calculate_order_taxes_and_charges(subtotal: float, order_type: str, pa
     }).to_list(1000)
     
     for charge in service_charges:
-        # Check if charge meets minimum order requirements (if any)
-        minimum_amount = charge.get("minimum_amount", 0)
-        if subtotal < minimum_amount:
+        # Check if charge meets minimum order requirements
+        minimum_amount = charge.get("minimum_order_amount", 0)
+        if minimum_amount > 0 and subtotal < minimum_amount:
+            continue
+            
+        # Check if charge meets maximum order requirements  
+        maximum_amount = charge.get("maximum_order_amount", 0)
+        if maximum_amount > 0 and subtotal > maximum_amount:
             continue
             
         if charge["type"] == "percentage":
