@@ -5770,6 +5770,9 @@ const TaxChargesComponent = ({ onBack }) => {
         alert('Service charge added successfully');
       }
 
+      // Refresh the data to trigger recalculation in any active orders
+      await fetchTaxChargesData();
+
       setShowChargeModal(false);
       setEditingItem(null);
       resetChargeForm();
