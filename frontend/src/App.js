@@ -5214,10 +5214,11 @@ const OrderDetailModal = ({ order, onClose }) => {
   );
 };
 
-// Table Merge Modal Component
+// Enhanced Table Merge Modal Component
 const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfirmMerge, onCancel }) => {
   const [existingOrder, setExistingOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [merging, setMerging] = useState(false);
 
   useEffect(() => {
     const fetchExistingOrder = async () => {
@@ -5237,17 +5238,37 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
   const currentCartTotal = currentCart.reduce((sum, item) => sum + (item.total_price || item.price || 0), 0);
   const existingOrderTotal = existingOrder?.subtotal || 0;
   const mergedTotal = currentCartTotal + existingOrderTotal;
-  const estimatedTax = mergedTotal * 0.08;
-  const finalTotal = mergedTotal + estimatedTax + (currentOrderInfo.tip || 0);
+  
+  // Estimate taxes and charges for merged order
+  const estimatedTax = mergedTotal * 0.0825; // More accurate tax rate
+  const estimatedServiceCharges = mergedTotal > 50 ? mergedTotal * 0.03 : 0; // Service charge for large orders
+  const finalTotal = mergedTotal + estimatedTax + estimatedServiceCharges + (currentOrderInfo.tip || 0);
+
+  const handleMerge = async () => {
+    setMerging(true);
+    try {
+      await onConfirmMerge();
+    } catch (error) {
+      console.error('Error merging orders:', error);
+      alert('Failed to merge orders. Please try again.');
+    } finally {
+      setMerging(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl p-6 max-w-4xl w-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>Loading existing order details...</p>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-600">Loading existing order details...</p>
+            <p className="text-sm text-gray-400 mt-2">Fetching information for {occupiedTable?.name || `Table ${occupiedTable?.number}`}</p>
           </div>
+        </div>
+      </div>
+    );
+  }
         </div>
       </div>
     );
