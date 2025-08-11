@@ -4594,9 +4594,12 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                   key={table.id}
                   onClick={() => {
                     if (table.status === 'occupied') {
-                      // Show table merge modal for occupied table
-                      setOccupiedTableToMerge(table);
-                      setShowTableMergeModal(true);
+                      // Show enhanced table assignment warning for occupied table
+                      setConflictingTable(table);
+                      setShowTableAssignmentWarning(true);
+                    } else if (table.status === 'cleaning') {
+                      // Show warning for cleaning table
+                      alert(`${getTableDisplayName(table)} is currently being cleaned. Please select another table.`);
                     } else {
                       // Assign available table
                       setAssignedTable(table);
@@ -4615,12 +4618,18 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
                       ? 'border-orange-500 bg-orange-50 text-orange-700 hover:bg-orange-100'
                       : 'border-red-500 bg-red-50 text-red-700 cursor-not-allowed'
                   }`}
-                  disabled={table.status === 'cleaning'}
+                  disabled={false} // Remove the cleaning disabled state, handle it in onClick
                 >
                   <div className="text-lg font-bold">{getTableDisplayName(table)}</div>
                   <div className="text-sm capitalize">{table.status}</div>
                   {table.status === 'occupied' && (
-                    <div className="text-xs mt-1">Click to merge</div>
+                    <div className="text-xs mt-1 bg-orange-200 px-2 py-1 rounded">⚠️ Occupied - Click for options</div>
+                  )}
+                  {table.status === 'cleaning' && (
+                    <div className="text-xs mt-1 bg-red-200 px-2 py-1 rounded">🧹 Being cleaned</div>
+                  )}
+                  {table.status === 'available' && (
+                    <div className="text-xs mt-1 bg-green-200 px-2 py-1 rounded">✅ Available</div>
                   )}
                 </button>
               ))}
