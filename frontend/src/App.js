@@ -5429,7 +5429,7 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
 };
 
 // Tax & Charges Component
-const TaxChargesComponent = ({ onBack }) => {
+const TaxChargesComponent = ({ onBack, onDataChange }) => {
   const [taxRates, setTaxRates] = useState([]);
   const [serviceCharges, setServiceCharges] = useState([]);
   const [gratuityRules, setGratuityRules] = useState([]);
