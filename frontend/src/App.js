@@ -5355,9 +5355,15 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
               <span>${mergedTotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Estimated Tax (8%):</span>
+              <span>Estimated Tax (8.25%):</span>
               <span>${estimatedTax.toFixed(2)}</span>
             </div>
+            {estimatedServiceCharges > 0 && (
+              <div className="flex justify-between">
+                <span>Service Charges:</span>
+                <span>${estimatedServiceCharges.toFixed(2)}</span>
+              </div>
+            )}
             {currentOrderInfo.tip > 0 && (
               <div className="flex justify-between">
                 <span>Tip:</span>
@@ -5368,6 +5374,9 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
               <span>Final Total:</span>
               <span>${finalTotal.toFixed(2)}</span>
             </div>
+          </div>
+          <div className="mt-3 p-2 bg-green-100 rounded text-sm text-green-700">
+            <strong>💡 Note:</strong> These are estimated amounts. Final totals will be calculated dynamically when the merge is completed.
           </div>
         </div>
 
