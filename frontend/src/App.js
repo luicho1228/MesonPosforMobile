@@ -5834,6 +5834,11 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
       setShowGratuityModal(false);
       setEditingItem(null);
       resetGratuityForm();
+      
+      // Notify parent component of data changes
+      if (onDataChange) {
+        onDataChange();
+      }
     } catch (error) {
       console.error('Error saving gratuity rule:', error);
       alert('Failed to save gratuity rule: ' + (error.response?.data?.detail || error.message));
