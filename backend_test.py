@@ -8422,6 +8422,10 @@ def run_all_tests():
         discount_system_success, discount_system_details = test_enhanced_discount_system()
         test_results["Enhanced Discount System"]["success"] = discount_system_success
         test_results["Enhanced Discount System"]["details"] = discount_system_details
+        
+        # Test Enhanced Table Assignment and Merge Functionality (Review Request Focus)
+        table_merge_success, table_merge_details = test_enhanced_table_assignment_and_merge()
+        test_results["Enhanced Table Assignment and Merge Functionality"] = {"success": table_merge_success, "details": table_merge_details}
     
     # Print summary
     print("\n========================================")
