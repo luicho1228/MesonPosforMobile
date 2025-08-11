@@ -124,11 +124,12 @@ async def test_service_charge_conditions():
         
         # Test the calculation endpoint directly
         calc_request = {
-            "items": [{"menu_item_id": "test", "quantity": 1, "price": scenario["subtotal"]}],
-            "order_type": scenario["order_type"]
+            "subtotal": scenario["subtotal"],
+            "order_type": scenario["order_type"],
+            "party_size": 2
         }
         
-        response = requests.post(f"{API_URL}/calculate-order", json=calc_request, headers=headers)
+        response = requests.post(f"{API_URL}/tax-charges/calculate", json=calc_request, headers=headers)
         if response.status_code != 200:
             print(f"❌ Failed to calculate order: {response.status_code}")
             print(f"Response: {response.text}")
