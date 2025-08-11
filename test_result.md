@@ -361,6 +361,21 @@ backend:
         agent: "testing"
         comment: "✅ SERVICE CHARGE ORDER COST FUNCTIONALITY FULLY TESTED AND WORKING: Conducted comprehensive testing of the service charge order cost conditions feature. VERIFIED: 1) Service charge API endpoints (GET /api/tax-charges/service-charges, POST, PUT, DELETE) work correctly ✓ 2) Service charges with minimum_order_amount and maximum_order_amount fields function properly ✓ 3) Order cost calculation applies service charges based on order amount conditions correctly ✓ 4) Boundary conditions (orders at exactly minimum/maximum amounts) work correctly - tested $19.99, $25.00, $75.00, $150.00 thresholds ✓ 5) Order type filtering integration works properly - dine-in, takeout, delivery charges apply to correct order types ✓ 6) Service charges are correctly calculated and saved in order records ✓ 7) Multiple service charges can apply simultaneously based on different conditions ✓ 8) Percentage and fixed amount service charges both work correctly ✓ The 'Apply based on order total cost' feature for service charges is fully functional and meets all requirements from the review request."
         
+  - task: "Enhanced Table Assignment and Merge Functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Enhanced table assignment and merge functionality implemented with comprehensive endpoints for table status management, table merge logic, and order-table relationships"
+      - working: true
+        agent: "testing"
+        comment: "✅ ENHANCED TABLE ASSIGNMENT AND MERGE FUNCTIONALITY FULLY TESTED: Successfully tested all requested functionality: 1) Table Status Management (GET, POST, PUT /api/tables) - All endpoints working correctly with proper field validation including id, name, capacity, status, current_order_id ✓, 2) Order-Table Relationships - Created orders assigned to tables, verified table status updates to occupied when orders sent to kitchen ✓, 3) Table Merge Logic (POST /api/tables/{table_id}/merge) - Successfully merged two occupied tables, combined order items and totals correctly (subtotal: $47.97 from $15.99 + $31.98, tip: $5.00 from $2.00 + $3.00), deleted source order, updated source table to available and destination table remains occupied ✓, 4) Order Table Reassignment (PUT /api/orders/{order_id}/table) - Successfully reassigned merged order to new table with proper status updates ✓, 5) Data Integrity Verification - No orphaned table references or missing table assignments found ✓, 6) Edge Cases - Properly rejected merge with empty table and assignment to non-existent table ✓. Minor: One edge case in table reassignment status update timing, but core functionality works correctly. All critical table management endpoints are functioning as expected."
+
 frontend:
   - task: "Authentication UI"
     implemented: true
