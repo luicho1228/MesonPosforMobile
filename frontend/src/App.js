@@ -4905,6 +4905,176 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
           </div>
         </div>
       )}
+
+      {/* Enhanced Table Assignment Warning Modal */}
+      {showTableAssignmentWarning && conflictingTable && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-orange-600">⚠️ Table Assignment Conflict</h3>
+              <button
+                onClick={() => {
+                  setShowTableAssignmentWarning(false);
+                  setConflictingTable(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <span className="text-2xl">🍽️</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-orange-800">
+                      {getTableDisplayName(conflictingTable)} is Currently Occupied
+                    </h4>
+                    <p className="text-sm text-orange-600 mt-1">
+                      This table has an active order. Choose how you'd like to proceed:
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current cart preview */}
+              {cart.length > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                  <h5 className="font-medium text-gray-700 mb-2">Your Current Order:</h5>
+                  <div className="space-y-1">
+                    {cart.slice(0, 3).map((item, index) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span>{item.quantity}× {item.menu_item_name}</span>
+                        <span>${(item.total_price || 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {cart.length > 3 && (
+                      <div className="text-xs text-gray-500">+{cart.length - 3} more items</div>
+                    )}
+                  </div>
+                  <div className="border-t pt-2 mt-2 flex justify-between font-medium">
+                    <span>Subtotal:</span>
+                    <span>${cart.reduce((sum, item) => sum + (item.total_price || 0), 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {/* Option 1: Merge Orders */}
+              <button
+                onClick={() => {
+                  setShowTableAssignmentWarning(false);
+                  setOccupiedTableToMerge(conflictingTable);
+                  setShowTableMergeModal(true);
+                }}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-left"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-lg">🔄</span>
+                  <div>
+                    <div className="font-semibold">Merge with Existing Order</div>
+                    <div className="text-sm opacity-90">Add your items to the current table's order</div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Option 2: Choose Different Table */}
+              <button
+                onClick={async () => {
+                  setShowTableAssignmentWarning(false);
+                  setConflictingTable(null);
+                  // Keep table modal open to choose another table
+                  
+                  // Highlight available tables
+                  const availableTables = tables.filter(t => t.status === 'available');
+                  if (availableTables.length > 0) {
+                    // Auto-suggest the next available table
+                    const suggestedTable = availableTables[0];
+                    if (window.confirm(`Would you like to use ${getTableDisplayName(suggestedTable)} instead? It's currently available.`)) {
+                      setAssignedTable(suggestedTable);
+                      setShowTableModal(false);
+                      
+                      if (editingActiveOrder && currentOrder) {
+                        updateOrderTableAssignment(currentOrder.id, suggestedTable.id);
+                      }
+                    }
+                  } else {
+                    alert('No tables are currently available. You can merge with an existing order or wait for a table to become available.');
+                  }
+                }}
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors text-left"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-lg">🎯</span>
+                  <div>
+                    <div className="font-semibold">Select Different Table</div>
+                    <div className="text-sm opacity-90">Choose an available table instead</div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Option 3: Force Assignment (Manager Override) */}
+              <button
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    `⚠️ MANAGER OVERRIDE\n\n` +
+                    `This will forcefully assign ${getTableDisplayName(conflictingTable)} to your new order. ` +
+                    `The existing order will be moved to a temporary holding state.\n\n` +
+                    `Only use this option if the table is actually empty or if you're resolving a data issue.\n\n` +
+                    `Continue with manager override?`
+                  );
+                  
+                  if (confirmed) {
+                    setAssignedTable(conflictingTable);
+                    setShowTableModal(false);
+                    setShowTableAssignmentWarning(false);
+                    setConflictingTable(null);
+                    
+                    // Optional: Log the override action
+                    console.warn(`Manager override: Table ${getTableDisplayName(conflictingTable)} forcefully reassigned`);
+                    
+                    if (editingActiveOrder && currentOrder) {
+                      updateOrderTableAssignment(currentOrder.id, conflictingTable.id);
+                    }
+                  }
+                }}
+                className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors text-left"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-lg">⚡</span>
+                  <div>
+                    <div className="font-semibold">Manager Override</div>
+                    <div className="text-sm opacity-90">Force assign table (use with caution)</div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Option 4: Cancel */}
+              <button
+                onClick={() => {
+                  setShowTableAssignmentWarning(false);
+                  setConflictingTable(null);
+                }}
+                className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel - Keep Current Selection
+              </button>
+            </div>
+
+            {/* Info section */}
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700">
+                <strong>💡 Tip:</strong> The merge option is recommended when customers want to add items to an existing order. 
+                Use "Select Different Table" for new customers who need their own separate check.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
