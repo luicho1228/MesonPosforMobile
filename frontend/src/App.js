@@ -5894,6 +5894,11 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
       setShowDiscountModal(false);
       setEditingItem(null);
       resetDiscountForm();
+      
+      // Notify parent component of data changes
+      if (onDataChange) {
+        onDataChange();
+      }
     } catch (error) {
       console.error('Error saving discount policy:', error);
       alert('Failed to save discount policy: ' + (error.response?.data?.detail || error.message));
