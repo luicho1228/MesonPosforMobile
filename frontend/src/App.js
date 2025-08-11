@@ -3508,16 +3508,52 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
       totalTaxes += taxAmount;
     }
 
-    // Calculate service charges
+    // Calculate service charges with order cost conditions
     let totalServiceCharges = 0;
     const serviceChargeBreakdown = [];
+    
     for (const charge of activeServiceCharges) {
+      // Check if service charge applies to this order type
+      if (charge.applies_to_order_types && charge.applies_to_order_types.length > 0 && 
+          !charge.applies_to_order_types.includes(orderType)) {
+        continue;
+      }
+      
+      // Determine what amount to check against based on applies_to_subtotal field
+      let checkAmount;
+      if (charge.applies_to_subtotal === false) {
+        // Apply conditions based on total cost (subtotal + tax)
+        checkAmount = subtotal + totalTaxes;
+      } else {
+        // Apply conditions based on subtotal
+        checkAmount = subtotal;
+      }
+      
+      // Check minimum order requirement
+      if (charge.minimum_order_amount && charge.minimum_order_amount > 0 && 
+          checkAmount < charge.minimum_order_amount) {
+        continue;
+      }
+      
+      // Check maximum order requirement
+      if (charge.maximum_order_amount && charge.maximum_order_amount > 0 && 
+          checkAmount > charge.maximum_order_amount) {
+        continue;
+      }
+      
+      // If we get here, the charge applies
       let chargeAmount = 0;
       if (charge.type === 'percentage') {
-        chargeAmount = subtotal * (charge.amount / 100);
+        // Apply percentage to the appropriate base amount
+        if (charge.applies_to_subtotal === false) {
+          chargeAmount = (subtotal + totalTaxes) * (charge.amount / 100);
+        } else {
+          chargeAmount = subtotal * (charge.amount / 100);
+        }
       } else if (charge.type === 'fixed') {
         chargeAmount = charge.amount;
       }
+      
       serviceChargeBreakdown.push({
         name: charge.name,
         type: 'service_charge',
