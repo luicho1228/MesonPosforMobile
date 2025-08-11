@@ -2880,6 +2880,8 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
   const [showChargeManagementModal, setShowChargeManagementModal] = useState(false);
   const [availableDiscounts, setAvailableDiscounts] = useState([]);
   const [availableServiceCharges, setAvailableServiceCharges] = useState([]);
+  const [showTableAssignmentWarning, setShowTableAssignmentWarning] = useState(false);
+  const [conflictingTable, setConflictingTable] = useState(null);
 
   // Auto-fill customer info when phone number is entered
   const handlePhoneChange = async (phone) => {
