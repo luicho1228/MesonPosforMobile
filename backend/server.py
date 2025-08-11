@@ -574,18 +574,31 @@ async def calculate_order_taxes_and_charges(subtotal: float, order_type: str, pa
     }).to_list(1000)
     
     for charge in service_charges:
+        # Determine what amount to check against based on applies_to_subtotal field
+        if charge.get("applies_to_subtotal", True):
+            # Apply conditions based on subtotal
+            check_amount = subtotal
+        else:
+            # Apply conditions based on total (subtotal + tax)
+            check_amount = subtotal + total_tax
+        
         # Check if charge meets minimum order requirements
         minimum_amount = charge.get("minimum_order_amount", 0)
-        if minimum_amount > 0 and subtotal < minimum_amount:
+        if minimum_amount > 0 and check_amount < minimum_amount:
             continue
             
         # Check if charge meets maximum order requirements  
         maximum_amount = charge.get("maximum_order_amount", 0)
-        if maximum_amount > 0 and subtotal > maximum_amount:
+        if maximum_amount > 0 and check_amount > maximum_amount:
             continue
             
+        # Apply the charge to the appropriate base amount
         if charge["type"] == "percentage":
-            total_service_charges += subtotal * (charge["amount"] / 100)
+            if charge.get("applies_to_subtotal", True):
+                total_service_charges += subtotal * (charge["amount"] / 100)
+            else:
+                # Apply percentage to total with tax
+                total_service_charges += (subtotal + total_tax) * (charge["amount"] / 100)
         else:  # fixed
             total_service_charges += charge["amount"]
     
