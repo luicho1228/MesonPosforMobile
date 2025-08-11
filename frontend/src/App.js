@@ -5772,6 +5772,11 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
 
       // Refresh the data to trigger recalculation in any active orders
       await fetchTaxChargesData();
+      
+      // Notify parent component of data changes
+      if (onDataChange) {
+        onDataChange();
+      }
 
       setShowChargeModal(false);
       setEditingItem(null);
