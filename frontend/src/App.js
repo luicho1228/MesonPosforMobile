@@ -5959,7 +5959,7 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
       type: charge.type,
       amount: charge.amount.toString(),
       description: charge.description || '',
-      applies_to: charge.applies_to,
+      applies_to: charge.applies_to_subtotal ? 'subtotal' : 'total', // Convert boolean to string
       conditions: charge.conditions || [],
       minimum_amount: charge.minimum_order_amount ? charge.minimum_order_amount.toString() : '',
       maximum_amount: charge.maximum_order_amount ? charge.maximum_order_amount.toString() : '',
