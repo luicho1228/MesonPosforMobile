@@ -5780,7 +5780,7 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
       description: chargeForm.description,
       amount: amount,
       type: chargeForm.type,
-      applies_to: chargeForm.applies_to,
+      applies_to_subtotal: chargeForm.applies_to === 'subtotal', // Convert string to boolean
       conditions: chargeForm.conditions,
       minimum_order_amount: parseFloat(chargeForm.minimum_amount) || 0,
       maximum_order_amount: parseFloat(chargeForm.maximum_amount) || 0,
