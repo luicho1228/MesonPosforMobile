@@ -36,7 +36,7 @@ async def test_service_charge_field_mapping():
         return False
     
     auth_data = auth_response.json()
-    token = auth_data.get("token")
+    token = auth_data.get("access_token")  # Fix: use correct field name
     headers = {"Authorization": f"Bearer {token}"}
     
     print("✅ Successfully authenticated")
