@@ -2968,6 +2968,36 @@ const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fro
     fetchTaxChargesData(); // Load tax and charges data for dynamic calculation
   }, [editingOrder, editingActiveOrder]);
 
+  // Listen for tax and charges data changes from other components
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'taxChargesDataChanged') {
+        console.log('Tax and charges data changed, refreshing...');
+        fetchTaxChargesData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Also listen for changes within the same window
+  useEffect(() => {
+    const checkForChanges = () => {
+      const lastChange = localStorage.getItem('taxChargesDataChanged');
+      const currentCheck = localStorage.getItem('lastTaxChargesCheck') || '0';
+      
+      if (lastChange && lastChange !== currentCheck) {
+        console.log('Tax and charges data changed within same window, refreshing...');
+        fetchTaxChargesData();
+        localStorage.setItem('lastTaxChargesCheck', lastChange);
+      }
+    };
+
+    const interval = setInterval(checkForChanges, 1000); // Check every second
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchTables = async () => {
     try {
       const response = await axios.get(`${API}/tables`);
