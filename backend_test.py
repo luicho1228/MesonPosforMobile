@@ -47,7 +47,8 @@ test_results = {
     "Critical Table Data Corruption Investigation": {"success": False, "details": ""},
     "Complete Gratuity System Implementation": {"success": False, "details": ""},
     "Service Charge Order Cost Functionality": {"success": False, "details": ""},
-    "Enhanced Discount System": {"success": False, "details": ""}
+    "Enhanced Discount System": {"success": False, "details": ""},
+    "Service Charge Editing Functionality": {"success": False, "details": ""}
 }
 
 # Global variables to store test data
