@@ -1967,31 +1967,25 @@ async def calculate_taxes_and_charges(order_data: Dict[str, Any], user_id: str =
     subtotal = order_data.get("subtotal", 0)
     order_type = order_data.get("order_type", "dine_in")
     party_size = order_data.get("party_size", 1)
+    applied_discounts = order_data.get("applied_discount_ids", [])
     
-    # Get active tax rates
-    tax_rates = await db.tax_rates.find({"active": True, "applies_to_order_types": order_type}).to_list(100)
+    # Use the main calculation function to ensure consistency
+    total_tax, total_service_charges, total_gratuity, total_discounts = await calculate_order_taxes_and_charges(
+        subtotal, order_type, party_size, applied_discounts
+    )
     
-    # Get active service charges
-    service_charges = await db.service_charges.find({
-        "active": True, 
-        "applies_to_order_types": order_type,
-        "minimum_order_amount": {"$lte": subtotal}
-    }).to_list(100)
-    
-    # Get active gratuity rules
-    gratuity_rules = await db.gratuity_rules.find({
+    # Get detailed breakdown for display
+    # Get active tax rates that apply to this order type
+    tax_rates = await db.tax_rates.find({
         "active": True,
-        "applies_to_order_types": order_type,
-        "minimum_order_amount": {"$lte": subtotal},
         "$or": [
-            {"maximum_order_amount": 0},
-            {"maximum_order_amount": {"$gte": subtotal}}
-        ],
-        "party_size_minimum": {"$lte": party_size}
-    }).to_list(100)
+            {"applies_to_order_types": {"$exists": False}},
+            {"applies_to_order_types": {"$size": 0}},
+            {"applies_to_order_types": {"$in": [order_type]}}
+        ]
+    }).to_list(1000)
     
-    # Calculate taxes
-    total_tax = 0
+    # Calculate tax breakdown
     tax_breakdown = []
     for rate in tax_rates:
         if rate["type"] == "percentage":
@@ -1999,7 +1993,6 @@ async def calculate_taxes_and_charges(order_data: Dict[str, Any], user_id: str =
         else:
             tax_amount = rate["rate"]
         
-        total_tax += tax_amount
         tax_breakdown.append({
             "name": rate["name"],
             "rate": rate["rate"],
@@ -2007,29 +2000,80 @@ async def calculate_taxes_and_charges(order_data: Dict[str, Any], user_id: str =
             "amount": round(tax_amount, 2)
         })
     
-    # Calculate service charges
-    total_service_charges = 0
+    # Get active service charges that apply to this order type
+    service_charges = await db.service_charges.find({
+        "active": True,
+        "$or": [
+            {"applies_to_order_types": {"$exists": False}},
+            {"applies_to_order_types": {"$size": 0}},
+            {"applies_to_order_types": {"$in": [order_type]}}
+        ]
+    }).to_list(1000)
+    
+    # Calculate service charge breakdown (only include charges that actually apply)
     service_charge_breakdown = []
     for charge in service_charges:
-        base_amount = subtotal if charge["applies_to_subtotal"] else (subtotal + total_tax)
+        # Determine what amount to check against based on applies_to_subtotal field
+        if charge.get("applies_to_subtotal", True):
+            check_amount = subtotal
+            base_amount = subtotal
+        else:
+            check_amount = subtotal + total_tax
+            base_amount = subtotal + total_tax
         
+        # Check if charge meets minimum order requirements
+        minimum_amount = charge.get("minimum_order_amount", 0)
+        if minimum_amount > 0 and check_amount < minimum_amount:
+            continue
+            
+        # Check if charge meets maximum order requirements  
+        maximum_amount = charge.get("maximum_order_amount", 0)
+        if maximum_amount > 0 and check_amount > maximum_amount:
+            continue
+        
+        # This charge applies, calculate the amount
         if charge["type"] == "percentage":
             charge_amount = base_amount * (charge["amount"] / 100)
         else:
             charge_amount = charge["amount"]
         
-        total_service_charges += charge_amount
         service_charge_breakdown.append({
             "name": charge["name"],
             "amount": charge["amount"],
             "type": charge["type"],
             "calculated_amount": round(charge_amount, 2),
-            "mandatory": charge["mandatory"]
+            "mandatory": charge["mandatory"],
+            "applies_to_subtotal": charge.get("applies_to_subtotal", True),
+            "check_amount": round(check_amount, 2),
+            "minimum_order_amount": charge.get("minimum_order_amount", 0),
+            "maximum_order_amount": charge.get("maximum_order_amount", 0)
         })
     
-    # Calculate suggested gratuity
+    # Calculate suggested gratuity breakdown
+    gratuity_rules = await db.gratuity_rules.find({
+        "active": True,
+        "$or": [
+            {"applies_to_order_types": {"$exists": False}},
+            {"applies_to_order_types": {"$size": 0}},
+            {"applies_to_order_types": {"$in": [order_type]}}
+        ]
+    }).to_list(1000)
+    
     suggested_gratuity = []
     for rule in gratuity_rules:
+        # Check conditions similar to service charges
+        minimum_amount = rule.get("minimum_order_amount", 0)
+        if minimum_amount > 0 and subtotal < minimum_amount:
+            continue
+            
+        maximum_amount = rule.get("maximum_order_amount", 0)
+        if maximum_amount > 0 and subtotal > maximum_amount:
+            continue
+            
+        party_size_min = rule.get("party_size_minimum", 0)
+        if party_size_min > 0 and party_size < party_size_min:
+            continue
+        
         if rule["type"] == "percentage":
             gratuity_amount = subtotal * (rule["amount"] / 100)
         else:
@@ -2040,14 +2084,16 @@ async def calculate_taxes_and_charges(order_data: Dict[str, Any], user_id: str =
             "amount": rule["amount"],
             "type": rule["type"],
             "calculated_amount": round(gratuity_amount, 2),
-            "party_size_minimum": rule["party_size_minimum"]
+            "party_size_minimum": rule.get("party_size_minimum", 0)
         })
     
     return {
         "subtotal": subtotal,
         "total_tax": round(total_tax, 2),
         "total_service_charges": round(total_service_charges, 2),
-        "total_before_tip": round(subtotal + total_tax + total_service_charges, 2),
+        "total_gratuity": round(total_gratuity, 2),
+        "total_discounts": round(total_discounts, 2),
+        "total_before_tip": round(subtotal + total_tax + total_service_charges + total_gratuity - total_discounts, 2),
         "tax_breakdown": tax_breakdown,
         "service_charge_breakdown": service_charge_breakdown,
         "suggested_gratuity": suggested_gratuity
