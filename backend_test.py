@@ -9320,6 +9320,312 @@ def test_enhanced_discount_system():
             error_msg += f"\nResponse: {e.response.text}"
         return print_test_result("Enhanced Discount System", False, error_msg)
 
+# Test Service Charge Editing Functionality (REVIEW REQUEST FOCUS)
+def test_service_charge_editing_functionality():
+    global auth_token
+    print("\n=== Testing Service Charge Editing Functionality ===")
+    
+    if not auth_token:
+        return print_test_result("Service Charge Editing Functionality", False, "No auth token available")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        print("\n🔧 TESTING SERVICE CHARGE EDITING FUNCTIONALITY")
+        print("Goal: Verify service charge PUT endpoint works with proper field mapping")
+        
+        # Step 1: Create a service charge that applies to subtotal
+        print("\nStep 1: Creating service charge that applies to subtotal...")
+        
+        service_charge_data = {
+            "name": f"Test Service Charge {random_string(4)}",
+            "description": "Test service charge for editing functionality",
+            "amount": 15.0,  # 15%
+            "type": "percentage",
+            "active": True,
+            "mandatory": False,
+            "applies_to_subtotal": True,  # Key field to test
+            "applies_to_order_types": ["dine_in", "takeout"],
+            "minimum_order_amount": 25.0,  # Key field to test
+            "maximum_order_amount": 100.0  # Key field to test
+        }
+        
+        print(f"Creating service charge with:")
+        print(f"  - Name: {service_charge_data['name']}")
+        print(f"  - Amount: {service_charge_data['amount']}%")
+        print(f"  - Applies to subtotal: {service_charge_data['applies_to_subtotal']}")
+        print(f"  - Minimum order amount: ${service_charge_data['minimum_order_amount']}")
+        print(f"  - Maximum order amount: ${service_charge_data['maximum_order_amount']}")
+        print(f"  - Order types: {service_charge_data['applies_to_order_types']}")
+        print(f"  - Active: {service_charge_data['active']}")
+        print(f"  - Mandatory: {service_charge_data['mandatory']}")
+        
+        response = requests.post(f"{API_URL}/tax-charges/service-charges", json=service_charge_data, headers=headers)
+        response.raise_for_status()
+        created_charge = response.json()
+        
+        service_charge_id = created_charge.get("id")
+        print(f"✅ Service charge created with ID: {service_charge_id}")
+        
+        # Verify all fields are saved correctly
+        if created_charge.get("applies_to_subtotal") != True:
+            return print_test_result("Service Charge Editing Functionality", False, "applies_to_subtotal field not saved correctly during creation")
+        
+        if created_charge.get("minimum_order_amount") != 25.0:
+            return print_test_result("Service Charge Editing Functionality", False, "minimum_order_amount field not saved correctly during creation")
+        
+        if created_charge.get("maximum_order_amount") != 100.0:
+            return print_test_result("Service Charge Editing Functionality", False, "maximum_order_amount field not saved correctly during creation")
+        
+        print("✅ All fields saved correctly during creation")
+        
+        # Step 2: Retrieve the service charge to verify it was saved correctly
+        print("\nStep 2: Retrieving service charge to verify initial save...")
+        
+        response = requests.get(f"{API_URL}/tax-charges/service-charges", headers=headers)
+        response.raise_for_status()
+        service_charges = response.json()
+        
+        our_charge = None
+        for charge in service_charges:
+            if charge.get("id") == service_charge_id:
+                our_charge = charge
+                break
+        
+        if not our_charge:
+            return print_test_result("Service Charge Editing Functionality", False, "Created service charge not found in GET response")
+        
+        print(f"✅ Service charge retrieved successfully:")
+        print(f"  - ID: {our_charge.get('id')}")
+        print(f"  - Name: {our_charge.get('name')}")
+        print(f"  - Amount: {our_charge.get('amount')}")
+        print(f"  - Type: {our_charge.get('type')}")
+        print(f"  - Applies to subtotal: {our_charge.get('applies_to_subtotal')}")
+        print(f"  - Minimum order amount: {our_charge.get('minimum_order_amount')}")
+        print(f"  - Maximum order amount: {our_charge.get('maximum_order_amount')}")
+        print(f"  - Order types: {our_charge.get('applies_to_order_types')}")
+        print(f"  - Active: {our_charge.get('active')}")
+        print(f"  - Mandatory: {our_charge.get('mandatory')}")
+        
+        # Step 3: Update service charge to apply to total (applies_to_subtotal: false)
+        print("\nStep 3: 🔧 CRITICAL TEST - Updating service charge to apply to total...")
+        
+        update_data_1 = {
+            "name": f"Updated Service Charge {random_string(4)}",
+            "description": "Updated service charge - now applies to total",
+            "amount": 18.0,  # Changed from 15% to 18%
+            "type": "percentage",
+            "active": True,
+            "mandatory": True,  # Changed from False to True
+            "applies_to_subtotal": False,  # KEY CHANGE: Changed from True to False
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],  # Added delivery
+            "minimum_order_amount": 30.0,  # Changed from 25.0 to 30.0
+            "maximum_order_amount": 150.0  # Changed from 100.0 to 150.0
+        }
+        
+        print(f"Updating service charge with PUT request:")
+        print(f"  - New name: {update_data_1['name']}")
+        print(f"  - New amount: {update_data_1['amount']}%")
+        print(f"  - Applies to subtotal: {update_data_1['applies_to_subtotal']} (CHANGED)")
+        print(f"  - New minimum order amount: ${update_data_1['minimum_order_amount']} (CHANGED)")
+        print(f"  - New maximum order amount: ${update_data_1['maximum_order_amount']} (CHANGED)")
+        print(f"  - New order types: {update_data_1['applies_to_order_types']} (CHANGED)")
+        print(f"  - Mandatory: {update_data_1['mandatory']} (CHANGED)")
+        
+        # This is the key test - PUT endpoint with field mapping
+        response = requests.put(f"{API_URL}/tax-charges/service-charges/{service_charge_id}", json=update_data_1, headers=headers)
+        response.raise_for_status()
+        updated_charge_1 = response.json()
+        
+        print(f"✅ PUT request successful")
+        
+        # Step 4: Verify the changes are saved correctly
+        print("\nStep 4: 🔍 CRITICAL VERIFICATION - Checking that changes are saved...")
+        
+        print(f"Updated service charge response:")
+        print(f"  - Name: {updated_charge_1.get('name')}")
+        print(f"  - Amount: {updated_charge_1.get('amount')}")
+        print(f"  - Applies to subtotal: {updated_charge_1.get('applies_to_subtotal')}")
+        print(f"  - Minimum order amount: {updated_charge_1.get('minimum_order_amount')}")
+        print(f"  - Maximum order amount: {updated_charge_1.get('maximum_order_amount')}")
+        print(f"  - Order types: {updated_charge_1.get('applies_to_order_types')}")
+        print(f"  - Mandatory: {updated_charge_1.get('mandatory')}")
+        
+        # Verify each field was updated correctly
+        if updated_charge_1.get("applies_to_subtotal") != False:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ CRITICAL: applies_to_subtotal not updated correctly. Expected: False, Got: {updated_charge_1.get('applies_to_subtotal')}")
+        
+        if updated_charge_1.get("minimum_order_amount") != 30.0:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ CRITICAL: minimum_order_amount not updated correctly. Expected: 30.0, Got: {updated_charge_1.get('minimum_order_amount')}")
+        
+        if updated_charge_1.get("maximum_order_amount") != 150.0:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ CRITICAL: maximum_order_amount not updated correctly. Expected: 150.0, Got: {updated_charge_1.get('maximum_order_amount')}")
+        
+        if updated_charge_1.get("mandatory") != True:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ CRITICAL: mandatory field not updated correctly. Expected: True, Got: {updated_charge_1.get('mandatory')}")
+        
+        if "delivery" not in updated_charge_1.get("applies_to_order_types", []):
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ CRITICAL: applies_to_order_types not updated correctly. Expected to include 'delivery', Got: {updated_charge_1.get('applies_to_order_types')}")
+        
+        print("✅ All fields updated correctly in PUT response")
+        
+        # Step 5: Retrieve the service charge again to confirm persistence
+        print("\nStep 5: 🔍 PERSISTENCE TEST - Retrieving service charge again to confirm changes persist...")
+        
+        response = requests.get(f"{API_URL}/tax-charges/service-charges", headers=headers)
+        response.raise_for_status()
+        updated_service_charges = response.json()
+        
+        persisted_charge = None
+        for charge in updated_service_charges:
+            if charge.get("id") == service_charge_id:
+                persisted_charge = charge
+                break
+        
+        if not persisted_charge:
+            return print_test_result("Service Charge Editing Functionality", False, "Updated service charge not found in GET response")
+        
+        print(f"✅ Service charge retrieved after update:")
+        print(f"  - Name: {persisted_charge.get('name')}")
+        print(f"  - Amount: {persisted_charge.get('amount')}")
+        print(f"  - Applies to subtotal: {persisted_charge.get('applies_to_subtotal')}")
+        print(f"  - Minimum order amount: {persisted_charge.get('minimum_order_amount')}")
+        print(f"  - Maximum order amount: {persisted_charge.get('maximum_order_amount')}")
+        print(f"  - Order types: {persisted_charge.get('applies_to_order_types')}")
+        print(f"  - Mandatory: {persisted_charge.get('mandatory')}")
+        
+        # Verify persistence of all critical fields
+        if persisted_charge.get("applies_to_subtotal") != False:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ PERSISTENCE FAILURE: applies_to_subtotal not persisted. Expected: False, Got: {persisted_charge.get('applies_to_subtotal')}")
+        
+        if persisted_charge.get("minimum_order_amount") != 30.0:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ PERSISTENCE FAILURE: minimum_order_amount not persisted. Expected: 30.0, Got: {persisted_charge.get('minimum_order_amount')}")
+        
+        if persisted_charge.get("maximum_order_amount") != 150.0:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ PERSISTENCE FAILURE: maximum_order_amount not persisted. Expected: 150.0, Got: {persisted_charge.get('maximum_order_amount')}")
+        
+        print("✅ All changes properly persisted")
+        
+        # Step 6: Update minimum and maximum order amounts again
+        print("\nStep 6: 🔧 SECOND UPDATE TEST - Updating order amount conditions...")
+        
+        update_data_2 = {
+            "name": persisted_charge.get("name"),  # Keep same name
+            "description": "Second update - testing order amount conditions",
+            "amount": 20.0,  # Changed from 18% to 20%
+            "type": "percentage",
+            "active": True,
+            "mandatory": True,
+            "applies_to_subtotal": False,  # Keep as False
+            "applies_to_order_types": ["dine_in", "takeout", "delivery"],
+            "minimum_order_amount": 50.0,  # Changed from 30.0 to 50.0
+            "maximum_order_amount": 200.0  # Changed from 150.0 to 200.0
+        }
+        
+        print(f"Second update:")
+        print(f"  - Amount: {update_data_2['amount']}% (changed from 18% to 20%)")
+        print(f"  - Minimum order amount: ${update_data_2['minimum_order_amount']} (changed from $30 to $50)")
+        print(f"  - Maximum order amount: ${update_data_2['maximum_order_amount']} (changed from $150 to $200)")
+        
+        response = requests.put(f"{API_URL}/tax-charges/service-charges/{service_charge_id}", json=update_data_2, headers=headers)
+        response.raise_for_status()
+        updated_charge_2 = response.json()
+        
+        print(f"✅ Second PUT request successful")
+        
+        # Verify second update
+        if updated_charge_2.get("minimum_order_amount") != 50.0:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ Second update failed: minimum_order_amount. Expected: 50.0, Got: {updated_charge_2.get('minimum_order_amount')}")
+        
+        if updated_charge_2.get("maximum_order_amount") != 200.0:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ Second update failed: maximum_order_amount. Expected: 200.0, Got: {updated_charge_2.get('maximum_order_amount')}")
+        
+        if updated_charge_2.get("amount") != 20.0:
+            return print_test_result("Service Charge Editing Functionality", False, 
+                                   f"❌ Second update failed: amount. Expected: 20.0, Got: {updated_charge_2.get('amount')}")
+        
+        print("✅ Second update successful")
+        
+        # Step 7: Final verification - retrieve one more time
+        print("\nStep 7: 🔍 FINAL VERIFICATION - Final retrieval to confirm all changes...")
+        
+        response = requests.get(f"{API_URL}/tax-charges/service-charges", headers=headers)
+        response.raise_for_status()
+        final_service_charges = response.json()
+        
+        final_charge = None
+        for charge in final_service_charges:
+            if charge.get("id") == service_charge_id:
+                final_charge = charge
+                break
+        
+        if not final_charge:
+            return print_test_result("Service Charge Editing Functionality", False, "Service charge not found in final verification")
+        
+        print(f"✅ Final service charge state:")
+        print(f"  - ID: {final_charge.get('id')}")
+        print(f"  - Name: {final_charge.get('name')}")
+        print(f"  - Amount: {final_charge.get('amount')}%")
+        print(f"  - Type: {final_charge.get('type')}")
+        print(f"  - Applies to subtotal: {final_charge.get('applies_to_subtotal')}")
+        print(f"  - Minimum order amount: ${final_charge.get('minimum_order_amount')}")
+        print(f"  - Maximum order amount: ${final_charge.get('maximum_order_amount')}")
+        print(f"  - Order types: {final_charge.get('applies_to_order_types')}")
+        print(f"  - Active: {final_charge.get('active')}")
+        print(f"  - Mandatory: {final_charge.get('mandatory')}")
+        
+        # Final verification of all key fields
+        expected_values = {
+            "applies_to_subtotal": False,
+            "minimum_order_amount": 50.0,
+            "maximum_order_amount": 200.0,
+            "amount": 20.0,
+            "mandatory": True,
+            "active": True
+        }
+        
+        for field, expected_value in expected_values.items():
+            actual_value = final_charge.get(field)
+            if actual_value != expected_value:
+                return print_test_result("Service Charge Editing Functionality", False, 
+                                       f"❌ Final verification failed for {field}. Expected: {expected_value}, Got: {actual_value}")
+        
+        print("✅ All fields verified in final state")
+        
+        # Clean up - delete the test service charge
+        print("\nCleaning up - deleting test service charge...")
+        try:
+            response = requests.delete(f"{API_URL}/tax-charges/service-charges/{service_charge_id}", headers=headers)
+            response.raise_for_status()
+            print("✅ Test service charge deleted successfully")
+        except Exception as e:
+            print(f"⚠️  Could not delete test service charge: {e}")
+        
+        return print_test_result("Service Charge Editing Functionality", True, 
+                               "✅ SERVICE CHARGE EDITING FUNCTIONALITY FULLY WORKING: "
+                               "1) Service charge PUT endpoint works correctly ✓ "
+                               "2) Field mapping is correct for all fields including applies_to_subtotal, minimum_order_amount, maximum_order_amount, applies_to_order_types, active, mandatory ✓ "
+                               "3) Created service charge that applies to subtotal, then updated it to apply to total (applies_to_subtotal: false) ✓ "
+                               "4) Updated minimum_order_amount and maximum_order_amount conditions multiple times ✓ "
+                               "5) All changes persist correctly when retrieved via GET endpoint ✓ "
+                               "The service charge editing functionality is working as expected - changes are saved and persist when users edit service charges.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Service charge editing functionality test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Service Charge Editing Functionality", False, error_msg)
+
 # Enhanced Table Assignment and Merge Functionality Tests (REVIEW REQUEST FOCUS)
 def test_enhanced_table_assignment_and_merge():
     """Test the enhanced table assignment and merge functionality as requested in the review"""
