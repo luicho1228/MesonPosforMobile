@@ -5722,6 +5722,11 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
       setShowTaxModal(false);
       setEditingItem(null);
       resetTaxForm();
+      
+      // Notify parent component of data changes
+      if (onDataChange) {
+        onDataChange();
+      }
     } catch (error) {
       console.error('Error saving tax rate:', error);
       alert('Failed to save tax rate: ' + (error.response?.data?.detail || error.message));
