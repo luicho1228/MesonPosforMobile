@@ -11266,7 +11266,13 @@ const POSInterface = () => {
   }
 
   if (currentView === 'tax-settings') {
-    return <TaxChargesComponent onBack={() => setCurrentView('settings')} />;
+    return <TaxChargesComponent 
+      onBack={() => setCurrentView('settings')} 
+      onDataChange={() => {
+        // Trigger a refresh for any active NewOrder components
+        localStorage.setItem('taxChargesDataChanged', Date.now().toString());
+      }}
+    />;
   }
 
   return (
