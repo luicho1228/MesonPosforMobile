@@ -5397,20 +5397,30 @@ const TableMergeModal = ({ occupiedTable, currentCart, currentOrderInfo, onConfi
         <div className="flex space-x-4">
           <button
             onClick={onCancel}
-            className="flex-1 bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+            disabled={merging}
+            className="flex-1 bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
-            onClick={onConfirmMerge}
-            disabled={currentCart.length === 0}
-            className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
-              currentCart.length === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            onClick={handleMerge}
+            disabled={currentCart.length === 0 || merging}
+            className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors disabled:cursor-not-allowed ${
+              currentCart.length === 0 || merging
+                ? 'bg-gray-300 text-gray-500'
                 : 'bg-red-600 text-white hover:bg-red-700'
             }`}
           >
-            {currentCart.length === 0 ? 'No Items to Merge' : `Confirm Merge with ${getTableDisplayName(occupiedTable)}`}
+            {merging ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Merging Orders...</span>
+              </div>
+            ) : currentCart.length === 0 ? (
+              'No Items to Merge'
+            ) : (
+              `Confirm Merge with ${occupiedTable?.name || `Table ${occupiedTable?.number}`}`
+            )}
           </button>
         </div>
       </div>
