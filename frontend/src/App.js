@@ -8,6 +8,7 @@ import PinVerificationModal from './components/PinVerificationModal';
 import CustomerManagement from './components/CustomerManagement';
 import OrderHistory from './components/OrderHistory';
 import ActiveOrders from './components/ActiveOrders';
+import TableManagement from './components/TableManagement';
 import { parseBackendTimestamp, formatLocalDate, formatLocalTime, formatLocalDateTime, getTimeElapsed, getOrderAgeColor } from './utils/dateUtils';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
