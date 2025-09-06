@@ -1,99 +1,50 @@
 <analysis>
-The previous AI engineer successfully stabilized and enhanced the POS system's financial and table management functionalities. Key early tasks involved fixing tax rate deactivation, ensuring correct tax application to orders, and implementing dynamic tax, service charge, and gratuity breakdowns with granular conditions based on order type, party size, and order amount. Data integrity for table management was also addressed.
-
-A significant portion of the work was dedicated to iteratively debugging and resolving issues with service charge conditions. This included fixing field mapping mismatches between frontend and backend, correcting backend calculation logic for  and , and crucially, updating the frontend's local calculation logic in  which initially ignored these conditions. The enhanced discount system and Dine-in Table Assignment Merge Logic were also successfully implemented and tested.
-
-The project then pivoted to a major code refactoring. An initial attempt to modularize the  inadvertently altered the UI, prompting the user to request a revert. The engineer successfully restored the original UI and functionality from a git commit, preserving all previous fixes. Currently, the engineer is engaged in a proper refactoring approach, systematically extracting components from  (e.g., , , , ) while meticulously ensuring no visible UI or functional changes. The work ended mid-refactor, with several core components successfully extracted and verified.
+The AI engineer effectively stabilized the POS system's financial and table management, then pivoted to a major frontend refactoring. The core approach, termed invisible refactoring, systematically extracts large components from the monolithic  into modular files without altering UI or functionality. Key extractions include , , , , , , , , , , , and . Each step involved identifying components, creating new files, updating  (imports/removals), and thorough visual and functional testing. The  file, initially over 10,000 lines, has been significantly reduced, with the current session concluding mid-extraction of , demonstrating consistent progress in modularizing the codebase while preserving system integrity.
 </analysis>
 
 <product_requirements>
-The overarching goal is to develop a comprehensive restaurant Point of Sale (POS) system for both web and mobile platforms. This system needs to support core functionalities like full CRUD operations for Menu Management (items, categories, modifiers), robust Order Processing (including dine-in, takeout, delivery, customer data, notes, and flexible checkout), and Employee Management (PIN login, roles, schedules). Advanced Table Management features are also critical, covering table status, capacity, custom naming, and the ability to move and merge orders.
-
-A key architectural decision involved shifting administrative and detailed setup features to a web-focused Settings section, moving away from a mobile-first approach for these specific areas. Recent development has focused on enhancing financial features, ensuring the accurate and dynamic application of Tax Rates, Service Charges, Gratuity Rules, and Discount Policies. This includes making these charges conditional based on order types and total cost. Crucial bug fixes have also been implemented to ensure data synchronization, display accuracy, and the correct persistence of all these financial rules.
+The goal is to develop a comprehensive restaurant Point of Sale (POS) system for both web and mobile. It must support Menu Management (CRUD for items, categories, modifiers), robust Order Processing (dine-in, takeout, delivery, customer data, notes, flexible checkout), and Employee Management (PIN login, roles, schedules). Critical advanced features include Table Management (status, capacity, custom naming, move/merge orders). Administrative and detailed setup functions were shifted to a web-focused Settings section. Recent development concentrated on enhancing financial features, ensuring dynamic and conditional application of Tax Rates, Service Charges, Gratuity Rules, and Discount Policies, along with bug fixes for data synchronization and display accuracy. The current phase involves refactoring the existing frontend codebase.
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-Stack Architecture**: React (web), React Native (mobile), FastAPI (Python backend), MongoDB (database).
--   **Data Handling**: UUIDs for IDs, Axios for API calls, Pydantic for data validation, environment variables for URLs.
--   **State Management**: React  and  for component state and side effects,  for cross-component/tab synchronization during service charge updates.
--   **UI/UX Patterns**: Modals, tabbed navigation, dynamic form inputs, component-based UI.
--   **Core Logic**: Dynamic calculation functions for taxes, charges, gratuities, and discounts, including complex conditional application.
+- **Full-Stack Architecture**: React (web), FastAPI (Python backend), MongoDB.
+- **Frontend**: React functional components, , , Context API (, ),  for state.
+- **Backend**: Pydantic for data validation, dynamic calculation logic.
+- **Data Handling**: UUIDs for IDs, Axios for API calls, environment variables for configuration.
+- **UI/UX Patterns**: Modals, tabbed navigation, component-based UI.
 </key_technical_concepts>
 
 <code_architecture>
 
 
--   **/app/backend/server.py**:
-    -   **Importance**: Centralizes all backend API logic, database interactions, and business rules.
-    -   **Changes**:
-        -   Enhanced  to dynamically fetch and apply active taxes, service charges, gratuity, and discounts based on various conditions (order type, party size, order amount, ).
-        -   Added , , , and  fields to  and  models.
-        -   Modified order creation () and update endpoints to use dynamic calculations and store all relevant financial breakdowns.
-        -   Implemented new API endpoints for managing existing order charges:  and .
-        -   Corrected logic in  endpoint to align with  for service charge conditions.
-
--   **/app/frontend/src/App.js**:
-    -   **Importance**: Historically, the monolithic primary React web application component. Currently being refactored.
-    -   **Changes**:
-        -   **Service Charge Fixes**: Updated  and  for correct field mapping ( string vs  boolean) and implemented a -based refresh mechanism for dynamic calculation updates.
-        -   **Discount Implementation**: Added  state, updated  and  to handle discounts.
-        -   **Order Editing**: Introduced state for , and functions (, ) to manage charges on active orders.
-        -   **UI Updates**: Integrated discount display into  and .
-        -   **Table Management**: Enhanced  for better warnings, and implemented  and refined .
-        -   **Refactoring (Ongoing)**: Original monolithic code is being systematically extracted into new, modular files. The  file now primarily acts as a wrapper and entry point, importing extracted components. Original login, customer management, and order history logic have been removed from this file.
-
--   **/app/frontend/src/contexts/AuthContext.js**:
-    -   **Importance**: Provides authentication context and state management across the application.
-    -   **Changes**: Extracted authentication logic (login, logout, pin verification) from .
-
--   **/app/frontend/src/components/PinLogin.js**:
-    -   **Importance**: Handles the PIN login interface.
-    -   **Changes**: Extracted the entire PIN login UI and related state from .
-
--   **/app/frontend/src/components/PinVerificationModal.js**:
-    -   **Importance**: Displays a modal for PIN verification.
-    -   **Changes**: Extracted the modal UI and logic from .
-
--   **/app/frontend/src/utils/dateUtils.js**:
-    -   **Importance**: Provides helper functions for date and time formatting.
-    -   **Changes**: Extracted  from .
-
--   **/app/frontend/src/components/CustomerManagement.js**:
-    -   **Importance**: Manages customer-related UI and logic.
-    -   **Changes**: Extracted the Customer Management component and its associated modals (e.g., , ) from .
-
--   **/app/frontend/src/components/OrderHistory.js**:
-    -   **Importance**: Displays past orders and their details.
-    -   **Changes**: Extracted the Order History component and its associated logic (e.g., date filtering) from .
-
--   **/app/mobile/src/navigation/MainTabNavigator.js**: (No changes in this trajectory)
--   **/app/mobile/src/screens/StaffManagementScreen.js**: (No changes in this trajectory)
--   **/app/mobile/src/screens/TaxSettingsScreen.js**: (No changes in this trajectory)
-
+- ****: Central API logic and database interactions. Enhanced to dynamically apply taxes, service charges, gratuity, and discounts based on conditions.
+- ****: Originally monolithic (~10,212 lines), now acts as the main entry point, importing modular components. It has been progressively refactored, reducing its size to approximately 5830 lines (after  and  removal).
+- ****: Extracted authentication logic (login, logout, PIN verification).
+- ****: Extracted PIN login UI and logic.
+- ****: Extracted PIN verification modal UI and logic.
+- ****: Extracted date and time formatting utility functions.
+- ****: Extracted customer management UI and logic.
+- ****: Extracted order history UI and logic.
+- ****: New file. Contains active orders management and its related .
+- ****: New file. Contains comprehensive table management logic and UI.
+- ****: New file. Houses  and  components.
+- ****: New file. Contains  and .
+- ****: New file. Handles displaying detailed order information.
+- ****: New file. Manages the table merging functionality.
+- ****: New file. Implements the interactive floor plan design.
+- ****: New file. Encapsulates comprehensive employee management, scheduling, and time tracking.
+- ****: New file. (Currently being extracted from ). Handles menu items, categories, and modifiers.
 </code_architecture>
 
 <pending_tasks>
--   Continue refactoring the monolithic  into smaller, modular components while strictly maintaining the existing UI and functionality.
+- Continue refactoring the monolithic  into smaller, modular components.
+- Specifically, extract the  (~2,300 lines),  (~2,000 lines), and  (~860 lines).
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was actively engaged in a comprehensive refactoring effort of the frontend application. The primary goal is to break down the highly monolithic  file into a more organized and scalable component structure, without introducing any changes to the user interface or existing functionality.
-
-The work flow involved:
-1.  **Directory Setup**: Creating , , and  directories within .
-2.  **Component Extraction**: Systematically identifying and moving self-contained UI blocks and their associated logic/state from  into new, dedicated files. So far, the following components have been extracted:
-    *   : Contains the authentication context provider and consumer logic.
-    *   : Encapsulates the entire PIN login screen UI and interaction logic.
-    *   : Handles the PIN verification modal UI and functionality.
-    *   : Stores utility functions like .
-    *   : Contains the UI and logic for managing customers, including related modals.
-    *   : Includes the UI and logic for displaying historical orders.
-3.  **App.js Cleanup**: After each extraction, the corresponding original code blocks are removed from , and  statements are added to bring in the newly created components.
-4.  **Verification**: After significant extractions, the frontend service is restarted, and screenshots are taken to explicitly confirm that the UI remains visually identical and all functionality is preserved. This ensures the refactoring is invisible to the end-user.
-
-The last action recorded was the successful extraction of  and , followed by the removal of their original implementations from . The current state is mid-refactor, with the core login, customer management, and order history sections now modularized, but many other large sections of  still awaiting extraction.
+Immediately before this summary, the AI engineer was actively extracting the  from . This component, spanning approximately 895 lines (from lines 5339 to 6234), handles menu items, categories, and modifiers. A new file, , was successfully created and the component's code moved into it. The  file has been updated to import this new component, and the original  code has been removed. The current state is that the extraction is complete, and the next step is to verify its functionality.
 </current_work>
 
 <optional_next_step>
-Continue extracting more components (e.g., , , ) from  while preserving the UI and functionality.
+Restart the frontend service and verify the successful extraction of .
 </optional_next_step>
