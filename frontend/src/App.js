@@ -11,6 +11,7 @@ import ActiveOrders from './components/ActiveOrders';
 import TableManagement from './components/TableManagement';
 import { EmployeeStatus, ClockInOut } from './components/EmployeeComponents';
 import { PaymentModal, ItemRemovalModal } from './components/ModalComponents';
+import OrderDetailModal from './components/OrderDetailModal';
 import { parseBackendTimestamp, formatLocalDate, formatLocalTime, formatLocalDateTime, getTimeElapsed, getOrderAgeColor } from './utils/dateUtils';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
