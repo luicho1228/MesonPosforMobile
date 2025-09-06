@@ -16,6 +16,7 @@ import TableMergeModal from './components/TableMergeModal';
 import FloorPlanDesigner from './components/FloorPlanDesigner';
 import StaffManagementComponent from './components/StaffManagementComponent';
 import MenuManagementComponent from './components/MenuManagementComponent';
+import NewOrder from './components/NewOrder';
 import { parseBackendTimestamp, formatLocalDate, formatLocalTime, formatLocalDateTime, getTimeElapsed, getOrderAgeColor } from './utils/dateUtils';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
