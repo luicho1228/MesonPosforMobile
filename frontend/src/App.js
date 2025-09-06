@@ -44,9 +44,7 @@ const App = () => {
 
 export default App;
 
-// PIN Login Component
-const PinLogin = () => {
-  const [pin, setPin] = useState('');
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
