@@ -32,16 +32,6 @@ const API = `${BACKEND_URL}/api`;
 
 // Tax & Charges Component
 
-  const updateOrderTableAssignment = async (orderId, tableId) => {
-    try {
-      await axios.put(`${API}/orders/${orderId}/table`, { table_id: tableId });
-      alert('Table assigned successfully!');
-    } catch (error) {
-      console.error('Error assigning table to order:', error);
-      alert('Failed to assign table to order');
-    }
-  };
-
   const cancelEmptyOrder = async () => {
     try {
       // Cancel the empty order using correct POST endpoint
