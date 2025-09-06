@@ -13,6 +13,7 @@ import { EmployeeStatus, ClockInOut } from './components/EmployeeComponents';
 import { PaymentModal, ItemRemovalModal } from './components/ModalComponents';
 import OrderDetailModal from './components/OrderDetailModal';
 import TableMergeModal from './components/TableMergeModal';
+import FloorPlanDesigner from './components/FloorPlanDesigner';
 import { parseBackendTimestamp, formatLocalDate, formatLocalTime, formatLocalDateTime, getTimeElapsed, getOrderAgeColor } from './utils/dateUtils';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
