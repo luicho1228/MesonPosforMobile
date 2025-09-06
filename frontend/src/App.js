@@ -30,33 +30,7 @@ const API = `${BACKEND_URL}/api`;
 
 
 
-const OrderComponent = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fromTableManagement }) => {
-  const { printOrderReceipt, connected, openPrinterManager } = usePrinter();
-  const [menuItems, setMenuItems] = useState([]);
-  const [modifierGroups, setModifierGroups] = useState([]);
-  const [modifiers, setModifiers] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [cart, setCart] = useState([]);
-  const [currentOrder, setCurrentOrder] = useState(null);
-  const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    apartment: '',
-    city: '',
-    state: '',
-    zip_code: ''
-  });
-  
-  // Add party size for gratuity calculations
-  const [partySize, setPartySize] = useState(1);
-  
-  // Tax & Charges state - needed for calculateTotal function
-  const [taxRates, setTaxRates] = useState([]);
-  const [serviceCharges, setServiceCharges] = useState([]);
-  const [gratuityRules, setGratuityRules] = useState([]);
-  const [discountPolicies, setDiscountPolicies] = useState([]);
+// Tax & Charges Component
 
   const updateOrderTableAssignment = async (orderId, tableId) => {
     try {
