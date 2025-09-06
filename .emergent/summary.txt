@@ -1,63 +1,99 @@
 <analysis>
-The previous AI engineer successfully transitioned the application from a React Native mobile-first approach to a React web application, focusing on administrative and POS functionalities. The trajectory details a series of critical bug fixes and feature enhancements. Initial efforts addressed a persistent tax rate deactivation bug stemming from ID format mismatches (numeric vs. UUID) and scope issues in frontend state management for dynamic tax display. Subsequently, the engineer fixed issues with taxes not being applied to orders when sent to the kitchen by correcting backend hardcoded tax logic. Extensive work was done to ensure accurate display of tax and charge breakdowns in both active and edit order windows. Major feature additions include granular control over tax and service charge application based on order types and order total costs, and the full implementation of gratuity rules with various conditions. Data integrity issues, specifically orphaned table references, were also comprehensively resolved through backend cleanup. The work culminates with the implementation of service charge conditions based on order cost, which is currently being demonstrated.
+The previous AI engineer successfully stabilized and enhanced the POS system's financial and table management functionalities. Key early tasks involved fixing tax rate deactivation, ensuring correct tax application to orders, and implementing dynamic tax, service charge, and gratuity breakdowns with granular conditions based on order type, party size, and order amount. Data integrity for table management was also addressed.
+
+A significant portion of the work was dedicated to iteratively debugging and resolving issues with service charge conditions. This included fixing field mapping mismatches between frontend and backend, correcting backend calculation logic for  and , and crucially, updating the frontend's local calculation logic in  which initially ignored these conditions. The enhanced discount system and Dine-in Table Assignment Merge Logic were also successfully implemented and tested.
+
+The project then pivoted to a major code refactoring. An initial attempt to modularize the  inadvertently altered the UI, prompting the user to request a revert. The engineer successfully restored the original UI and functionality from a git commit, preserving all previous fixes. Currently, the engineer is engaged in a proper refactoring approach, systematically extracting components from  (e.g., , , , ) while meticulously ensuring no visible UI or functional changes. The work ended mid-refactor, with several core components successfully extracted and verified.
 </analysis>
 
 <product_requirements>
-The goal is to build a comprehensive restaurant Point of Sale (POS) system for web and mobile platforms. Key features include full CRUD for Menu Management (items, categories, modifiers), robust Order Processing (dine-in, takeout, delivery, customer data, notes, flexible checkout), Employee Management (PIN login, roles, schedules), and advanced Table Management (status, capacity, custom naming, order moving/merging). A significant architectural decision was to pivot from mobile-first to a web-focused Settings section for detailed administrative features. Recent work concentrated on refining financial functionalities, specifically the dynamic application of Tax Rates, Service Charges, Gratuity Rules, and Discount Policies, ensuring they are correctly calculated, displayed, and saved across the application. This includes recent enhancements to apply these charges based on order types and total cost, alongside critical bug fixes for data synchronization and display accuracy.
+The overarching goal is to develop a comprehensive restaurant Point of Sale (POS) system for both web and mobile platforms. This system needs to support core functionalities like full CRUD operations for Menu Management (items, categories, modifiers), robust Order Processing (including dine-in, takeout, delivery, customer data, notes, and flexible checkout), and Employee Management (PIN login, roles, schedules). Advanced Table Management features are also critical, covering table status, capacity, custom naming, and the ability to move and merge orders.
+
+A key architectural decision involved shifting administrative and detailed setup features to a web-focused Settings section, moving away from a mobile-first approach for these specific areas. Recent development has focused on enhancing financial features, ensuring the accurate and dynamic application of Tax Rates, Service Charges, Gratuity Rules, and Discount Policies. This includes making these charges conditional based on order types and total cost. Crucial bug fixes have also been implemented to ensure data synchronization, display accuracy, and the correct persistence of all these financial rules.
 </product_requirements>
 
 <key_technical_concepts>
 -   **Full-Stack Architecture**: React (web), React Native (mobile), FastAPI (Python backend), MongoDB (database).
 -   **Data Handling**: UUIDs for IDs, Axios for API calls, Pydantic for data validation, environment variables for URLs.
--   **State Management**: React  and  for managing component state and side effects.
--   **UI/UX Patterns**: Modals, tabbed navigation, dynamic form inputs.
--   **Core Logic**: Dynamic calculation functions for taxes, charges, and totals.
+-   **State Management**: React  and  for component state and side effects,  for cross-component/tab synchronization during service charge updates.
+-   **UI/UX Patterns**: Modals, tabbed navigation, dynamic form inputs, component-based UI.
+-   **Core Logic**: Dynamic calculation functions for taxes, charges, gratuities, and discounts, including complex conditional application.
 </key_technical_concepts>
 
 <code_architecture>
 
 
 -   **/app/backend/server.py**:
-    -   **Importance**: Centralizes all backend API logic, database interactions, and business rules for the POS system.
+    -   **Importance**: Centralizes all backend API logic, database interactions, and business rules.
     -   **Changes**:
-        -   **Tax & Charge Calculation**: Updated  to dynamically fetch and apply active taxes, service charges, and gratuity rules based on order type, party size, and order amount, replacing hardcoded tax.
-        -   **Order Model Enhancement**: Added  and  fields to the  model to store these details persistently.
-        -   **Model Consistency**: Ensured , , , and  fields are consistent across , , and  models.
-        -   **Order CRUD**: Modified order creation and update endpoints () to use the dynamic calculation, save the calculated , , and  amounts, and include .
-        -   **Table Management**: Implemented logic to resolve data synchronization issues where tables were incorrectly marked occupied or orders were assigned to non-existent tables, restoring consistency between tables and orders.
+        -   Enhanced  to dynamically fetch and apply active taxes, service charges, gratuity, and discounts based on various conditions (order type, party size, order amount, ).
+        -   Added , , , and  fields to  and  models.
+        -   Modified order creation () and update endpoints to use dynamic calculations and store all relevant financial breakdowns.
+        -   Implemented new API endpoints for managing existing order charges:  and .
+        -   Corrected logic in  endpoint to align with  for service charge conditions.
 
 -   **/app/frontend/src/App.js**:
-    -   **Importance**: The primary React web application component, handling UI rendering, state management, routing, and all frontend-backend interactions. Contains most of the POS interface logic.
+    -   **Importance**: Historically, the monolithic primary React web application component. Currently being refactored.
     -   **Changes**:
-        -   **Tax Rate Deactivation Fix**: Updated default tax/charge/gratuity/discount data functions (, etc.) to generate UUIDs using  instead of numeric IDs, resolving backend not found errors.
-        -   **Dynamic Tax & Charge Display (Cart)**: Moved tax/charge related state variables and the  function from  to the  component scope. Integrated these into  and added  as a  dependency for real-time updates.
-        -   **Tax & Charge Display (Active/Edit Orders)**: Modified active order and edit order display logic to show a detailed breakdown of calculated taxes, service charges, and gratuities (including specific names and percentages) instead of just the total or generic labels. In edit mode, it now prefers saved tax values but can dynamically recalculate.
-        -   **Tax/Charge Order Type Selection**: Added  field to  state and implemented a comprehensive UI for selecting applicable order types (All/Specific) in the tax and service charge modals.
-        -   **Tax/Charge/Gratuity Editing/Saving Fixes**: Corrected field name mismatches between frontend forms (, ,  functions) and backend models ( vs ,  vs ,  vs ). Ensured forms properly initialize and reset all fields.
-        -   **Gratuity Implementation**: Added  state to  component, integrated it into  and  functions, and added a Party Size input field to the customer information section in the  UI.
-        -   **Service Charge Order Cost Condition**: Added  and  fields to  state and integrated UI elements for these conditions in the service charge modal.
+        -   **Service Charge Fixes**: Updated  and  for correct field mapping ( string vs  boolean) and implemented a -based refresh mechanism for dynamic calculation updates.
+        -   **Discount Implementation**: Added  state, updated  and  to handle discounts.
+        -   **Order Editing**: Introduced state for , and functions (, ) to manage charges on active orders.
+        -   **UI Updates**: Integrated discount display into  and .
+        -   **Table Management**: Enhanced  for better warnings, and implemented  and refined .
+        -   **Refactoring (Ongoing)**: Original monolithic code is being systematically extracted into new, modular files. The  file now primarily acts as a wrapper and entry point, importing extracted components. Original login, customer management, and order history logic have been removed from this file.
 
--   **/app/mobile/src/navigation/MainTabNavigator.js**:
-    -   **Importance**: Manages the navigation flow for the mobile application.
-    -   **Changes**: Incorporated a  stack navigator to provide access to administrative screens mirroring the web app.
+-   **/app/frontend/src/contexts/AuthContext.js**:
+    -   **Importance**: Provides authentication context and state management across the application.
+    -   **Changes**: Extracted authentication logic (login, logout, pin verification) from .
 
--   **/app/mobile/src/screens/StaffManagementScreen.js**:
-    -   **Importance**: Mobile interface for managing staff.
-    -   **Changes**: Enhanced with a four-tab system (Employees, Schedules, Time & Attendance, Roles & Permissions) to align with the web application's features.
+-   **/app/frontend/src/components/PinLogin.js**:
+    -   **Importance**: Handles the PIN login interface.
+    -   **Changes**: Extracted the entire PIN login UI and related state from .
 
--   **/app/mobile/src/screens/TaxSettingsScreen.js**:
-    -   **Importance**: Mobile interface for configuring tax and charges.
-    -   **Changes**: Comprehensively enhanced to include all four sections (Tax Rates, Service Charges, Gratuity Rules, Discount Policies) with mobile-optimized UI, mirroring the web app's functionality.
+-   **/app/frontend/src/components/PinVerificationModal.js**:
+    -   **Importance**: Displays a modal for PIN verification.
+    -   **Changes**: Extracted the modal UI and logic from .
+
+-   **/app/frontend/src/utils/dateUtils.js**:
+    -   **Importance**: Provides helper functions for date and time formatting.
+    -   **Changes**: Extracted  from .
+
+-   **/app/frontend/src/components/CustomerManagement.js**:
+    -   **Importance**: Manages customer-related UI and logic.
+    -   **Changes**: Extracted the Customer Management component and its associated modals (e.g., , ) from .
+
+-   **/app/frontend/src/components/OrderHistory.js**:
+    -   **Importance**: Displays past orders and their details.
+    -   **Changes**: Extracted the Order History component and its associated logic (e.g., date filtering) from .
+
+-   **/app/mobile/src/navigation/MainTabNavigator.js**: (No changes in this trajectory)
+-   **/app/mobile/src/screens/StaffManagementScreen.js**: (No changes in this trajectory)
+-   **/app/mobile/src/screens/TaxSettingsScreen.js**: (No changes in this trajectory)
+
 </code_architecture>
 
 <pending_tasks>
--   **Dine-in Table Assignment - Merge Logic (Web App)**: Full implementation for warning about occupied tables and offering to merge orders (deeper integration and edge cases still pending refinement).
+-   Continue refactoring the monolithic  into smaller, modular components while strictly maintaining the existing UI and functionality.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary, the AI engineer was working on enhancing the Service Charge settings to allow activation based on order total cost. This involved adding  and  fields to the backend  and  models in . Concurrently, the frontend's  was updated to include these new fields in the  state, and the , , and  functions were modified to correctly handle the loading, saving, and resetting of these new order cost conditions. The backend's  function was also updated to incorporate this new logic, ensuring service charges are only applied if the order subtotal falls within the specified minimum and maximum amounts. The UI for these conditions was integrated into the Edit Service Charge modal. The last action in the trajectory was the AI engineer successfully testing and confirming that the Apply based on order total cost option now appears in the UI for service charges, and the next step is to demonstrate its full functionality.
+Immediately before this summary request, the AI engineer was actively engaged in a comprehensive refactoring effort of the frontend application. The primary goal is to break down the highly monolithic  file into a more organized and scalable component structure, without introducing any changes to the user interface or existing functionality.
+
+The work flow involved:
+1.  **Directory Setup**: Creating , , and  directories within .
+2.  **Component Extraction**: Systematically identifying and moving self-contained UI blocks and their associated logic/state from  into new, dedicated files. So far, the following components have been extracted:
+    *   : Contains the authentication context provider and consumer logic.
+    *   : Encapsulates the entire PIN login screen UI and interaction logic.
+    *   : Handles the PIN verification modal UI and functionality.
+    *   : Stores utility functions like .
+    *   : Contains the UI and logic for managing customers, including related modals.
+    *   : Includes the UI and logic for displaying historical orders.
+3.  **App.js Cleanup**: After each extraction, the corresponding original code blocks are removed from , and  statements are added to bring in the newly created components.
+4.  **Verification**: After significant extractions, the frontend service is restarted, and screenshots are taken to explicitly confirm that the UI remains visually identical and all functionality is preserved. This ensures the refactoring is invisible to the end-user.
+
+The last action recorded was the successful extraction of  and , followed by the removal of their original implementations from . The current state is mid-refactor, with the core login, customer management, and order history sections now modularized, but many other large sections of  still awaiting extraction.
 </current_work>
 
 <optional_next_step>
-Demonstrate the full functionality of the Apply based on order total cost feature for service charges.
+Continue extracting more components (e.g., , , ) from  while preserving the UI and functionality.
 </optional_next_step>

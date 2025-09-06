@@ -9,7 +9,7 @@ import random
 import string
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://5c6211d0-c981-4aa6-b05c-67ca512180a7.preview.emergentagent.com"
+BACKEND_URL = "https://pos-refactor.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 # Test results
