@@ -11440,25 +11440,3 @@ const getOrderTableDisplayName = (order, tables = []) => {
   return 'Unknown Table';
 };
 
-// App Component
-function App() {
-  return (
-    <AuthProvider>
-      <PrinterProvider>
-        <AppContent />
-      </PrinterProvider>
-    </AuthProvider>
-  );
-}
-
-const AppContent = () => {
-  const { isAuthenticated } = useAuth();
-
-  return (
-    <div className="App">
-      {isAuthenticated ? <POSInterface /> : <PinLogin />}
-    </div>
-  );
-};
-
-export default App;
