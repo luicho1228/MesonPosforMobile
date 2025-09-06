@@ -29,8 +29,7 @@ const API = `${BACKEND_URL}/api`;
 
 
 
-// New Order Component
-const NewOrder = ({ selectedTable, editingOrder, editingActiveOrder, onBack, fromTableManagement = false }) => {
+
   const { printOrderReceipt, connected, openPrinterManager } = usePrinter();
   const [menuItems, setMenuItems] = useState([]);
   const [modifierGroups, setModifierGroups] = useState([]);
