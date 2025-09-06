@@ -29,6 +29,8 @@ const API = `${BACKEND_URL}/api`;
 
 
 
+
+  const { printOrderReceipt, connected, openPrinterManager } = usePrinter();
   const [menuItems, setMenuItems] = useState([]);
   const [modifierGroups, setModifierGroups] = useState([]);
   const [modifiers, setModifiers] = useState([]);
