@@ -23,7 +23,6 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Tax & Charges Component
-  const [orderType, setOrderType] = useState(fromTableManagement ? 'dine_in' : (selectedTable ? 'dine_in' : 'takeout'));
   const [tip, setTip] = useState(0);
   const [showModifierModal, setShowModifierModal] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState(null);
