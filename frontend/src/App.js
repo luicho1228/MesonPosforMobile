@@ -23,32 +23,6 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Tax & Charges Component
-  const [tip, setTip] = useState(0);
-  const [showModifierModal, setShowModifierModal] = useState(false);
-  const [selectedMenuItem, setSelectedMenuItem] = useState(null);
-  const [selectedModifiers, setSelectedModifiers] = useState({});
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showRemovalModal, setShowRemovalModal] = useState(false);
-  const [removalItemIndex, setRemovalItemIndex] = useState(null);
-  const [orderNotes, setOrderNotes] = useState('');
-  const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [showCustomerSelectionModal, setShowCustomerSelectionModal] = useState(false);
-  const [existingCustomers, setExistingCustomers] = useState([]);
-  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
-  const [showTableModal, setShowTableModal] = useState(false);
-  const [assignedTable, setAssignedTable] = useState(selectedTable || null);
-  const [tables, setTables] = useState([]);
-  const [showTableMergeModal, setShowTableMergeModal] = useState(false);
-  const [occupiedTableToMerge, setOccupiedTableToMerge] = useState(null);
-  const [existingTableOrder, setExistingTableOrder] = useState(null);
-  const [showEmptyOrderModal, setShowEmptyOrderModal] = useState(false);
-  const [emptyOrderData, setEmptyOrderData] = useState(null);
-  const [appliedDiscountIds, setAppliedDiscountIds] = useState([]);
-  const [showChargeManagementModal, setShowChargeManagementModal] = useState(false);
-  const [availableDiscounts, setAvailableDiscounts] = useState([]);
-  const [availableServiceCharges, setAvailableServiceCharges] = useState([]);
-  const [showTableAssignmentWarning, setShowTableAssignmentWarning] = useState(false);
-  const [conflictingTable, setConflictingTable] = useState(null);
 
   // Auto-fill customer info when phone number is entered
   const handlePhoneChange = async (phone) => {
