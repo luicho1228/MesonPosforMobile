@@ -22,42 +22,7 @@ import { parseBackendTimestamp, formatLocalDate, formatLocalTime, formatLocalDat
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-  const cancelEmptyOrder = async () => {
-    try {
-      // Cancel the empty order using correct POST endpoint
-      await axios.post(`${API}/orders/${emptyOrderData.id}/cancel`, {
-        reason: 'empty_order',
-        notes: 'Order cancelled because all items were removed'
-      });
-      
-      alert('Order cancelled successfully');
-      setShowEmptyOrderModal(false);
-      setEmptyOrderData(null);
-      
-      // Navigate back to main screen or active orders
-      if (onBack) {
-        onBack();
-      }
-      
-      // If editing from table management, also refresh tables
-      if (editingOrder && fromTableManagement) {
-        // Force refresh of table management when we go back
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }
-    } catch (error) {
-      console.error('Error cancelling empty order:', error);
-      alert(`Failed to cancel order: ${error.response?.data?.detail || error.message}`);
-    }
-  };
-
-  const resetCustomerInfo = () => {
-    setCustomerInfo({ name: '', phone: '', address: '', apartment: '' });
-    setShowCustomerInfo(false);
-  };
-
-  const [showCustomerInfo, setShowCustomerInfo] = useState(false);
+// Tax & Charges Component
   const [orderType, setOrderType] = useState(fromTableManagement ? 'dine_in' : (selectedTable ? 'dine_in' : 'takeout'));
   const [tip, setTip] = useState(0);
   const [showModifierModal, setShowModifierModal] = useState(false);
