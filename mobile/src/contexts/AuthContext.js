@@ -17,7 +17,7 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BACKEND_URL = 'https://resto-system.preview.emergentagent.com';
+  const BACKEND_URL = 'https://app-decompose.preview.emergentagent.com';
   const API = `${BACKEND_URL}/api`;
 
   useEffect(() => {

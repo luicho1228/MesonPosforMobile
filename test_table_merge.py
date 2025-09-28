@@ -6,7 +6,7 @@ import random
 import string
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://resto-system.preview.emergentagent.com"
+BACKEND_URL = "https://app-decompose.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 # Global variables
