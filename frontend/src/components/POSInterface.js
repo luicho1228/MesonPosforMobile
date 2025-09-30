@@ -13,17 +13,15 @@ import { EmployeeStatus } from './EmployeeComponents';
 
 const POSInterface = () => {
   const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('new-order');
   const [showEmployeeStatus, setShowEmployeeStatus] = useState(false);
 
-  const menuItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: '🏠', roles: ['manager', 'employee'] },
+  const mainTabs = [
     { id: 'new-order', name: 'New Order', icon: '➕', roles: ['manager', 'employee'] },
     { id: 'active-orders', name: 'Active Orders', icon: '🍽️', roles: ['manager', 'employee'] },
     { id: 'order-history', name: 'Order History', icon: '📋', roles: ['manager', 'employee'] },
     { id: 'tables', name: 'Tables', icon: '🪑', roles: ['manager', 'employee'] },
-    { id: 'customers', name: 'Customers', icon: '👥', roles: ['manager', 'employee'] },
-    { id: 'settings', name: 'Settings', icon: '⚙️', roles: ['manager'] }
+    { id: 'customers', name: 'Customers', icon: '👥', roles: ['manager', 'employee'] }
   ];
 
   const settingsOptions = [
@@ -33,8 +31,8 @@ const POSInterface = () => {
     { id: 'table-settings', name: 'Table Settings', icon: '🪑' }
   ];
 
-  const filteredMenuItems = menuItems.filter(item => 
-    item.roles.includes(user?.role) || item.roles.includes('employee')
+  const filteredMainTabs = mainTabs.filter(tab => 
+    tab.roles.includes(user?.role) || tab.roles.includes('employee')
   );
 
   const handleLogout = () => {
@@ -44,57 +42,26 @@ const POSInterface = () => {
   };
 
   const renderContent = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return (
-          <div className="p-6">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {user?.name || user?.username}!</p>
-            </div>
-            
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMenuItems.slice(1, -1).map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentView(item.id)}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
-                >
-                  <div className="text-4xl mb-3">{item.icon}</div>
-                  <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      
+    switch (currentView) {      
       case 'new-order':
-        return <NewOrder onBack={() => setCurrentView('dashboard')} />;
+        return <NewOrder onBack={() => setCurrentView('new-order')} />;
       
       case 'active-orders':
-        return <ActiveOrders onBack={() => setCurrentView('dashboard')} />;
+        return <ActiveOrders onBack={() => setCurrentView('active-orders')} />;
       
       case 'order-history':
-        return <OrderHistory onBack={() => setCurrentView('dashboard')} />;
+        return <OrderHistory onBack={() => setCurrentView('order-history')} />;
       
       case 'tables':
-        return <TableManagement onBack={() => setCurrentView('dashboard')} />;
+        return <TableManagement onBack={() => setCurrentView('tables')} />;
       
       case 'customers':
-        return <CustomerManagement onBack={() => setCurrentView('dashboard')} />;
+        return <CustomerManagement onBack={() => setCurrentView('customers')} />;
       
       case 'settings':
         return (
           <div className="p-6">
             <div className="mb-6">
-              <button 
-                onClick={() => setCurrentView('dashboard')}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-4"
-              >
-                <span>←</span>
-                <span>Back to Dashboard</span>
-              </button>
               <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
             </div>
             
@@ -130,10 +97,10 @@ const POSInterface = () => {
           <div className="p-6 text-center">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Page Not Found</h2>
             <button 
-              onClick={() => setCurrentView('dashboard')}
+              onClick={() => setCurrentView('new-order')}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
-              Go to Dashboard
+              Go to New Order
             </button>
           </div>
         );
@@ -147,12 +114,17 @@ const POSInterface = () => {
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold text-gray-800">Restaurant POS</h1>
-            {currentView !== 'dashboard' && (
-              <span className="text-gray-500">/ {menuItems.find(item => item.id === currentView)?.name || settingsOptions.find(option => option.id === currentView)?.name}</span>
-            )}
           </div>
           
           <div className="flex items-center space-x-4">
+            {user?.role === 'manager' && (
+              <button
+                onClick={() => setCurrentView('settings')}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+              >
+                Settings
+              </button>
+            )}
             <button
               onClick={() => setShowEmployeeStatus(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -172,27 +144,25 @@ const POSInterface = () => {
         </div>
       </header>
 
-      {/* Navigation */}
-      {currentView === 'dashboard' && (
-        <nav className="bg-white border-b">
-          <div className="flex space-x-8 px-6">
-            {filteredMenuItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setCurrentView(item.id)}
-                className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm ${
-                  currentView === item.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <span>{item.icon}</span>
-                <span>{item.name}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
-      )}
+      {/* Main Navigation Tabs */}
+      <nav className="bg-white border-b">
+        <div className="flex space-x-0 px-0">
+          {filteredMainTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setCurrentView(tab.id)}
+              className={`flex items-center justify-center space-x-2 py-4 px-6 border-b-3 font-medium text-sm flex-1 ${
+                currentView === tab.id
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.name}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* Main Content */}
       <main className="flex-1">
