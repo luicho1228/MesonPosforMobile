@@ -511,7 +511,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Table Cancellation Functionality Testing"
+    - "Table Deletion with Automatic Order Cancellation Fix"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
