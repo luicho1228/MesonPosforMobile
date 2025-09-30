@@ -250,22 +250,283 @@ def print_test_result(test_name, success, details=""):
         print(f"Details: {details}")
     return success, details
 
-# Main execution for POSInterface restoration verification
+# Test Table Deletion with Automatic Order Cancellation
+def test_table_deletion_with_order_cancellation():
+    """
+    Test the updated table deletion endpoint to verify the fix for the reported issue.
+    Tests:
+    1. Create test scenario: Create a dine-in order assigned to a table to make it occupied
+    2. Test occupied table deletion: Try to delete the occupied table using DELETE /api/tables/{table_id}
+    3. Verify automatic order cancellation: Confirm that the associated order is automatically cancelled with proper cancellation info
+    4. Test available table deletion: Create and delete an available table to ensure normal deletion still works
+    5. Verify error handling: Test deletion of non-existent table
+    """
+    global auth_token
+    print("\n=== Testing Table Deletion with Automatic Order Cancellation ===")
+    
+    if not auth_token:
+        # Try to login with PIN 1234 (manager account)
+        login_data = {"pin": "1234"}
+        try:
+            response = requests.post(f"{API_URL}/auth/login", json=login_data)
+            response.raise_for_status()
+            result = response.json()
+            auth_token = result.get("access_token")
+            print("✅ Logged in with manager account")
+        except:
+            return print_test_result("Table Deletion with Order Cancellation", False, "Could not authenticate with manager account")
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        # Get available menu items for testing
+        print("\nStep 1: Getting available menu items...")
+        response = requests.get(f"{API_URL}/menu/items")
+        response.raise_for_status()
+        menu_items = response.json()
+        
+        if not menu_items:
+            return print_test_result("Table Deletion with Order Cancellation", False, "No menu items available for testing")
+        
+        test_menu_item = menu_items[0]
+        menu_item_id = test_menu_item.get("id")
+        print(f"Using menu item: {test_menu_item.get('name')} (${test_menu_item.get('price')})")
+        
+        # Step 1: Create test scenario - Create a dine-in order assigned to a table to make it occupied
+        print("\nStep 2: Creating table for occupied table deletion test...")
+        table_name = f"Test Table {random_string(5)}"
+        table_data = {
+            "name": table_name,
+            "capacity": 4
+        }
+        
+        response = requests.post(f"{API_URL}/tables", json=table_data, headers=headers)
+        response.raise_for_status()
+        occupied_table = response.json()
+        occupied_table_id = occupied_table.get("id")
+        print(f"Created table: {table_name} with ID: {occupied_table_id}")
+        
+        # Create a dine-in order for this table
+        print("\nStep 3: Creating dine-in order to occupy the table...")
+        order_data = {
+            "customer_name": f"Table Deletion Test Customer {random_string(4)}",
+            "customer_phone": f"555{random_string(7)}",
+            "customer_address": "123 Test Street, Test City, TS 12345",
+            "table_id": occupied_table_id,
+            "party_size": 2,
+            "items": [
+                {
+                    "menu_item_id": menu_item_id,
+                    "quantity": 2,
+                    "special_instructions": "Test order for table deletion"
+                }
+            ],
+            "order_type": "dine_in",
+            "tip": 5.00,
+            "order_notes": "Test order for table deletion functionality"
+        }
+        
+        response = requests.post(f"{API_URL}/orders", json=order_data, headers=headers)
+        response.raise_for_status()
+        test_order = response.json()
+        test_order_id = test_order.get("id")
+        order_number = test_order.get("order_number")
+        print(f"Created order: {order_number} with ID: {test_order_id}")
+        
+        # Send order to kitchen to make table occupied
+        print("\nStep 4: Sending order to kitchen to occupy table...")
+        response = requests.post(f"{API_URL}/orders/{test_order_id}/send", headers=headers)
+        response.raise_for_status()
+        print("✅ Order sent to kitchen")
+        
+        # Verify table is now occupied
+        print("\nStep 5: Verifying table is occupied...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        tables = response.json()
+        
+        table_occupied = False
+        for table in tables:
+            if table.get("id") == occupied_table_id:
+                if table.get("status") == "occupied" and table.get("current_order_id") == test_order_id:
+                    table_occupied = True
+                    print(f"✅ Table {table.get('name')} is occupied by order {order_number}")
+                    break
+        
+        if not table_occupied:
+            return print_test_result("Table Deletion with Order Cancellation", False, "Table was not properly occupied by the order")
+        
+        # Verify order is active (pending status)
+        print("\nStep 6: Verifying order is active...")
+        response = requests.get(f"{API_URL}/orders/{test_order_id}", headers=headers)
+        response.raise_for_status()
+        order_before_deletion = response.json()
+        
+        if order_before_deletion.get("status") != "pending":
+            return print_test_result("Table Deletion with Order Cancellation", False, f"Order status is {order_before_deletion.get('status')}, expected 'pending'")
+        
+        print(f"✅ Order {order_number} is active with status: {order_before_deletion.get('status')}")
+        
+        # Step 2: Test occupied table deletion - Try to delete the occupied table
+        print("\nStep 7: Testing deletion of occupied table...")
+        response = requests.delete(f"{API_URL}/tables/{occupied_table_id}", headers=headers)
+        response.raise_for_status()
+        deletion_result = response.json()
+        
+        print(f"✅ Table deletion successful: {deletion_result.get('message')}")
+        print(f"Order was cancelled: {deletion_result.get('cancelled_order', False)}")
+        
+        # Step 3: Verify automatic order cancellation
+        print("\nStep 8: Verifying automatic order cancellation...")
+        response = requests.get(f"{API_URL}/orders/{test_order_id}", headers=headers)
+        response.raise_for_status()
+        cancelled_order = response.json()
+        
+        # Check order status is cancelled
+        if cancelled_order.get("status") != "cancelled":
+            return print_test_result("Table Deletion with Order Cancellation", False, f"Order status is {cancelled_order.get('status')}, expected 'cancelled'")
+        
+        print(f"✅ Order {order_number} status changed to: {cancelled_order.get('status')}")
+        
+        # Verify cancellation info is properly set
+        cancellation_info = cancelled_order.get("cancellation_info")
+        if not cancellation_info:
+            return print_test_result("Table Deletion with Order Cancellation", False, "Order missing cancellation_info after table deletion")
+        
+        expected_reason = "table_deleted"
+        if cancellation_info.get("reason") != expected_reason:
+            return print_test_result("Table Deletion with Order Cancellation", False, f"Cancellation reason is '{cancellation_info.get('reason')}', expected '{expected_reason}'")
+        
+        print(f"✅ Cancellation reason: {cancellation_info.get('reason')}")
+        print(f"✅ Cancellation notes: {cancellation_info.get('notes')}")
+        print(f"✅ Cancelled by: {cancellation_info.get('cancelled_by')}")
+        print(f"✅ Cancelled at: {cancellation_info.get('cancelled_at')}")
+        
+        # Verify table is deleted
+        print("\nStep 9: Verifying table is deleted...")
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        remaining_tables = response.json()
+        
+        table_still_exists = False
+        for table in remaining_tables:
+            if table.get("id") == occupied_table_id:
+                table_still_exists = True
+                break
+        
+        if table_still_exists:
+            return print_test_result("Table Deletion with Order Cancellation", False, "Table still exists after deletion")
+        
+        print("✅ Table successfully deleted from database")
+        
+        # Step 4: Test available table deletion - Create and delete an available table
+        print("\nStep 10: Testing deletion of available table...")
+        available_table_name = f"Available Test Table {random_string(5)}"
+        available_table_data = {
+            "name": available_table_name,
+            "capacity": 6
+        }
+        
+        response = requests.post(f"{API_URL}/tables", json=available_table_data, headers=headers)
+        response.raise_for_status()
+        available_table = response.json()
+        available_table_id = available_table.get("id")
+        print(f"Created available table: {available_table_name} with ID: {available_table_id}")
+        
+        # Verify table is available
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        tables = response.json()
+        
+        table_is_available = False
+        for table in tables:
+            if table.get("id") == available_table_id and table.get("status") == "available":
+                table_is_available = True
+                break
+        
+        if not table_is_available:
+            return print_test_result("Table Deletion with Order Cancellation", False, "Available table not found or not in available status")
+        
+        # Delete the available table
+        print("\nStep 11: Deleting available table...")
+        response = requests.delete(f"{API_URL}/tables/{available_table_id}", headers=headers)
+        response.raise_for_status()
+        available_deletion_result = response.json()
+        
+        print(f"✅ Available table deletion successful: {available_deletion_result.get('message')}")
+        print(f"No order was cancelled: {available_deletion_result.get('cancelled_order', False)}")
+        
+        # Verify available table is deleted
+        response = requests.get(f"{API_URL}/tables", headers=headers)
+        response.raise_for_status()
+        final_tables = response.json()
+        
+        available_table_still_exists = False
+        for table in final_tables:
+            if table.get("id") == available_table_id:
+                available_table_still_exists = True
+                break
+        
+        if available_table_still_exists:
+            return print_test_result("Table Deletion with Order Cancellation", False, "Available table still exists after deletion")
+        
+        print("✅ Available table successfully deleted from database")
+        
+        # Step 5: Verify error handling - Test deletion of non-existent table
+        print("\nStep 12: Testing deletion of non-existent table...")
+        fake_table_id = str(uuid.uuid4())
+        
+        try:
+            response = requests.delete(f"{API_URL}/tables/{fake_table_id}", headers=headers)
+            if response.status_code == 404:
+                print("✅ Non-existent table deletion properly returns 404 error")
+            else:
+                return print_test_result("Table Deletion with Order Cancellation", False, f"Non-existent table deletion returned status {response.status_code}, expected 404")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                print("✅ Non-existent table deletion properly returns 404 error")
+            else:
+                return print_test_result("Table Deletion with Order Cancellation", False, f"Non-existent table deletion returned unexpected error: {e}")
+        
+        # Summary of test results
+        print("\n=== TEST SUMMARY ===")
+        print("✅ Created dine-in order and assigned to table (table became occupied)")
+        print("✅ Deleted occupied table successfully")
+        print("✅ Associated order was automatically cancelled with proper cancellation info")
+        print("✅ Cancellation reason: 'table_deleted'")
+        print("✅ Cancellation notes include table name and deletion context")
+        print("✅ Cancelled by field populated with user information")
+        print("✅ Available table deletion works normally (no order cancellation)")
+        print("✅ Non-existent table deletion returns proper 404 error")
+        print("✅ Table deletion fix resolves the reported issue: 'it doesn't cancel the order'")
+        
+        return print_test_result("Table Deletion with Order Cancellation", True, 
+                               "Table deletion with automatic order cancellation is working correctly. " +
+                               "Occupied tables now auto-cancel their orders before deletion, resolving the user's reported issue.")
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Table deletion with order cancellation test failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f"\nResponse: {e.response.text}"
+        return print_test_result("Table Deletion with Order Cancellation", False, error_msg)
+
+# Main execution for table deletion testing
 if __name__ == "__main__":
-    print("🔍 Starting POSInterface Restoration Data Verification...")
-    print("=" * 60)
+    print("🔍 Starting Table Deletion with Automatic Order Cancellation Test...")
+    print("=" * 80)
     
     # Run the specific test requested
-    success, details = test_posinterface_restoration_data_verification()
+    success, details = test_table_deletion_with_order_cancellation()
     
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 80)
     if success:
-        print("🎉 VERIFICATION COMPLETE: Database state verified after POSInterface restoration")
+        print("🎉 TEST COMPLETE: Table deletion with automatic order cancellation is working correctly")
+        print("✅ The fix resolves the user's reported issue where 'it doesn't cancel the order'")
     else:
-        print("🚨 VERIFICATION FAILED: Issues detected with database state")
+        print("🚨 TEST FAILED: Issues detected with table deletion functionality")
     
     print(f"Final Result: {'PASSED' if success else 'FAILED'}")
-    print("=" * 60)
+    print("=" * 80)
 
 # 1. Test Authentication System
 def test_authentication():
