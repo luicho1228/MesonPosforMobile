@@ -1003,10 +1003,46 @@ async def move_table_order(table_id: str, move_request: TableMoveRequest, user_i
 
 @api_router.delete("/tables/{table_id}")
 async def delete_table(table_id: str, user_id: str = Depends(verify_token)):
+    # First, find the table to check if it exists and if it's occupied
+    table = await db.tables.find_one({"id": table_id})
+    if not table:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    # Check if table is occupied and has an active order
+    if table.get("status") == "occupied" and table.get("current_order_id"):
+        order_id = table["current_order_id"]
+        
+        # Find the associated order
+        order = await db.orders.find_one({"id": order_id})
+        
+        if order and order.get("status") not in ["paid", "delivered", "cancelled"]:
+            # Get user info for tracking
+            user = await db.users.find_one({"id": user_id})
+            
+            # Cancel the associated order first
+            cancellation_info = {
+                "reason": "table_deleted",
+                "notes": f"Order automatically cancelled due to table '{table.get('name', table_id)}' deletion",
+                "cancelled_by": user.get("full_name", "Unknown") if user else "Unknown",
+                "cancelled_at": get_current_time()
+            }
+            
+            # Update order to cancelled status
+            await db.orders.update_one(
+                {"id": order_id},
+                {"$set": {
+                    "status": "cancelled", 
+                    "updated_at": get_current_time(),
+                    "cancellation_info": cancellation_info
+                }}
+            )
+    
+    # Now delete the table
     result = await db.tables.delete_one({"id": table_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Table not found")
-    return {"message": "Table deleted successfully"}
+    
+    return {"message": "Table deleted successfully", "cancelled_order": bool(table.get("current_order_id"))}
 
 # Customer routes
 @api_router.post("/customers", response_model=Customer)
