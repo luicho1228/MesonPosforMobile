@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePrinter } from '../PrinterContext';
 import NewOrder from './NewOrder';
-import ActiveOrders from './ActiveOrders';
 import OrderHistory from './OrderHistory';
-import TableManagement from './TableManagement';
 import CustomerManagement from './CustomerManagement';
+import TableManagement from './TableManagement';
+import { EmployeeStatus, ClockInOut } from './EmployeeComponents';
 import StaffManagementComponent from './StaffManagementComponent';
 import MenuManagementComponent from './MenuManagementComponent';
 import TaxChargesComponent from './TaxChargesComponent';
 import TableSettingsComponent from './TableSettingsComponent';
-import { EmployeeStatus, ClockInOut } from './EmployeeComponents';
+import ActiveOrders from './ActiveOrders';
 
 const POSInterface = () => {
   const [currentView, setCurrentView] = useState('main');
