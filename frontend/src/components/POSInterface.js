@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePrinter } from '../PrinterContext';
 import NewOrder from './NewOrder';
 import ActiveOrders from './ActiveOrders';
 import OrderHistory from './OrderHistory';
@@ -9,170 +10,431 @@ import StaffManagementComponent from './StaffManagementComponent';
 import MenuManagementComponent from './MenuManagementComponent';
 import TaxChargesComponent from './TaxChargesComponent';
 import TableSettingsComponent from './TableSettingsComponent';
-import { EmployeeStatus } from './EmployeeComponents';
+import { EmployeeStatus, ClockInOut } from './EmployeeComponents';
 
 const POSInterface = () => {
+  const [currentView, setCurrentView] = useState('main');
+  const [assignedTable, setAssignedTable] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editingActiveOrder, setEditingActiveOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [fromTableManagement, setFromTableManagement] = useState(false);
+
   const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('new-order');
-  const [showEmployeeStatus, setShowEmployeeStatus] = useState(false);
+  const { connected, openPrinterManager } = usePrinter();
 
-  const mainTabs = [
-    { id: 'new-order', name: 'New Order', icon: '➕', roles: ['manager', 'employee'] },
-    { id: 'active-orders', name: 'Active Orders', icon: '🍽️', roles: ['manager', 'employee'] },
-    { id: 'order-history', name: 'Order History', icon: '📋', roles: ['manager', 'employee'] },
-    { id: 'tables', name: 'Tables', icon: '🪑', roles: ['manager', 'employee'] },
-    { id: 'customers', name: 'Customers', icon: '👥', roles: ['manager', 'employee'] }
-  ];
-
-  const settingsOptions = [
-    { id: 'menu-management', name: 'Menu Management', icon: '📝' },
-    { id: 'staff-management', name: 'Staff Management', icon: '👨‍💼' },
-    { id: 'tax-charges', name: 'Tax & Charges', icon: '💰' },
-    { id: 'table-settings', name: 'Table Settings', icon: '🪑' }
-  ];
-
-  const filteredMainTabs = mainTabs.filter(tab => 
-    tab.roles.includes(user?.role) || tab.roles.includes('employee')
-  );
-
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      logout();
-    }
+  const handleNewOrder = (table = null) => {
+    setSelectedTable(table);
+    setEditingOrder(null);
+    setEditingActiveOrder(null);
+    setFromTableManagement(false);
+    setCurrentView('new-order');
   };
 
-  const renderContent = () => {
-    switch (currentView) {      
-      case 'new-order':
-        return <NewOrder onBack={() => setCurrentView('new-order')} />;
-      
-      case 'active-orders':
-        return <ActiveOrders onBack={() => setCurrentView('active-orders')} />;
-      
-      case 'order-history':
-        return <OrderHistory onBack={() => setCurrentView('order-history')} />;
-      
-      case 'tables':
-        return <TableManagement onBack={() => setCurrentView('tables')} />;
-      
-      case 'customers':
-        return <CustomerManagement onBack={() => setCurrentView('customers')} />;
-      
-      case 'settings':
-        return (
-          <div className="p-6">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
+  const handleTableSelect = (table) => {
+    setFromTableManagement(true);
+    if (table.status === 'available') {
+      // Start new order for available table
+      setSelectedTable(table);
+      setEditingOrder(null);
+      setEditingActiveOrder(null);
+    } else if (table.status === 'occupied') {
+      // Edit existing order for occupied table
+      setEditingOrder(table);
+      setSelectedTable(table); // Pass the table so NewOrder can use it for assignedTable
+      setEditingActiveOrder(null);
+    }
+    setCurrentView('new-order');
+  };
+
+  const handleOrderClick = (order) => {
+    // Instead of showing modal, go to order editing
+    setEditingActiveOrder(order);
+    setSelectedTable(null);
+    setEditingOrder(null);
+    setCurrentView('new-order');
+  };
+
+  const handleBackToMain = () => {
+    setCurrentView('main');
+    setSelectedTable(null);
+    setEditingOrder(null);
+    setEditingActiveOrder(null);
+    // Trigger refresh of active orders when returning to main view
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleOrderHistory = () => {
+    setCurrentView('order-history');
+  };
+
+  const handleTableManagement = () => {
+    setCurrentView('table-management');
+  };
+
+  if (currentView === 'new-order') {
+    return (
+      <NewOrder
+        selectedTable={selectedTable}
+        editingOrder={editingOrder}
+        editingActiveOrder={editingActiveOrder}
+        onBack={handleBackToMain}
+        fromTableManagement={fromTableManagement}
+      />
+    );
+  }
+
+  if (currentView === 'order-history') {
+    return (
+      <OrderHistory onBack={handleBackToMain} />
+    );
+  }
+
+  if (currentView === 'customerManagement') {
+    return (
+      <CustomerManagement onBack={handleBackToMain} />
+    );
+  }
+
+  if (currentView === 'table-management') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBackToMain}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+              >
+                <span>←</span>
+                <span>Back</span>
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">Table Management</h1>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {settingsOptions.map(option => (
+          </div>
+        </div>
+
+        <div className="p-6">
+          <TableManagement onTableSelect={handleTableSelect} />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentView === 'settings') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBackToMain}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+              >
+                <span>←</span>
+                <span>Back</span>
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                Welcome, {user?.full_name} ({user?.role})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Settings Sections */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Menu Management */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">🍽️</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Menu Management</h3>
+                  <p className="text-sm text-gray-600">Manage menu items, categories, prices & modifiers</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentView('menu-management')}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Manage Menu
+              </button>
+            </div>
+
+            {/* Table Settings */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">🪑</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Table Settings</h3>
+                  <p className="text-sm text-gray-600">Configure tables, capacity & layout</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentView('table-settings')}
+                className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Configure Tables
+              </button>
+            </div>
+
+            {/* Staff Management - Manager Only */}
+            {user?.role === 'manager' && (
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="flex items-center space-x-3 mb-4">
+                  <span className="text-2xl">👥</span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">Staff Management</h3>
+                    <p className="text-sm text-gray-600">Manage employees, roles & permissions</p>
+                  </div>
+                </div>
                 <button
-                  key={option.id}
-                  onClick={() => setCurrentView(option.id)}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
+                  onClick={() => setCurrentView('staff-management')}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  <div className="text-4xl mb-3">{option.icon}</div>
-                  <h3 className="text-lg font-semibold text-gray-800">{option.name}</h3>
+                  Manage Staff
                 </button>
-              ))}
+              </div>
+            )}
+
+            {/* Tax & Charges - Manager Only */}
+            {user?.role === 'manager' && (
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="flex items-center space-x-3 mb-4">
+                  <span className="text-2xl">💰</span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">Tax & Charges</h3>
+                    <p className="text-sm text-gray-600">Configure tax rates, service charges & fees</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCurrentView('tax-settings')}
+                  className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Configure Tax & Charges
+                </button>
+              </div>
+            )}
+
+            {/* System Settings */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">🖨️</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Printer Settings</h3>
+                  <p className="text-sm text-gray-600">{connected ? 'Printer Connected' : 'Setup Printer'}</p>
+                </div>
+              </div>
+              <button
+                onClick={openPrinterManager}
+                className={`w-full px-4 py-2 rounded-lg transition-colors ${
+                  connected
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {connected ? 'Manage Printer' : 'Setup Printer'}
+              </button>
+            </div>
+
+            {/* User Profile */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-2xl">👤</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">User Profile</h3>
+                  <p className="text-sm text-gray-600">{user?.full_name} ({user?.role})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => alert('User profile editing coming soon')}
+                className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Edit Profile
+              </button>
             </div>
           </div>
-        );
-      
-      case 'menu-management':
-        return <MenuManagementComponent onBack={() => setCurrentView('settings')} />;
-      
-      case 'staff-management':
-        return <StaffManagementComponent onBack={() => setCurrentView('settings')} />;
-      
-      case 'tax-charges':
-        return <TaxChargesComponent onBack={() => setCurrentView('settings')} />;
-      
-      case 'table-settings':
-        return <TableSettingsComponent onBack={() => setCurrentView('settings')} />;
-      
-      default:
-        return (
-          <div className="p-6 text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Page Not Found</h2>
-            <button 
-              onClick={() => setCurrentView('new-order')}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Go to New Order
-            </button>
+
+          {/* Quick Actions */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button
+                onClick={() => setCurrentView('new-order')}
+                className="flex flex-col items-center space-y-2 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <span className="text-2xl">🛒</span>
+                <span className="text-sm font-medium">New Order</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('order-history')}
+                className="flex flex-col items-center space-y-2 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                <span className="text-2xl">📋</span>
+                <span className="text-sm font-medium">Order History</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('table-management')}
+                className="flex flex-col items-center space-y-2 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+              >
+                <span className="text-2xl">🪑</span>
+                <span className="text-sm font-medium">Tables</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('customerManagement')}
+                className="flex flex-col items-center space-y-2 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+              >
+                <span className="text-2xl">👥</span>
+                <span className="text-sm font-medium">Customers</span>
+              </button>
+            </div>
           </div>
-        );
-    }
-  };
+
+          {/* System Information */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">System Information</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-gray-600">Restaurant:</span>
+                <p>El Meson Restaurant</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Address:</span>
+                <p>3517 Broadway</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">Phone:</span>
+                <p>929-321-9679</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600">System:</span>
+                <p>POS Web v1.0.0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Add placeholder management screens
+  if (currentView === 'menu-management') {
+    return <MenuManagementComponent onBack={() => setCurrentView('settings')} />;
+  }
+
+  if (currentView === 'table-settings') {
+    return <TableSettingsComponent onBack={() => setCurrentView('settings')} />;
+  }
+
+  if (currentView === 'staff-management') {
+    return <StaffManagementComponent onBack={() => setCurrentView('settings')} />;
+  }
+
+  if (currentView === 'tax-settings') {
+    return <TaxChargesComponent
+      onBack={() => setCurrentView('settings')}
+      onDataChange={() => {
+        // Trigger a refresh for any active NewOrder components
+        localStorage.setItem('taxChargesDataChanged', Date.now().toString());
+      }}
+    />;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="flex items-center justify-between p-4">
+      <div className="bg-white shadow-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-800">Restaurant POS</h1>
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold text-gray-800">Restaurant POS</h1>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            {user?.role === 'manager' && (
-              <button
-                onClick={() => setCurrentView('settings')}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-              >
-                Settings
-              </button>
-            )}
+            {/* Printer Status */}
             <button
-              onClick={() => setShowEmployeeStatus(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              onClick={openPrinterManager}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                connected
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+              }`}
             >
-              Employee Status
+              <span>🖨️</span>
+              <span>{connected ? 'Printer Connected' : 'Setup Printer'}</span>
             </button>
-            <div className="text-sm text-gray-600">
-              {user?.name || user?.username} ({user?.role})
-            </div>
+
+            {/* Settings Button */}
             <button
-              onClick={handleLogout}
+              onClick={() => setCurrentView('settings')}
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
+            >
+              <span>⚙️</span>
+              <span>Settings</span>
+            </button>
+
+            <span className="text-sm text-gray-600">
+              Welcome, {user?.full_name} ({user?.role})
+            </span>
+
+            {user?.role === 'manager' && <EmployeeStatus />}
+            <ClockInOut />
+
+            <button
+              onClick={logout}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
             >
               Logout
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Navigation Tabs */}
-      <nav className="bg-white border-b">
-        <div className="flex space-x-0 px-0">
-          {filteredMainTabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setCurrentView(tab.id)}
-              className={`flex items-center justify-center space-x-2 py-4 px-6 border-b-3 font-medium text-sm flex-1 ${
-                currentView === tab.id
-                  ? 'border-blue-500 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.name}</span>
-            </button>
-          ))}
+      <div className="p-6 space-y-6">
+        {/* Quick Actions */}
+        <div className="flex space-x-4 flex-wrap">
+          <button
+            onClick={() => handleNewOrder()}
+            className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+          >
+            + New Order
+          </button>
+          <button
+            onClick={handleOrderHistory}
+            className="bg-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg"
+          >
+            📋 Order History
+          </button>
+          <button
+            onClick={handleTableManagement}
+            className="bg-green-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-green-700 transition-colors shadow-lg"
+          >
+            🏓 Table Management
+          </button>
+          <button
+            onClick={() => setCurrentView('customerManagement')}
+            className="bg-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg"
+          >
+            👥 Customer Management
+          </button>
+          <button
+            onClick={openPrinterManager}
+            className={`px-8 py-4 rounded-xl text-lg font-semibold transition-colors shadow-lg ${
+              connected
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-orange-600 text-white hover:bg-orange-700'
+            }`}
+          >
+            🖨️ Printer Manager
+          </button>
         </div>
-      </nav>
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {renderContent()}
-      </main>
-
-      {/* Employee Status Modal */}
-      {showEmployeeStatus && (
-        <EmployeeStatus onClose={() => setShowEmployeeStatus(false)} />
-      )}
+        {/* Active Orders */}
+        <ActiveOrders onOrderClick={handleOrderClick} refreshTrigger={refreshTrigger} />
+      </div>
     </div>
   );
 };
