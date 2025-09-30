@@ -406,6 +406,21 @@ backend:
         agent: "testing"
         comment: "🎉 TABLE CANCELLATION FUNCTIONALITY TESTING COMPLETED SUCCESSFULLY: Conducted comprehensive testing of the table cancellation functionality after service restart and data synchronization. TESTING RESULTS: ✅ LOGIN FUNCTIONALITY: Successfully logged in with PIN 1234 (manager account) - authentication system working correctly ✓, ✅ TABLE MANAGEMENT ACCESS: Successfully navigated to Table Management section - navigation working properly ✓, ✅ OCCUPIED TABLES IDENTIFIED: Found 5 occupied tables (Gratuity Test Tables 12094, 18917, 41222, Patio tagd, and VIP Table qjl7) - more than expected 2, indicating active system usage ✓, ✅ CANCELLATION WORKFLOW ACCESSIBLE: Successfully triggered table cancellation workflow - 'Select Tables to Cancel' modal appeared with proper multi-select functionality ✓, ✅ NO ERRORS DETECTED: No AxiosError or other cancellation errors occurred during the workflow - the previously reported error has been resolved ✓, ✅ BACKEND API VERIFICATION: Backend APIs responding correctly with proper table status and order data synchronization ✓, ✅ DATA SYNCHRONIZATION CONFIRMED: Tables show proper occupied status with valid current_order_id references - no orphaned table references detected ✓. CONCLUSION: The table cancellation functionality is working correctly after the service restart and data synchronization. The previously reported AxiosError during table cancellation has been resolved. System properly displays occupied tables, allows access to cancellation workflow, and maintains proper table-order synchronization. All critical functionality is operational and ready for production use."
 
+  - task: "Table Deletion with Automatic Order Cancellation Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "Test the updated table deletion endpoint to verify the fix for the reported issue. User reported that when deleting occupied tables, 'it doesn't cancel the order'. Need to test: 1) Create dine-in order assigned to table, 2) Delete occupied table, 3) Verify automatic order cancellation with proper cancellation info, 4) Test available table deletion, 5) Test error handling for non-existent tables."
+      - working: true
+        agent: "testing"
+        comment: "🎉 TABLE DELETION WITH AUTOMATIC ORDER CANCELLATION FIX SUCCESSFULLY TESTED: Conducted comprehensive testing of the updated table deletion endpoint to verify the fix for the reported issue where 'it doesn't cancel the order'. ✅ TEST RESULTS: 1) OCCUPIED TABLE DELETION: Created dine-in order (ORD-0563) assigned to table 'Test Table 0jlf9', sent to kitchen to occupy table, successfully deleted occupied table which automatically cancelled the associated order ✓, 2) AUTOMATIC ORDER CANCELLATION: Order status correctly changed from 'pending' to 'cancelled' with proper cancellation_info including reason: 'table_deleted', descriptive notes mentioning table name, cancelled_by: 'Demo Manager', and timestamp ✓, 3) AVAILABLE TABLE DELETION: Created and successfully deleted available table with no order cancellation (normal behavior) ✓, 4) ERROR HANDLING: Non-existent table deletion properly returns 404 error ✓, 5) DATA INTEGRITY: Table properly removed from database, no orphaned references ✓. ✅ CONCLUSION: The table deletion fix is working correctly and resolves the user's reported issue. Occupied tables now automatically cancel their associated orders before deletion with comprehensive cancellation tracking. The fix ensures data integrity and prevents orphaned order references when tables are deleted."
+
 frontend:
   - task: "Authentication UI"
     implemented: true
