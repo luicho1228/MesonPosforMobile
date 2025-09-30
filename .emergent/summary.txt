@@ -1,50 +1,58 @@
 <analysis>
-The AI engineer's work, passed on from a previous AI, focused primarily on an invisible refactoring strategy for the frontend. The objective was to modularize the monolithic  without altering UI or functionality. The process involved identifying large components, extracting them into new files in , updating  for imports and removing original code, and then verifying functionality.
+The trajectory details a frontend refactoring effort aimed at modularizing a monolithic  file. The previous AI engineer successfully extracted two large components,  and , into their own files within . However, during the process of removing the  code from , the main post-login UI component, , was accidentally deleted.
 
-Initially, the  was successfully extracted and its functionality verified after resolving a temporary routing/authentication glitch that caused redirects to the login page. This reduced  from over 10,000 lines to 5,830. Following this, the  component (approx. 2,363 lines) was targeted. Its extraction involved creating , moving the component's code, and then cleaning up residual, orphaned code from  to ensure a clean state. The current work concludes with the  component successfully extracted and the  cleaned, positioning for the next refactoring task.
+This critical error led to a broken user interface after login. The engineer, unaware of the original layout, made two unsuccessful attempts to recreate the  from scratch based on common UI patterns and analysis of other components. Both attempts resulted in a UI that did not match the original, prompting corrective feedback from the user.
+
+The user eventually provided a valid GitHub link to the original repository. The engineer was able to access this link, view the original , and understand the correct structure of the . The work concluded at the exact moment of this discovery, with the immediate next step being to use this new information to restore the original UI correctly, thus completing the refactoring without unintended visual changes.
 </analysis>
 
 <product_requirements>
-The goal is to develop a comprehensive, full-stack Point of Sale (POS) system for web and mobile. Key functionalities include robust Menu Management (CRUD for items, categories, modifiers), flexible Order Processing (handling dine-in, takeout, delivery, customer data, notes, and diverse checkout flows), and efficient Employee Management (PIN login, role-based access, scheduling). Advanced table management features (status, capacity, custom naming, order moving/merging) are also crucial. Administrative settings are centralized in a web-specific Settings section. Recent enhancements focused on financial logic, ensuring dynamic calculation and application of tax rates, service charges, gratuity rules, and discounts, alongside bug fixes for data synchronization. The current phase is dedicated to a major frontend refactoring, specifically breaking down a large, monolithic  file into smaller, maintainable React components to improve code organization and future development.
+The project is a full-stack Point of Sale (POS) system featuring menu, order, employee, and table management. The immediate product goal was an invisible refactoring of the frontend's monolithic  file. The objective was to break down this large file into smaller, modular React components to improve code maintainability and future development speed.
+
+A critical requirement of this refactoring was that there should be **no changes to the user interface or functionality**. The work done so far has successfully modularized several components, but a recent mistake led to the deletion and incorrect recreation of the main  component. The current, overriding user request is to restore the application's UI to its original state, as it was before the refactoring mistake occurred, using the original codebase from a provided GitHub link as a reference.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full-Stack Architecture**: React (web frontend), FastAPI (Python backend), MongoDB (database).
-- **Frontend**: React functional components, , , Context API (, ),  for state management.
-- **Backend**: Pydantic for data validation, dynamic calculation logic for charges and discounts.
-- **Data Handling**: UUIDs for IDs, Axios for API calls, environment variables for configuration.
-- **UI/UX Patterns**: Modals, tabbed navigation, component-based architecture.
+- **Frontend Framework**: React.js
+- **Component Architecture**: Refactoring a monolithic component () into smaller, functional components.
+- **State Management**: React Hooks (, ) and Context API ().
+- **Backend Stack**: FastAPI (Python) with a MongoDB database.
+- **API Communication**:  for making HTTP requests from the frontend to the backend.
 </key_technical_concepts>
 
 <code_architecture>
+The application follows a standard full-stack structure with separate , , and  directories. The core of the recent work has been within the  directory.
 
 
-- ****: Contains the core API logic, database interactions, and dynamic calculation for financial rules. (No direct changes in this trajectory, but it's the backend foundation.)
-- ****: Main entry point, heavily refactored from ~10,000 lines to a current size of ~2350 lines (after  cleanup). It now imports modular components and manages high-level application state.
-- ****: Handles user authentication and authorization logic. (Extracted previously).
-- ****: Newly created file. Encapsulates all UI and logic for managing menu items, categories, and modifiers. Extracted from  and successfully verified in this session.
-- ****: Newly created file. Now contains the complete logic and UI for creating new orders, customer selection, and order item management. Extracted from  in this session.
-- ****: Documents the ongoing refactoring progress and verification steps. Updated to reflect  extraction.
+- ****
+  - **Importance**: The main application entry point. It handles top-level routing, primarily deciding whether to show the  component or the main .
+  - **Changes**: It has been significantly reduced in size by extracting large components. However, its main  component was accidentally removed and needs to be properly reintegrated. The current size is approximately 84 lines.
+
+- ****
+  - **Importance**: A new, self-contained component that encapsulates all logic and UI for managing taxes and service charges.
+  - **Changes**: This file was created by extracting ~2,070 lines of code from . No further changes were made.
+
+- ****
+  - **Importance**: A new, self-contained component for managing table layouts and settings.
+  - **Changes**: This file was created by extracting ~834 lines of code from . No further changes were made.
+
+- ****
+  - **Importance**: This component should contain the entire user interface displayed after a successful login, including navigation between different POS sections.
+  - **Changes**: This file was created to replace the component logic that was accidentally deleted from . It currently contains an incorrect, temporary implementation with a tab-based layout that does not match the original UI. This file is the primary target for the next fix.
 </code_architecture>
 
 <pending_tasks>
-- Continue refactoring the monolithic  into smaller, modular components.
-- Specifically, extract the  (~2,000 lines) from .
-- Extract  (~860 lines) from .
+- Recreate the  component in  to exactly match the UI and logic from the original codebase found in the provided GitHub repository.
+- Ensure the restored  correctly integrates with the already extracted components (, , etc.).
+- Verify that the application's post-login UI is identical to the original version.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer successfully extracted the  component from . This component, which was approximately 2,363 lines long (from lines 31-2394 in the original  before extraction), handles the complete functionality for creating new orders, including customer selection, adding items, and managing the order state.
+The AI engineer was in the process of fixing a critical mistake. After successfully refactoring  and  out of , the main  component was accidentally deleted. The user reported that the engineer's attempt to recreate it from scratch resulted in an incorrect UI.
 
-The extraction involved:
-1.  Creating a new file: .
-2.  Moving the entire  component's code into this new file.
-3.  Updating  to .
-4.  Removing the original  component definition from , and subsequently cleaning up orphaned code fragments that remained from the component's original location.
-
-The  was also extracted and verified successfully earlier in this session, reducing  significantly. The  file has been cleaned of residual  code and is now ready for the next extraction.
+The user provided a GitHub link for the second time: . The engineer successfully accessed this link and examined the original  file from the repository. This action confirmed the correct structure and code for the original . The work stopped precisely at this point, with the engineer having just found the source of truth needed to correct the UI and now planning to recreate the interface exactly as it was.
 </current_work>
 
 <optional_next_step>
-Extract the  from  into a new file: .
+Recreate the original  component by copying its structure and logic from the GitHub repository's  file into  and update  to render it correctly.
 </optional_next_step>
