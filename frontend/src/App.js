@@ -19,6 +19,7 @@ import MenuManagementComponent from './components/MenuManagementComponent';
 import NewOrder from './components/NewOrder';
 import TaxChargesComponent from './components/TaxChargesComponent';
 import TableSettingsComponent from './components/TableSettingsComponent';
+import POSInterface from './components/POSInterface';
 import { parseBackendTimestamp, formatLocalDate, formatLocalTime, formatLocalDateTime, getTimeElapsed, getOrderAgeColor } from './utils/dateUtils';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
