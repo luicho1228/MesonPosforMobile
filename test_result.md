@@ -481,7 +481,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "POSInterface Restoration Data Verification"
+    - "Table Cancellation Functionality Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
