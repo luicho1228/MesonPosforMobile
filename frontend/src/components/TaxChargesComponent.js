@@ -1242,29 +1242,82 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Automatic Gratuity Rules</h2>
-              <button
-                onClick={() => setShowGratuityModal(true)}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center space-x-2"
-              >
-                <span>+</span>
-                <span>Add Gratuity Rule</span>
-              </button>
+              <div className="flex space-x-3">
+                {selectedGratuities.length > 0 && (
+                  <>
+                    <span className="text-sm text-gray-600 py-2">
+                      {selectedGratuities.length} selected
+                    </span>
+                    <button
+                      onClick={() => clearSelections('gratuity')}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBulkDeleteType('gratuity');
+                        setShowBulkDeleteModal(true);
+                      }}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                    >
+                      <span>🗑️</span>
+                      <span>Delete Selected ({selectedGratuities.length})</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowGratuityModal(true)}
+                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center space-x-2"
+                >
+                  <span>+</span>
+                  <span>Add Gratuity Rule</span>
+                </button>
+              </div>
             </div>
+
+            {/* Multi-select controls */}
+            {gratuityRules.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedGratuities.length === gratuityRules.length && gratuityRules.length > 0}
+                      onChange={() => handleSelectAll('gratuity')}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">Select All</span>
+                  </label>
+                  <span className="text-sm text-gray-600">
+                    {selectedGratuities.length} of {gratuityRules.length} items selected
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {gratuityRules.map(rule => (
-                <div key={rule.id} className="bg-white border rounded-lg p-6">
+                <div key={rule.id} className={`bg-white border rounded-lg p-6 ${selectedGratuities.includes(rule.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold text-lg text-gray-800">{rule.name}</h3>
-                        {rule.auto_apply && (
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                            Auto-Apply
-                          </span>
-                        )}
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedGratuities.includes(rule.id)}
+                        onChange={() => handleItemSelect('gratuity', rule.id)}
+                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-lg text-gray-800">{rule.name}</h3>
+                          {rule.auto_apply && (
+                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
+                              Auto-Apply
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{rule.description}</p>
                       </div>
-                      <p className="text-sm text-gray-600">{rule.description}</p>
                     </div>
                     <button
                       onClick={() => toggleActive('gratuity', rule.id)}
