@@ -613,6 +613,159 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
     }
   };
 
+  // Bulk delete functions
+  const handleBulkDelete = async () => {
+    const selectedItems = getSelectedItems();
+    if (selectedItems.length === 0) {
+      alert('Please select items to delete');
+      return;
+    }
+
+    try {
+      // Delete all selected items
+      const deletePromises = selectedItems.map(async (item) => {
+        let endpoint = '';
+        switch (bulkDeleteType) {
+          case 'taxes':
+            endpoint = `${API}/tax-charges/tax-rates/${item.id}`;
+            break;
+          case 'charges':
+            endpoint = `${API}/tax-charges/service-charges/${item.id}`;
+            break;
+          case 'gratuity':
+            endpoint = `${API}/tax-charges/gratuity-rules/${item.id}`;
+            break;
+          case 'discounts':
+            endpoint = `${API}/tax-charges/discount-policies/${item.id}`;
+            break;
+          default:
+            throw new Error('Invalid type');
+        }
+        
+        return axios.delete(endpoint);
+      });
+
+      await Promise.all(deletePromises);
+
+      // Update local state after successful deletion
+      switch (bulkDeleteType) {
+        case 'taxes':
+          setTaxRates(prev => prev.filter(item => !selectedTaxes.includes(item.id)));
+          setSelectedTaxes([]);
+          break;
+        case 'charges':
+          setServiceCharges(prev => prev.filter(item => !selectedCharges.includes(item.id)));
+          setSelectedCharges([]);
+          break;
+        case 'gratuity':
+          setGratuityRules(prev => prev.filter(item => !selectedGratuities.includes(item.id)));
+          setSelectedGratuities([]);
+          break;
+        case 'discounts':
+          setDiscountPolicies(prev => prev.filter(item => !selectedDiscounts.includes(item.id)));
+          setSelectedDiscounts([]);
+          break;
+      }
+
+      setShowBulkDeleteModal(false);
+      setBulkDeleteType('');
+      alert(`${selectedItems.length} items deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      alert('Failed to delete some items: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const getSelectedItems = () => {
+    switch (bulkDeleteType) {
+      case 'taxes':
+        return taxRates.filter(item => selectedTaxes.includes(item.id));
+      case 'charges':
+        return serviceCharges.filter(item => selectedCharges.includes(item.id));
+      case 'gratuity':
+        return gratuityRules.filter(item => selectedGratuities.includes(item.id));
+      case 'discounts':
+        return discountPolicies.filter(item => selectedDiscounts.includes(item.id));
+      default:
+        return [];
+    }
+  };
+
+  const handleSelectAll = (type) => {
+    switch (type) {
+      case 'taxes':
+        if (selectedTaxes.length === taxRates.length) {
+          setSelectedTaxes([]);
+        } else {
+          setSelectedTaxes(taxRates.map(item => item.id));
+        }
+        break;
+      case 'charges':
+        if (selectedCharges.length === serviceCharges.length) {
+          setSelectedCharges([]);
+        } else {
+          setSelectedCharges(serviceCharges.map(item => item.id));
+        }
+        break;
+      case 'gratuity':
+        if (selectedGratuities.length === gratuityRules.length) {
+          setSelectedGratuities([]);
+        } else {
+          setSelectedGratuities(gratuityRules.map(item => item.id));
+        }
+        break;
+      case 'discounts':
+        if (selectedDiscounts.length === discountPolicies.length) {
+          setSelectedDiscounts([]);
+        } else {
+          setSelectedDiscounts(discountPolicies.map(item => item.id));
+        }
+        break;
+    }
+  };
+
+  const handleItemSelect = (type, id) => {
+    switch (type) {
+      case 'taxes':
+        setSelectedTaxes(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+      case 'charges':
+        setSelectedCharges(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+      case 'gratuity':
+        setSelectedGratuities(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+      case 'discounts':
+        setSelectedDiscounts(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+    }
+  };
+
+  const clearSelections = (type) => {
+    switch (type) {
+      case 'taxes':
+        setSelectedTaxes([]);
+        break;
+      case 'charges':
+        setSelectedCharges([]);
+        break;
+      case 'gratuity':
+        setSelectedGratuities([]);
+        break;
+      case 'discounts':
+        setSelectedDiscounts([]);
+        break;
+    }
+  };
+
   const toggleActive = async (type, id) => {
     try {
       let endpoint = '';
