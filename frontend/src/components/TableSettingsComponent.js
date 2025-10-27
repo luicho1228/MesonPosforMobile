@@ -18,6 +18,10 @@ const TableSettingsComponent = ({ onBack }) => {
   const [tableToDelete, setTableToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Bulk delete states
+  const [selectedTables, setSelectedTables] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   const [newTableForm, setNewTableForm] = useState({
     capacity: '',
