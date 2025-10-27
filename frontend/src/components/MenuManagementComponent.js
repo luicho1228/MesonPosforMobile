@@ -21,6 +21,14 @@ const MenuManagementComponent = ({ onBack }) => {
   const [editingItem, setEditingItem] = useState(null);
   const [editingModifier, setEditingModifier] = useState(null);
   const [editingModifierGroup, setEditingModifierGroup] = useState(null);
+  
+  // Bulk delete states  
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedModifiers, setSelectedModifiers] = useState([]);
+  const [selectedModifierGroups, setSelectedModifierGroups] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleteType, setBulkDeleteType] = useState('');
 
   const [itemForm, setItemForm] = useState({
     name: '',
