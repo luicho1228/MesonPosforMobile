@@ -16,6 +16,14 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
   const [showGratuityModal, setShowGratuityModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  
+  // Bulk delete states
+  const [selectedTaxes, setSelectedTaxes] = useState([]);
+  const [selectedCharges, setSelectedCharges] = useState([]);
+  const [selectedGratuities, setSelectedGratuities] = useState([]);
+  const [selectedDiscounts, setSelectedDiscounts] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleteType, setBulkDeleteType] = useState('');
 
   const [taxForm, setTaxForm] = useState({
     name: '',
