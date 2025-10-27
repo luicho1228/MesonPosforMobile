@@ -1685,6 +1685,49 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
       )}
 
       {/* Additional modals would go here but I'll truncate for length - the component includes complete modal implementations */}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold text-red-600">Delete Multiple Items</h2>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to delete <strong>{getSelectedItems().length}</strong> selected {bulkDeleteType}? 
+                This action cannot be undone.
+              </p>
+              
+              <div className="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
+                <p className="text-sm font-medium text-gray-700 mb-2">Items to be deleted:</p>
+                <ul className="space-y-1">
+                  {getSelectedItems().map(item => (
+                    <li key={item.id} className="text-sm text-gray-600">• {item.name}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowBulkDeleteModal(false);
+                  setBulkDeleteType('');
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Delete {getSelectedItems().length} Items
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
