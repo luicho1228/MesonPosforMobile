@@ -1533,13 +1533,13 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEditDiscount(discount)}
-                      className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded text-sm font-medium hover:bg-red-100"
+                      className="flex-1 bg-green-50 text-green-600 px-3 py-2 rounded text-sm font-medium hover:bg-green-100"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete('discount', discount.id)}
-                      className="flex-1 bg-gray-50 text-gray-600 px-3 py-2 rounded text-sm font-medium hover:bg-gray-100"
+                      className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded text-sm font-medium hover:bg-red-100"
                     >
                       Delete
                     </button>
@@ -1555,7 +1555,7 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
                 <p className="text-gray-500 mb-4">Create discount policies for your restaurant</p>
                 <button
                   onClick={() => setShowDiscountModal(true)}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
                 >
                   Add Discount Policy
                 </button>
