@@ -1397,34 +1397,87 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Discount Policies</h2>
-              <button
-                onClick={() => setShowDiscountModal(true)}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
-              >
-                <span>+</span>
-                <span>Add Discount</span>
-              </button>
+              <div className="flex space-x-3">
+                {selectedDiscounts.length > 0 && (
+                  <>
+                    <span className="text-sm text-gray-600 py-2">
+                      {selectedDiscounts.length} selected
+                    </span>
+                    <button
+                      onClick={() => clearSelections('discounts')}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBulkDeleteType('discounts');
+                        setShowBulkDeleteModal(true);
+                      }}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                    >
+                      <span>🗑️</span>
+                      <span>Delete Selected ({selectedDiscounts.length})</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowDiscountModal(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                >
+                  <span>+</span>
+                  <span>Add Discount</span>
+                </button>
+              </div>
             </div>
+
+            {/* Multi-select controls */}
+            {discountPolicies.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedDiscounts.length === discountPolicies.length && discountPolicies.length > 0}
+                      onChange={() => handleSelectAll('discounts')}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">Select All</span>
+                  </label>
+                  <span className="text-sm text-gray-600">
+                    {selectedDiscounts.length} of {discountPolicies.length} items selected
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {discountPolicies.map(discount => (
-                <div key={discount.id} className="bg-white border rounded-lg p-6">
+                <div key={discount.id} className={`bg-white border rounded-lg p-6 ${selectedDiscounts.includes(discount.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold text-lg text-gray-800">{discount.name}</h3>
-                        {discount.stackable && (
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                            Stackable
-                          </span>
-                        )}
-                        {discount.requires_code && (
-                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
-                            Code Required
-                          </span>
-                        )}
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedDiscounts.includes(discount.id)}
+                        onChange={() => handleItemSelect('discounts', discount.id)}
+                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-lg text-gray-800">{discount.name}</h3>
+                          {discount.stackable && (
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                              Stackable
+                            </span>
+                          )}
+                          {discount.requires_code && (
+                            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
+                              Code Required
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{discount.description}</p>
                       </div>
-                      <p className="text-sm text-gray-600">{discount.description}</p>
                     </div>
                     <button
                       onClick={() => toggleActive('discount', discount.id)}
