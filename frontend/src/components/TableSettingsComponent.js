@@ -163,6 +163,51 @@ const TableSettingsComponent = ({ onBack }) => {
     }
   };
 
+  // Bulk delete functions
+  const handleBulkDelete = async () => {
+    if (selectedTables.length === 0) {
+      alert('Please select tables to delete');
+      return;
+    }
+
+    try {
+      // Delete all selected tables
+      const deletePromises = selectedTables.map(tableId => 
+        axios.delete(`${API}/tables/${tableId}`)
+      );
+
+      await Promise.all(deletePromises);
+
+      // Update local state after successful deletion
+      setTables(prev => prev.filter(table => !selectedTables.includes(table.id)));
+      setSelectedTables([]);
+      setShowBulkDeleteModal(false);
+      
+      alert(`${selectedTables.length} tables deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting tables:', error);
+      alert('Failed to delete some tables: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTables.length === filteredTables.length) {
+      setSelectedTables([]);
+    } else {
+      setSelectedTables(filteredTables.map(table => table.id));
+    }
+  };
+
+  const handleTableSelect = (tableId) => {
+    setSelectedTables(prev => 
+      prev.includes(tableId) ? prev.filter(id => id !== tableId) : [...prev, tableId]
+    );
+  };
+
+  const clearSelections = () => {
+    setSelectedTables([]);
+  };
+
   const getTableDisplayName = (table) => {
     if (table.name && table.name.trim()) {
       return table.name;
