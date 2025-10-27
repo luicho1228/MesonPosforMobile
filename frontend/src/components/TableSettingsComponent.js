@@ -322,6 +322,26 @@ const TableSettingsComponent = ({ onBack }) => {
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Table Management</h2>
               <div className="flex space-x-3">
+                {selectedTables.length > 0 && (
+                  <>
+                    <span className="text-sm text-gray-600 py-2">
+                      {selectedTables.length} selected
+                    </span>
+                    <button
+                      onClick={clearSelections}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => setShowBulkDeleteModal(true)}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                    >
+                      <span>🗑️</span>
+                      <span>Delete Selected ({selectedTables.length})</span>
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => setShowBulkAddModal(true)}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center space-x-2"
@@ -365,19 +385,47 @@ const TableSettingsComponent = ({ onBack }) => {
               </div>
             </div>
 
+            {/* Multi-select controls */}
+            {filteredTables.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedTables.length === filteredTables.length && filteredTables.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">Select All</span>
+                  </label>
+                  <span className="text-sm text-gray-600">
+                    {selectedTables.length} of {filteredTables.length} tables selected
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Tables Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredTables.map(table => (
-                <div key={table.id} className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div key={table.id} className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${selectedTables.includes(table.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
                   <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-800">
-                        {getTableDisplayName(table)}
-                      </h3>
-                      <p className="text-sm text-gray-600">Capacity: {table.capacity} guests</p>
-                      {table.current_order_id && (
-                        <p className="text-xs text-blue-600 mt-1">Order: {table.current_order_id.slice(0, 8)}...</p>
-                      )}
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedTables.includes(table.id)}
+                        onChange={() => handleTableSelect(table.id)}
+                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-lg text-gray-800">
+                          {getTableDisplayName(table)}
+                        </h3>
+                        <p className="text-sm text-gray-600">Capacity: {table.capacity} guests</p>
+                        {table.current_order_id && (
+                          <p className="text-xs text-blue-600 mt-1">Order: {table.current_order_id.slice(0, 8)}...</p>
+                        )}
+                      </div>
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       table.status === 'available' ? 'bg-green-100 text-green-800' :
