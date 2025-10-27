@@ -990,22 +990,75 @@ const TaxChargesComponent = ({ onBack, onDataChange }) => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Tax Rates Configuration</h2>
-              <button
-                onClick={() => setShowTaxModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-              >
-                <span>+</span>
-                <span>Add Tax Rate</span>
-              </button>
+              <div className="flex space-x-3">
+                {selectedTaxes.length > 0 && (
+                  <>
+                    <span className="text-sm text-gray-600 py-2">
+                      {selectedTaxes.length} selected
+                    </span>
+                    <button
+                      onClick={() => clearSelections('taxes')}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBulkDeleteType('taxes');
+                        setShowBulkDeleteModal(true);
+                      }}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                    >
+                      <span>🗑️</span>
+                      <span>Delete Selected ({selectedTaxes.length})</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowTaxModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                >
+                  <span>+</span>
+                  <span>Add Tax Rate</span>
+                </button>
+              </div>
             </div>
+
+            {/* Multi-select controls */}
+            {taxRates.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedTaxes.length === taxRates.length && taxRates.length > 0}
+                      onChange={() => handleSelectAll('taxes')}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">Select All</span>
+                  </label>
+                  <span className="text-sm text-gray-600">
+                    {selectedTaxes.length} of {taxRates.length} items selected
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {taxRates.map(tax => (
-                <div key={tax.id} className="bg-white border rounded-lg p-6">
+                <div key={tax.id} className={`bg-white border rounded-lg p-6 ${selectedTaxes.includes(tax.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-800">{tax.name}</h3>
-                      <p className="text-sm text-gray-600">{tax.description}</p>
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedTaxes.includes(tax.id)}
+                        onChange={() => handleItemSelect('taxes', tax.id)}
+                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-lg text-gray-800">{tax.name}</h3>
+                        <p className="text-sm text-gray-600">{tax.description}</p>
+                      </div>
                     </div>
                     <div className="flex space-x-2">
                       <button
