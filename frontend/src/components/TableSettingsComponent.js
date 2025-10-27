@@ -932,6 +932,68 @@ const TableSettingsComponent = ({ onBack }) => {
           </div>
         </div>
       )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-semibold text-red-600">Delete Multiple Tables</h2>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to delete <strong>{selectedTables.length}</strong> selected tables? 
+                This action cannot be undone.
+              </p>
+              
+              <div className="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
+                <p className="text-sm font-medium text-gray-700 mb-2">Tables to be deleted:</p>
+                <ul className="space-y-1">
+                  {selectedTables.map(tableId => {
+                    const table = tables.find(t => t.id === tableId);
+                    return table ? (
+                      <li key={tableId} className="text-sm text-gray-600 flex justify-between">
+                        <span>• {getTableDisplayName(table)}</span>
+                        {table.status === 'occupied' && (
+                          <span className="text-red-600 text-xs">⚠️ Occupied</span>
+                        )}
+                      </li>
+                    ) : null;
+                  })}
+                </ul>
+              </div>
+
+              {selectedTables.some(id => {
+                const table = tables.find(t => t.id === id);
+                return table?.status === 'occupied';
+              }) && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-700 text-sm">
+                    ⚠️ Warning: Some selected tables are currently occupied. Deleting them will automatically cancel their orders.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowBulkDeleteModal(false);
+                  setSelectedTables([]);
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Delete {selectedTables.length} Tables
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
