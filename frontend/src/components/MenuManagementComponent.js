@@ -380,6 +380,168 @@ const MenuManagementComponent = ({ onBack }) => {
     }
   };
 
+  // Bulk delete functions
+  const handleBulkDelete = async () => {
+    const selectedData = getSelectedItems();
+    if (selectedData.length === 0) {
+      alert('Please select items to delete');
+      return;
+    }
+
+    try {
+      const deletePromises = selectedData.map(async (item) => {
+        let endpoint = '';
+        switch (bulkDeleteType) {
+          case 'items':
+            endpoint = `${API}/menu/items/${item.id}`;
+            break;
+          case 'categories':
+            endpoint = `${API}/menu/categories/${item.id}`;
+            break;
+          case 'modifiers':
+            endpoint = `${API}/menu/modifiers/${item.id}`;
+            break;
+          case 'modifierGroups':
+            endpoint = `${API}/menu/modifier-groups/${item.id}`;
+            break;
+          default:
+            throw new Error('Invalid type');
+        }
+        
+        return axios.delete(endpoint);
+      });
+
+      await Promise.all(deletePromises);
+
+      // Update local state after successful deletion
+      switch (bulkDeleteType) {
+        case 'items':
+          setMenuItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
+          setSelectedItems([]);
+          break;
+        case 'categories':
+          setCategories(prev => prev.filter(item => !selectedCategories.includes(item.id)));
+          setSelectedCategories([]);
+          break;
+        case 'modifiers':
+          setModifiers(prev => prev.filter(item => !selectedModifiers.includes(item.id)));
+          setSelectedModifiers([]);
+          break;
+        case 'modifierGroups':
+          setModifierGroups(prev => prev.filter(item => !selectedModifierGroups.includes(item.id)));
+          setSelectedModifierGroups([]);
+          break;
+      }
+
+      setShowBulkDeleteModal(false);
+      setBulkDeleteType('');
+      alert(`${selectedData.length} items deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      alert('Failed to delete some items: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const getSelectedItems = () => {
+    switch (bulkDeleteType) {
+      case 'items':
+        return menuItems.filter(item => selectedItems.includes(item.id));
+      case 'categories':
+        return categories.filter(item => selectedCategories.includes(item.id));
+      case 'modifiers':
+        return modifiers.filter(item => selectedModifiers.includes(item.id));
+      case 'modifierGroups':
+        return modifierGroups.filter(item => selectedModifierGroups.includes(item.id));
+      default:
+        return [];
+    }
+  };
+
+  const handleSelectAll = (type) => {
+    switch (type) {
+      case 'items':
+        const filteredItems = getFilteredItems();
+        if (selectedItems.length === filteredItems.length) {
+          setSelectedItems([]);
+        } else {
+          setSelectedItems(filteredItems.map(item => item.id));
+        }
+        break;
+      case 'categories':
+        if (selectedCategories.length === categories.length) {
+          setSelectedCategories([]);
+        } else {
+          setSelectedCategories(categories.map(item => item.id));
+        }
+        break;
+      case 'modifiers':
+        if (selectedModifiers.length === modifiers.length) {
+          setSelectedModifiers([]);
+        } else {
+          setSelectedModifiers(modifiers.map(item => item.id));
+        }
+        break;
+      case 'modifierGroups':
+        if (selectedModifierGroups.length === modifierGroups.length) {
+          setSelectedModifierGroups([]);
+        } else {
+          setSelectedModifierGroups(modifierGroups.map(item => item.id));
+        }
+        break;
+    }
+  };
+
+  const handleItemSelect = (type, id) => {
+    switch (type) {
+      case 'items':
+        setSelectedItems(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+      case 'categories':
+        setSelectedCategories(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+      case 'modifiers':
+        setSelectedModifiers(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+      case 'modifierGroups':
+        setSelectedModifierGroups(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+        break;
+    }
+  };
+
+  const clearSelections = (type) => {
+    switch (type) {
+      case 'items':
+        setSelectedItems([]);
+        break;
+      case 'categories':
+        setSelectedCategories([]);
+        break;
+      case 'modifiers':
+        setSelectedModifiers([]);
+        break;
+      case 'modifierGroups':
+        setSelectedModifierGroups([]);
+        break;
+    }
+  };
+
+  const getFilteredItems = () => {
+    return menuItems.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  };
+
   const resetModifierForm = () => {
     setModifierForm({
       name: '',
